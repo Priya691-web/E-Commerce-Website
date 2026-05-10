@@ -6,6 +6,57 @@
          
   <display-name>FashionStore</display-name>
 
+  <!-- Filter Mappings - Order matters! -->
+  <!-- 1. CORS (handle cross-origin requests first) -->
+  <filter>
+    <filter-name>CORSFilter</filter-name>
+    <filter-class>com.fashionstore.filter.CORSFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>CORSFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- 2. Security Headers (set headers after CORS) -->
+  <filter>
+    <filter-name>SecurityHeadersFilter</filter-name>
+    <filter-class>com.fashionstore.filter.SecurityHeadersFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>SecurityHeadersFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- 3. Request Logging (log all requests) -->
+  <filter>
+    <filter-name>RequestLoggingFilter</filter-name>
+    <filter-class>com.fashionstore.filter.RequestLoggingFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>RequestLoggingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- 4. Authentication (check auth before CSRF) -->
+  <filter>
+    <filter-name>AuthFilter</filter-name>
+    <filter-class>com.fashionstore.filter.AuthFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- 5. CSRF (validate after auth) -->
+  <filter>
+    <filter-name>CSRFFilter</filter-name>
+    <filter-class>com.fashionstore.filter.CSRFFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>CSRFFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
   <!-- Error Pages Configuration -->
   <error-page>
     <error-code>404</error-code>
@@ -27,7 +78,7 @@
     <session-timeout>30</session-timeout>
     <cookie-config>
       <http-only>true</http-only>
-      <secure>true</secure>
+      <!-- Secure flag is set programmatically in SessionCookieConfigListener (prod / env). -->
     </cookie-config>
     <tracking-mode>COOKIE</tracking-mode>
   </session-config>

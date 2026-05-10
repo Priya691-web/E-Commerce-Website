@@ -12,7 +12,7 @@
 
 <jsp:include page="/WEB-INF/views/partials/navbar.jsp" />
 
-<main class="auth-page">
+<main class="site-main auth-page">
     <section class="auth-card">
         <h1>Create your account</h1>
         <p>Join FashionStore to track orders, manage your cart, and checkout faster.</p>

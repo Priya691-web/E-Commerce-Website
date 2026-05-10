@@ -1,5 +1,7 @@
 package com.fashionstore.validation;
 
+import com.fashionstore.util.ValidationUtil;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -8,7 +10,8 @@ public class Validator {
     
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[6-9]\\d{9}$");
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z\\s]{2,50}$");
+    /** Letters (any script), spaces, apostrophe, hyphen, period — avoids locking out real names. */
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}\\s'.-]{2,80}$");
     
     private final List<String> errors = new ArrayList<>();
     
@@ -108,6 +111,40 @@ public class Validator {
     public Validator validateMatch(String value1, String value2, String fieldName) {
         if (value1 == null || value2 == null || !value1.equals(value2)) {
             errors.add(fieldName + " do not match");
+        }
+        return this;
+    }
+
+    /**
+     * Optional postal-style address: when provided, enforce length and reject dangerous control characters.
+     */
+    public Validator validateOptionalAddress(String address, String fieldName, int maxLength) {
+        if (address == null || address.trim().isEmpty()) {
+            return this;
+        }
+        String t = address.trim();
+        if (t.length() > maxLength) {
+            errors.add(fieldName + " must not exceed " + maxLength + " characters");
+            return this;
+        }
+        for (int i = 0; i < t.length(); i++) {
+            char c = t.charAt(i);
+            if (c < 32 && c != '\t' && c != '\n' && c != '\r') {
+                errors.add(fieldName + " contains invalid characters");
+                return this;
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Validates quantity for cart/order lines (upper bound aligned with {@link com.fashionstore.util.ValidationUtil}).
+     */
+    public Validator validateProductQuantity(int quantity, String fieldName) {
+        if (quantity < 1) {
+            errors.add(fieldName + " must be at least 1");
+        } else if (quantity > ValidationUtil.MAX_PRODUCT_QUANTITY_PER_LINE) {
+            errors.add(fieldName + " cannot exceed " + ValidationUtil.MAX_PRODUCT_QUANTITY_PER_LINE);
         }
         return this;
     }

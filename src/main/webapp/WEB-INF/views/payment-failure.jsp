@@ -20,7 +20,7 @@
     Order order = (Order) request.getAttribute("order");
 %>
 
-<main class="error-page">
+<main class="site-main payment-failure-page">
     <div class="container">
         <div class="error-container">
             <div class="error-icon">

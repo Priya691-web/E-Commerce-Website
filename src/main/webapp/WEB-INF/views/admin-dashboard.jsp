@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page import="org.apache.commons.text.StringEscapeUtils" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +13,10 @@
 <body class="admin-dashboard">
 
 <div class="admin-layout">
+    <button type="button" class="admin-menu-toggle" data-admin-menu-open aria-label="Open admin menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="admin-sidebar-backdrop" data-admin-menu-close tabindex="-1" aria-hidden="true"></div>
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
         <div class="sidebar-brand">FashionStore Admin</div>
@@ -69,7 +74,7 @@
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                     </svg>
                 </div>
-                <div class="stat-value">₹<%= request.getAttribute("totalSales") != null ? request.getAttribute("totalSales") : "0" %></div>
+                <div class="stat-value">₹<%= StringEscapeUtils.escapeHtml4((String) request.getAttribute("totalSales")) %></div>
                 <div class="stat-label">Total Sales</div>
                 <div class="stat-change positive">↑ 12% from last month</div>
             </div>
@@ -83,7 +88,7 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
                 </div>
-                <div class="stat-value"><%= request.getAttribute("totalUsers") != null ? request.getAttribute("totalUsers") : "0" %></div>
+                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("totalUsers"))) %></div>
                 <div class="stat-label">Total Users</div>
                 <div class="stat-change positive">↑ 8% from last month</div>
             </div>
@@ -96,7 +101,7 @@
                         <path d="M16 10a4 4 0 0 1-8 0"/>
                     </svg>
                 </div>
-                <div class="stat-value"><%= request.getAttribute("totalOrders") != null ? request.getAttribute("totalOrders") : "0" %></div>
+                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("totalOrders"))) %></div>
                 <div class="stat-label">Total Orders</div>
                 <div class="stat-change positive">↑ 15% from last month</div>
             </div>
@@ -109,7 +114,7 @@
                         <line x1="12" y1="17" x2="12.01" y2="17"/>
                     </svg>
                 </div>
-                <div class="stat-value"><%= request.getAttribute("lowStockCount") != null ? request.getAttribute("lowStockCount") : "0" %></div>
+                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("lowStockCount"))) %></div>
                 <div class="stat-label">Low Stock Alerts</div>
                 <div class="stat-change negative">⚠ Needs attention</div>
             </div>
@@ -132,7 +137,7 @@
         <div class="recent-orders">
             <div class="chart-header">
                 <h3 class="chart-title">Recent Orders</h3>
-                <a href="<%= request.getContextPath() %>/admin/orders" class="add-btn" style="font-size: 12px;">View All</a>
+                <a href="<%= request.getContextPath() %>/admin/orders" class="add-btn add-btn--compact">View All</a>
             </div>
             <div class="admin-table-container">
                 <table class="admin-table">
@@ -150,19 +155,19 @@
                            java.util.List<com.fashionstore.model.Order> orders = (java.util.List<com.fashionstore.model.Order>) request.getAttribute("recentOrders");
                            for (com.fashionstore.model.Order order : orders) { %>
                         <tr>
-                            <td>#<%= order.getOrderId() %></td>
-                            <td><%= order.getFullName() != null ? order.getFullName() : "Guest" %></td>
+                            <td>#<%= StringEscapeUtils.escapeHtml4(String.valueOf(order.getOrderId())) %></td>
+                            <td><%= StringEscapeUtils.escapeHtml4(order.getFullName() != null ? order.getFullName() : "Guest") %></td>
                             <td>₹<%= String.format("%.2f", order.getTotalAmount()) %></td>
                             <td>
-                                <span class="status-badge status-<%= order.getStatus().toLowerCase() %>">
-                                    <%= order.getStatus() %>
+                                <span class="status-badge status-<%= order.getStatus() != null ? order.getStatus().toLowerCase() : "pending" %>">
+                                    <%= StringEscapeUtils.escapeHtml4(order.getStatus() != null ? order.getStatus() : "Pending") %>
                                 </span>
                             </td>
-                            <td><%= new java.text.SimpleDateFormat("MMM dd, yyyy").format(order.getOrderDate()) %></td>
+                            <td><%= order.getOrderDate() != null ? new java.text.SimpleDateFormat("MMM dd, yyyy").format(order.getOrderDate()) : "N/A" %></td>
                         </tr>
                         <% } } else { %>
                         <tr>
-                            <td colspan="5" style="text-align: center; color: var(--color-secondary);">No recent orders</td>
+                            <td colspan="5" class="admin-table-empty">No recent orders</td>
                         </tr>
                         <% } %>
                     </tbody>
@@ -173,64 +178,87 @@
 </div>
 
 <!-- Hidden elements for chart data -->
-<input type="hidden" id="revenue-data" value='<%= request.getAttribute("revenueData") != null ? request.getAttribute("revenueData") : "[]" %>'>
-<input type="hidden" id="revenue-labels" value='<%= request.getAttribute("revenueLabels") != null ? request.getAttribute("revenueLabels") : "[]" %>'>
+<input type="hidden" id="revenue-data" value='<%= request.getAttribute("revenueDataJson") != null ? request.getAttribute("revenueDataJson") : "[]" %>'>
+<input type="hidden" id="revenue-labels" value='<%= request.getAttribute("revenueLabelsJson") != null ? request.getAttribute("revenueLabelsJson") : "[]" %>'>
 
 <script>
-// Revenue Chart
-const ctx = document.getElementById('revenueChart');
-if (ctx) {
-    const chartData = JSON.parse(document.getElementById('revenue-data').value);
-    const labels = JSON.parse(document.getElementById('revenue-labels').value);
+(function() {
+    const revenueDataEl = document.getElementById('revenue-data');
+    const revenueLabelsEl = document.getElementById('revenue-labels');
     
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Revenue',
-                data: chartData,
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                fill: true,
-                tension: 0.4,
-                borderWidth: 2,
-                pointBackgroundColor: '#667eea',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
+    let chartData = [];
+    let labels = [];
+    
+    try {
+        if (revenueDataEl && revenueDataEl.value) {
+            chartData = JSON.parse(revenueDataEl.value);
+        }
+    } catch (e) {
+        console.error('Failed to parse revenue data:', e);
+        chartData = [];
+    }
+    
+    try {
+        if (revenueLabelsEl && revenueLabelsEl.value) {
+            labels = JSON.parse(revenueLabelsEl.value);
+        }
+    } catch (e) {
+        console.error('Failed to parse revenue labels:', e);
+        labels = [];
+    }
+    
+    const ctx = document.getElementById('revenueChart');
+    if (ctx && chartData.length > 0 && labels.length > 0) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: chartData,
+                    borderColor: '#2a2926',
+                    backgroundColor: 'rgba(42, 41, 38, 0.06)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointBackgroundColor: '#121211',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '₹' + value;
-                        }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 },
-                x: {
-                    grid: {
-                        display: false
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value;
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
                     }
                 }
             }
-        }
-    });
-}
+        });
+    }
+})();
 </script>
 
 </body>
 </html>
+

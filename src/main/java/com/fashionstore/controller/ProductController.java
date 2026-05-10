@@ -16,6 +16,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,6 +73,24 @@ public class ProductController extends HttpServlet {
                     categoryId = resolved.getCategoryId();
                     search = null;
                 }
+            }
+
+            // Track search in session for recent searches
+            if (search != null && !search.isBlank()) {
+                HttpSession session = request.getSession();
+                @SuppressWarnings("unchecked")
+                List<String> recentSearches = (List<String>) session.getAttribute("recentSearches");
+                if (recentSearches == null) {
+                    recentSearches = new ArrayList<>();
+                }
+                // Remove if already exists and add to front
+                recentSearches.remove(search);
+                recentSearches.add(0, search);
+                // Keep only last 10 searches
+                if (recentSearches.size() > 10) {
+                    recentSearches = recentSearches.subList(0, 10);
+                }
+                session.setAttribute("recentSearches", recentSearches);
             }
 
             int page = 1;

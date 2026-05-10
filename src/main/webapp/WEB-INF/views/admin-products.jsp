@@ -14,6 +14,10 @@
 <body class="admin-dashboard">
 
 <div class="admin-layout">
+    <button type="button" class="admin-menu-toggle" data-admin-menu-open aria-label="Open admin menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="admin-sidebar-backdrop" data-admin-menu-close tabindex="-1" aria-hidden="true"></div>
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
         <div class="sidebar-brand">FashionStore Admin</div>
@@ -68,15 +72,15 @@
         </div>
 
         <!-- PRODUCT SEARCH -->
-        <div class="glass-card" style="padding: var(--space-4); margin-bottom: var(--space-5);">
-            <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center;">
-                <div style="flex: 1; min-width: 200px;">
-                    <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 4px; display: block;">Search Products</label>
-                    <input type="text" id="searchProducts" placeholder="Search by name, brand..." style="width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 14px;">
+        <div class="glass-card admin-toolbar-card">
+            <div class="admin-filter-row">
+                <div class="admin-filter-field admin-filter-field--grow">
+                    <label class="admin-filter-label" for="searchProducts">Search Products</label>
+                    <input type="text" id="searchProducts" class="admin-filter-input" placeholder="Search by name, brand...">
                 </div>
-                <div style="min-width: 150px;">
-                    <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 4px; display: block;">Stock Status</label>
-                    <select id="stockFilter" style="width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 14px; background: var(--color-surface);">
+                <div class="admin-filter-field">
+                    <label class="admin-filter-label" for="stockFilter">Stock Status</label>
+                    <select id="stockFilter" class="admin-filter-select">
                         <option value="">All Products</option>
                         <option value="instock">In Stock</option>
                         <option value="lowstock">Low Stock</option>
@@ -89,13 +93,13 @@
         <!-- UI FEEDBACK -->
         <% String message = (String) session.getAttribute("message"); %>
         <% if (message != null) { %>
-            <div class="alert alert-success" style="margin-bottom: var(--space-4);"><%= message %></div>
+            <div class="alert alert-success admin-alert-spacing"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(message) %></div>
             <% session.removeAttribute("message"); %>
         <% } %>
 
         <% String error = (String) session.getAttribute("error"); %>
         <% if (error != null) { %>
-            <div class="alert alert-danger" style="margin-bottom: var(--space-4);"><%= error %></div>
+            <div class="alert alert-danger admin-alert-spacing"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(error) %></div>
             <% session.removeAttribute("error"); %>
         <% } %>
 
@@ -117,15 +121,15 @@
                         if (products != null) {
                             for (Product p : products) {
                     %>
-                    <tr data-product-name="<%= p.getProductName().toLowerCase() %>" data-brand="<%= (p.getBrand() != null ? p.getBrand().toLowerCase() : "") %>" data-stock="<%= getStockStatus(p) %>">
+                    <tr data-product-name="<%= p.getProductName() != null ? org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getProductName().toLowerCase()) : "" %>" data-brand="<%= (p.getBrand() != null ? org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getBrand().toLowerCase()) : "") %>" data-stock="<%= getStockStatus(p) %>">
                         <td>
                             <div class="product-image-wrapper">
-                                <img src="<%= p.getImageUrl() %>" class="prod-img" alt="<%= p.getProductName() %>" onclick="showImagePreview('<%= p.getImageUrl() %>', '<%= p.getProductName() %>')">
+                                <img src="<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getImageUrl() != null ? p.getImageUrl() : "") %>" class="prod-img" alt="<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getProductName() != null ? p.getProductName() : "Product") %>" onclick="showImagePreview('<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(p.getImageUrl() != null ? p.getImageUrl() : "") %>', '<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(p.getProductName() != null ? p.getProductName() : "Product") %>')" onerror="this.src='<%= request.getContextPath() %>/assets/images/placeholder-product.jpg'; this.onerror=null;">
                             </div>
                         </td>
                         <td>
-                            <div style="font-weight: 500;"><%= p.getProductName() %></div>
-                            <div style="font-size: 12px; color: var(--color-secondary); margin-top: 4px;"><%= p.getBrand() != null ? p.getBrand() : "" %></div>
+                            <div class="admin-table-cell-title"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getProductName() != null ? p.getProductName() : "Unnamed Product") %></div>
+                            <div class="admin-table-cell-sub"><%= p.getBrand() != null ? org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getBrand()) : "" %></div>
                         </td>
                         <td>₹<%= String.format("%.2f", p.getPrice()) %></td>
                         <td>
@@ -138,7 +142,7 @@
                                     }
                                 } else {
                             %>
-                                <span class="no-sizes" style="color: var(--color-secondary); font-size: 13px;">No sizes set</span>
+                                <span class="no-sizes">No sizes set</span>
                             <% } %>
                         </td>
                         <td class="action-btns">
@@ -157,66 +161,13 @@
 </div>
 
 <!-- IMAGE PREVIEW MODAL -->
-<div id="imageModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px;">
-        <span class="close-modal" onclick="closeImagePreview()">&times;</span>
-        <img id="modalImage" src="" alt="Product Preview" style="width: 100%; border-radius: var(--radius-md);">
-        <p id="modalImageName" style="text-align: center; margin-top: var(--space-3); font-weight: 500;"></p>
+<div id="imageModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="modalImageName">
+    <div class="admin-modal__dialog">
+        <button type="button" class="admin-modal__close" onclick="closeImagePreview()" aria-label="Close preview">&times;</button>
+        <img id="modalImage" class="admin-modal__img" src="" alt="Product preview">
+        <p id="modalImageName" class="admin-modal__caption"></p>
     </div>
 </div>
-
-<style>
-.modal {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.8);
-    display: none;
-}
-
-.modal-content {
-    background: var(--color-surface);
-    margin: 10% auto;
-    padding: var(--space-5);
-    border-radius: var(--radius-lg);
-    position: relative;
-}
-
-.close-modal {
-    position: absolute;
-    right: 20px;
-    top: 10px;
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--text-primary);
-    cursor: pointer;
-}
-
-.product-image-wrapper {
-    position: relative;
-    cursor: pointer;
-    display: inline-block;
-}
-
-.product-image-wrapper:hover::after {
-    content: '🔍';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 24px;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-}
-
-.size-badge.low-stock {
-    background: #fef3c7;
-    color: #92400e;
-}
-</style>
 
 <script>
 // Product search and filter functionality
@@ -254,20 +205,19 @@ function showImagePreview(imageUrl, productName) {
     
     modalImage.src = imageUrl;
     modalImageName.textContent = productName;
-    modal.style.display = 'block';
+    modal.classList.add('is-open');
 }
 
 function closeImagePreview() {
-    document.getElementById('imageModal').style.display = 'none';
+    document.getElementById('imageModal').classList.remove('is-open');
 }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
+window.addEventListener('click', function(event) {
     const modal = document.getElementById('imageModal');
-    if (event.target == modal) {
+    if (modal && event.target === modal) {
         closeImagePreview();
     }
-}
+});
 
 <%!
     private String getStockStatus(Product p) {

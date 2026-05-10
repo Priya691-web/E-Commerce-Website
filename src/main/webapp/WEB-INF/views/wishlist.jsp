@@ -25,7 +25,7 @@
     }
 %>
 
-<main class="wishlist-page container">
+<main class="site-main wishlist-page">
     <div class="wishlist-header">
         <h1 class="wishlist-title">My Wishlist</h1>
         <p class="wishlist-count"><%= wishlistItems.size() %> items saved</p>
@@ -36,7 +36,7 @@
             <% for (WishlistItem item : wishlistItems) { %>
                 <div class="product-card" id="wishlist-item-<%= item.getProductId() %>">
                     <div class="product-card-image-wrapper">
-                        <img src="<%= item.getImageUrl() %>" alt="<%= item.getProductName() %>" class="product-card-image">
+                        <img src="<%= item.getImageUrl() %>" alt="<%= item.getProductName() %>" class="product-card-image" onerror="this.src='<%= request.getContextPath() %>/assets/images/placeholder-product.jpg'; this.onerror=null;">
                         <button class="product-card-wishlist active" onclick="removeWishlistItem(<%= item.getProductId() %>)" aria-label="Remove from wishlist">
                             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
@@ -45,13 +45,13 @@
                     </div>
                     <div class="product-card-content">
                         <span class="product-card-brand">Saved Item</span>
-                        <h3 class="product-card-name"><%= item.getProductName() %></h3>
+                        <h3 class="product-card-name"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(item.getProductName()) %></h3>
                         <div class="product-card-bottom">
                             <div class="product-card-price">
                                 <span class="product-card-price-current">&#8377;<%= String.format("%.2f", item.getPrice()) %></span>
                             </div>
                             <div class="product-card-actions">
-                                <button class="btn btn-primary btn-sm" onclick="FashionStore.addToCart(<%= item.getProductId() %>)">Add to Cart</button>
+                                <button class="btn btn-primary btn-sm" onclick="FashionStore.addToCart('<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(String.valueOf(item.getProductId())) %>')">Add to Cart</button>
                             </div>
                         </div>
                     </div>

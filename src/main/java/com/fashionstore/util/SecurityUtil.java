@@ -22,7 +22,7 @@ public class SecurityUtil {
         HttpSession session = request.getSession(false);
         if (session == null) return false;
         User user = (User) session.getAttribute("user");
-        return user != null && "admin".equals(user.getRole());
+        return user != null && user.isAdmin();
     }
 
     /**

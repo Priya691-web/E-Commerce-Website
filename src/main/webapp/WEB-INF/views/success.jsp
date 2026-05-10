@@ -11,7 +11,7 @@
 <body>
 <jsp:include page="/WEB-INF/views/partials/navbar.jsp" />
 
-<div class="success-page">
+<main class="site-main success-page">
     <div class="success-container">
         <!-- Animated Success Icon -->
         <div class="success-icon-wrapper">
@@ -55,7 +55,7 @@
             <a href="<%= request.getContextPath() %>/products" class="btn btn-secondary">Continue Shopping</a>
         </div>
     </div>
-</div>
+</main>
 
 <jsp:include page="/WEB-INF/views/partials/footer.jsp" />
 

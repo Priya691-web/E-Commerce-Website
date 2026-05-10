@@ -12,8 +12,8 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-8);
-    padding: var(--space-8) 0 var(--space-12);
-    width: min(1400px, 94%);
+    padding: var(--space-6) clamp(var(--space-3), 3vw, var(--space-4)) var(--space-12);
+    width: min(1400px, 100%);
     margin: 0 auto;
 }
 
@@ -21,7 +21,7 @@
     .details-container {
         grid-template-columns: 1.1fr 1fr;
         gap: var(--space-10);
-        padding: var(--space-10) 0 var(--space-16);
+        padding: var(--space-10) clamp(var(--space-3), 3vw, var(--space-6)) var(--space-16);
     }
 }
 
@@ -31,16 +31,16 @@
 
 .image-section {
     position: sticky;
-    top: 88px;
+    top: 80px;
     height: fit-content;
 }
 
 .product-gallery-main {
     background: var(--color-surface);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: var(--space-3);
     border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-xs);
     overflow: hidden;
 }
 
@@ -48,12 +48,13 @@
     width: 100%;
     aspect-ratio: 4/5;
     object-fit: cover;
-    border-radius: var(--radius-md);
-    transition: transform var(--transition-slow), opacity 220ms var(--ease-out), filter 220ms var(--ease-out);
+    object-position: center top;
+    border-radius: var(--radius-sm);
+    transition: transform var(--transition-slow) var(--ease-premium), opacity 220ms var(--ease-out), filter 220ms var(--ease-out);
 }
 
 .product-gallery-main:hover img {
-    transform: scale(1.03);
+    transform: scale(1.015);
 }
 
 .product-gallery-main.is-switching img {
@@ -69,13 +70,18 @@
 }
 
 .gallery-thumb {
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     background: var(--color-surface);
     padding: var(--space-1);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     overflow: hidden;
+}
+
+.gallery-thumb:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
 }
 
 .gallery-thumb:hover,
@@ -96,10 +102,10 @@
 
 .details-section {
     background: var(--color-surface);
-    padding: var(--space-8);
-    border-radius: var(--radius-lg);
+    padding: clamp(var(--space-6), 4vw, var(--space-8));
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-xs);
 }
 
 .details-kicker {
@@ -119,10 +125,10 @@
 
 .product-title {
     font-family: var(--font-family-display);
-    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-size: clamp(1.5rem, 3.5vw, 2.15rem);
     font-weight: var(--font-weight-semibold);
     margin-bottom: var(--space-4);
-    line-height: var(--leading-tight);
+    line-height: var(--leading-display);
     letter-spacing: var(--letter-spacing-tight);
     color: var(--color-text-primary);
 }
@@ -153,11 +159,11 @@
 }
 
 .product-price {
-    font-size: var(--text-3xl);
+    font-size: clamp(1.35rem, 2.5vw, 1.85rem);
     color: var(--color-text-primary);
     margin-bottom: var(--space-2);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: -0.02em;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-tight);
 }
 
 .product-discount {
@@ -205,16 +211,15 @@
 }
 
 .size-option:hover {
-    border-color: var(--color-champagne);
-    color: var(--color-champagne);
-    transform: translateY(-1px);
+    border-color: var(--color-text-primary);
+    color: var(--color-text-primary);
 }
 
 .size-option.selected {
-    background: var(--gradient-gold);
-    color: var(--color-text-inverse);
-    border-color: transparent;
-    box-shadow: var(--glow-gold);
+    background: var(--color-text-primary);
+    color: var(--color-inverse);
+    border-color: var(--color-text-primary);
+    box-shadow: none;
 }
 
 .size-option.out-of-stock {
@@ -232,15 +237,65 @@
    RESPONSIVE
    ============================================ */
 
+@media (max-width: 1024px) {
+    .details-container {
+        grid-template-columns: 1fr;
+        gap: var(--space-8);
+    }
+}
+
 @media (max-width: 768px) {
     .details-container {
-        padding: var(--space-6) 0 var(--space-10);
+        padding: var(--space-6) clamp(var(--space-3), 3vw, var(--space-4)) var(--space-10);
     }
+
     .image-section {
         position: static;
     }
+
     .details-section {
         padding: var(--space-6);
+    }
+}
+
+/* Mobile sticky buy bar (injected by product-details.jsp) */
+.mobile-sticky-cta {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .mobile-sticky-cta {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: var(--space-2);
+        align-items: stretch;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: var(--z-overlay);
+        padding: var(--space-3) var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom, 0));
+        background: var(--nav-surface);
+        border-top: 1px solid var(--color-border);
+        box-shadow: 0 -4px 24px rgba(16, 16, 14, 0.06);
+    }
+
+    .mobile-sticky-cta .btn {
+        min-height: 48px;
+    }
+
+    body:has(.mobile-sticky-cta) {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom, 0));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .product-gallery-main img {
+        transition: none;
+    }
+
+    .product-gallery-main:hover img {
+        transform: none;
     }
 }
 
@@ -251,8 +306,8 @@
 [data-theme="dark"] .product-gallery-main,
 [data-theme="dark"] .gallery-thumb,
 [data-theme="dark"] .details-section {
-    background: var(--color-surface-dark);
-    border-color: var(--color-border-dark);
+    background: var(--color-surface);
+    border-color: var(--color-border);
 }
 
 [data-theme="dark"] .gallery-thumb:hover,
@@ -261,12 +316,18 @@
 }
 
 [data-theme="dark"] .size-option {
-    background: var(--color-surface-dark);
-    border-color: var(--color-border-dark);
-    color: var(--color-text-primary-dark);
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
 }
 
 [data-theme="dark"] .size-option:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
+}
+
+[data-theme="dark"] .size-option.selected {
+    background: var(--color-primary);
+    color: var(--color-inverse);
+    border-color: var(--color-primary);
 }

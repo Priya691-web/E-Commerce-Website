@@ -42,6 +42,29 @@ public class DBConnection {
             String user = System.getenv("FASHIONSTORE_DB_USER");
             String password = System.getenv("FASHIONSTORE_DB_PASSWORD");
 
+            // Docker-style env fallback: DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD
+            if (url == null || url.isBlank()) {
+                String host = System.getenv("DB_HOST");
+                String port = System.getenv("DB_PORT");
+                String dbName = System.getenv("DB_NAME");
+                if (host != null && !host.isBlank()) {
+                    if (port == null || port.isBlank()) {
+                        port = "3306";
+                    }
+                    if (dbName == null || dbName.isBlank()) {
+                        dbName = "fashionstore";
+                    }
+                    url = "jdbc:mysql://" + host + ":" + port + "/" + dbName
+                            + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+                }
+                if (user == null || user.isBlank()) {
+                    user = System.getenv("DB_USER");
+                }
+                if (password == null) {
+                    password = System.getenv("DB_PASSWORD");
+                }
+            }
+
             // If environment variables not set, try loading from properties file (dev/local)
             if (url == null || url.isBlank() || user == null || user.isBlank() || password == null) {
                 try (InputStream is = DBConnection.class.getClassLoader().getResourceAsStream("db.properties")) {
@@ -60,11 +83,15 @@ public class DBConnection {
                 logger.info("Loaded database configuration from environment variables");
             }
 
-            if (url == null || url.isBlank() || user == null || user.isBlank() || password == null) {
-                logger.error("Database configuration is missing. Please set environment variables or configure db.properties");
-                logger.error("Required environment variables: FASHIONSTORE_DB_URL, FASHIONSTORE_DB_USER, FASHIONSTORE_DB_PASSWORD");
-                throw new IllegalStateException(
-                        "Database configuration is missing. Set FASHIONSTORE_DB_URL, FASHIONSTORE_DB_USER, and FASHIONSTORE_DB_PASSWORD environment variables, or create src/main/resources/db.properties file.");
+            // Final local defaults for developer machines
+            if (url == null || url.isBlank()) {
+                url = "jdbc:mysql://localhost:3306/fashionstore?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+            }
+            if (user == null || user.isBlank()) {
+                user = "fashionstore";
+            }
+            if (password == null) {
+                password = "fashionstore";
             }
 
             config.setJdbcUrl(url);
@@ -124,7 +151,8 @@ public class DBConnection {
             initialized = false;
             connectionValid = false;
             logger.error("Failed to initialize database connection pool: {}", e.getMessage(), e);
-            throw new RuntimeException("Database initialization failed", e);
+            // Keep application booting so controllers can fail gracefully instead of
+            // causing class-initialization errors and blanket HTTP 500 responses.
         }
     }
 

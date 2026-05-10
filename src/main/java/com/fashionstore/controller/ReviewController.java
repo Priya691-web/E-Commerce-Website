@@ -6,7 +6,7 @@ import com.fashionstore.dao.ReviewDAO;
 import com.fashionstore.daoimpl.ReviewDAOImpl;
 import com.fashionstore.model.Review;
 import com.fashionstore.model.User;
-import com.google.gson.Gson;
+import com.fashionstore.util.JsonUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -43,10 +43,11 @@ public class ReviewController extends HttpServlet {
         Map<String, Object> map = new HashMap<>();
 
         if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             map.put("success", false);
             map.put("message", "Please log in to leave a review");
             map.put("redirect", request.getContextPath() + "/login");
-            response.getWriter().write(new Gson().toJson(map));
+            response.getWriter().write(JsonUtil.toJson(map));
             return;
         }
 
@@ -54,6 +55,20 @@ public class ReviewController extends HttpServlet {
             int productId = Integer.parseInt(request.getParameter("productId"));
             int rating = Integer.parseInt(request.getParameter("rating"));
             String comment = request.getParameter("comment");
+            if (productId <= 0 || rating < 1 || rating > 5) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                map.put("success", false);
+                map.put("message", "Invalid review input");
+                response.getWriter().write(JsonUtil.toJson(map));
+                return;
+            }
+            if (comment == null || comment.trim().isEmpty() || comment.length() > 1000) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                map.put("success", false);
+                map.put("message", "Comment must be between 1 and 1000 characters");
+                response.getWriter().write(JsonUtil.toJson(map));
+                return;
+            }
 
             Review review = new Review();
             review.setUserId(user.getUserId());
@@ -67,15 +82,17 @@ public class ReviewController extends HttpServlet {
                 map.put("success", true);
                 map.put("message", "Review submitted successfully");
             } else {
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 map.put("success", false);
                 map.put("message", "Failed to submit review");
             }
         } catch (Exception e) {
             logger.error("Error in ReviewController.doPost: {}", e.getMessage(), e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             map.put("success", false);
             map.put("message", "An error occurred");
         }
 
-        response.getWriter().write(new Gson().toJson(map));
+        response.getWriter().write(JsonUtil.toJson(map));
     }
 }

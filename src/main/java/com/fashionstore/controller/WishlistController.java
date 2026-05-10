@@ -6,7 +6,7 @@ import com.fashionstore.dao.WishlistDAO;
 import com.fashionstore.daoimpl.WishlistDAOImpl;
 import com.fashionstore.model.User;
 import com.fashionstore.model.WishlistItem;
-import com.google.gson.Gson;
+import com.fashionstore.util.JsonUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -61,17 +61,17 @@ public class WishlistController extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         Map<String, Object> map = new HashMap<>();
-        Gson gson = new Gson();
-        
+
         try {
             HttpSession session = request.getSession(false);
             User user = (session != null) ? (User) session.getAttribute("user") : null;
             
             if (user == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 map.put("success", false);
                 map.put("message", "Please login to continue.");
                 map.put("redirect", request.getContextPath() + "/login");
-                response.getWriter().write(gson.toJson(map));
+                response.getWriter().write(JsonUtil.toJson(map));
                 return;
             }
 
@@ -79,9 +79,10 @@ public class WishlistController extends HttpServlet {
             String productIdStr = request.getParameter("productId");
             
             if (productIdStr == null || productIdStr.isBlank()) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 map.put("success", false);
                 map.put("message", "Product ID missing");
-                response.getWriter().write(gson.toJson(map));
+                response.getWriter().write(JsonUtil.toJson(map));
                 return;
             }
 
@@ -89,9 +90,10 @@ public class WishlistController extends HttpServlet {
             try {
                 productId = Integer.parseInt(productIdStr);
             } catch (NumberFormatException e) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 map.put("success", false);
                 map.put("message", "Invalid Product ID");
-                response.getWriter().write(gson.toJson(map));
+                response.getWriter().write(JsonUtil.toJson(map));
                 return;
             }
 
@@ -114,17 +116,19 @@ public class WishlistController extends HttpServlet {
                 map.put("isFavorite", false);
                 map.put("message", "Removed from wishlist");
             } else {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 map.put("success", false);
                 map.put("message", "Invalid action");
             }
 
-            response.getWriter().write(gson.toJson(map));
+            response.getWriter().write(JsonUtil.toJson(map));
         } catch (Exception e) {
             logger.error("Error in WishlistController.doPost: {}", e.getMessage(), e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             map.put("success", false);
-            map.put("message", "Failed to process wishlist action: " + e.getMessage());
+            map.put("message", "Failed to process wishlist action");
             map.put("status", "error");
-            response.getWriter().write(gson.toJson(map));
+            response.getWriter().write(JsonUtil.toJson(map));
         }
     }
 }

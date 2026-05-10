@@ -30,7 +30,7 @@
     }
 %>
 
-<main class="details-container">
+<main class="site-main details-container">
 
     <!-- IMAGE -->
     <% if (product != null) { %>
@@ -49,8 +49,8 @@
     <div class="details-section">
 
         <div class="details-kicker">
-            <span><%= product.getBrand() != null && !product.getBrand().isBlank() ? product.getBrand() : "FashionStore" %></span>
-            <% if (product.getCategoryName() != null) { %><span><%= product.getCategoryName() %></span><% } %>
+            <span><%= product.getBrand() != null && !product.getBrand().isBlank() ? org.apache.commons.text.StringEscapeUtils.escapeHtml4(product.getBrand()) : "FashionStore" %></span>
+            <% if (product.getCategoryName() != null) { %><span><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(product.getCategoryName()) %></span><% } %>
         </div>
 
         <h2 class="product-title"><%= product.getProductName() %></h2>
@@ -79,7 +79,7 @@
         </div>
 
         <div class="product-description">
-            <%= product.getDescription() %>
+            <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(product.getDescription()) %>
         </div>
 
         <div class="stock-summary <%= product.getStockQuantity() > 0 ? "in-stock" : "out-of-stock" %>">
@@ -142,7 +142,7 @@
                 <button class="add-cart-btn btn btn-primary" onclick="submitProductDetailsCart()">
                     Add to Cart
                 </button>
-                <button class="wishlist-detail-btn" onclick="FashionStore.toggleWishlist(<%= product.getProductId() %>, this)" aria-label="Add to wishlist">
+                <button class="wishlist-detail-btn" onclick="FashionStore.toggleWishlist('<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(String.valueOf(product.getProductId())) %>', this)" aria-label="Add to wishlist">
                     <svg class="wishlist-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
@@ -225,21 +225,21 @@
         <% for (Product related : relatedProducts) { %>
             <article class="product-card">
                 <div class="product-card-image-wrapper">
-                    <img class="product-card-image" src="<%= related.getImageUrl() %>" alt="<%= related.getProductName() %>">
-                    <button class="product-card-wishlist" onclick="event.preventDefault(); FashionStore.toggleWishlist(<%= related.getProductId() %>, this)" aria-label="Add to wishlist">
+                    <img class="product-card-image" src="<%= related.getImageUrl() %>" alt="<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(related.getProductName()) %>" onerror="this.src='<%= request.getContextPath() %>/assets/images/placeholder-product.jpg'; this.onerror=null;">
+                    <button class="product-card-wishlist" onclick="event.preventDefault(); FashionStore.toggleWishlist('<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(String.valueOf(related.getProductId())) %>', this)" aria-label="Add to wishlist">
                         <svg class="wishlist-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
                     </button>
                 </div>
                 <div class="product-card-content">
-                    <span class="product-card-brand"><%= related.getBrand() != null && !related.getBrand().isBlank() ? related.getBrand() : related.getCategoryName() %></span>
-                    <h4 class="product-card-name"><%= related.getProductName() %></h4>
+                    <span class="product-card-brand"><%= related.getBrand() != null && !related.getBrand().isBlank() ? org.apache.commons.text.StringEscapeUtils.escapeHtml4(related.getBrand()) : org.apache.commons.text.StringEscapeUtils.escapeHtml4(related.getCategoryName()) %></span>
+                    <h4 class="product-card-name"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(related.getProductName()) %></h4>
                     <div class="product-card-price">
                         <span class="product-card-price-current">₹<%= String.format("%.2f", related.getPrice()) %></span>
                     </div>
                     <div class="product-card-actions">
-                        <a href="<%= request.getContextPath() %>/product?id=<%= related.getProductId() %>" class="btn btn-primary product-card-add-btn">View Details</a>
+                        <a href="<%= request.getContextPath() %>/product?id=<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(String.valueOf(related.getProductId())) %>" class="btn btn-primary product-card-add-btn">View Details</a>
                     </div>
                 </div>
             </article>
@@ -287,7 +287,7 @@
         <div class="review-form-card">
             <h4>Write a Review</h4>
             <% if (session.getAttribute("user") != null) { %>
-                <form id="reviewForm" onsubmit="return submitReview(event, <%= product.getProductId() %>)">
+                <form id="reviewForm" onsubmit="return submitReview(event, '<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(String.valueOf(product.getProductId())) %>')">
                     <div class="review-form-group">
                         <label for="reviewRating">Rating</label>
                         <select name="rating" id="reviewRating" required>
@@ -302,11 +302,11 @@
                         <label for="reviewComment">Review</label>
                         <textarea name="comment" id="reviewComment" rows="4" required placeholder="What did you think about this product?"></textarea>
                     </div>
-                    <button type="submit" class="btn-primary btn-block">Submit Review</button>
+                    <button type="submit" class="btn btn-primary btn-block">Submit Review</button>
                 </form>
             <% } else { %>
                 <p class="review-login-prompt">Please log in to write a review.</p>
-                <a href="<%= request.getContextPath() %>/login" class="btn-primary btn-block" style="text-align: center;">Log In</a>
+                <a href="<%= request.getContextPath() %>/login" class="btn btn-primary btn-block">Log In</a>
             <% } %>
         </div>
     </div>
@@ -315,7 +315,7 @@
 <script>
 const detailsStickyCta = document.createElement('div');
 detailsStickyCta.className = 'mobile-sticky-cta';
-detailsStickyCta.innerHTML = '<button class="btn btn-primary" onclick="submitProductDetailsCart()">Add to Cart</button><button class="wishlist-detail-btn" onclick="FashionStore.toggleWishlist(<%= product.getProductId() %>, this)">Wishlist</button>';
+detailsStickyCta.innerHTML = '<button class="btn btn-primary" onclick="submitProductDetailsCart()">Add to Cart</button><button class="wishlist-detail-btn" onclick="FashionStore.toggleWishlist(\'<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(String.valueOf(product.getProductId())) %>\', this)">Wishlist</button>';
 document.body.appendChild(detailsStickyCta);
 
 function submitReview(event, productId) {

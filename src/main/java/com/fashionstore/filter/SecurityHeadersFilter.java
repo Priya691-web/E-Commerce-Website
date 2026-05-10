@@ -1,7 +1,6 @@
 package com.fashionstore.filter;
 
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -9,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-@WebFilter("/*")
 public class SecurityHeadersFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityHeadersFilter.class);
@@ -30,6 +28,13 @@ public class SecurityHeadersFilter implements Filter {
         // NOTE: style-src must include https://fonts.googleapis.com because Google
         // Fonts serves the @font-face stylesheet from that domain. style-src-elem
         // falls back to style-src when not set explicitly.
+        // Allow localhost:5173 for development iframe embedding
+        String origin = httpRequest.getHeader("Origin");
+        String cspFrameAncestors = "frame-ancestors 'none'";
+        if (origin != null && (origin.contains("localhost:5173") || origin.contains("127.0.0.1:5173"))) {
+            cspFrameAncestors = "frame-ancestors 'self' http://localhost:5173 http://127.0.0.1:5173";
+        }
+        
         httpResponse.setHeader("Content-Security-Policy",
             "default-src 'self'; " +
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
@@ -38,7 +43,7 @@ public class SecurityHeadersFilter implements Filter {
             "img-src 'self' data: https:; " +
             "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com; " +
             "connect-src 'self'; " +
-            "frame-ancestors 'none'; " +
+            cspFrameAncestors + "; " +
             "form-action 'self'; " +
             "base-uri 'self'");
 
@@ -46,7 +51,12 @@ public class SecurityHeadersFilter implements Filter {
         httpResponse.setHeader("X-Content-Type-Options", "nosniff");
 
         // X-Frame-Options
-        httpResponse.setHeader("X-Frame-Options", "DENY");
+        // Allow framing from localhost:5173 (Vite dev server) in development
+        if (origin != null && (origin.contains("localhost:5173") || origin.contains("127.0.0.1:5173"))) {
+            httpResponse.setHeader("X-Frame-Options", "SAMEORIGIN");
+        } else {
+            httpResponse.setHeader("X-Frame-Options", "DENY");
+        }
 
         // X-XSS-Protection
         httpResponse.setHeader("X-XSS-Protection", "1; mode=block");
@@ -69,7 +79,8 @@ public class SecurityHeadersFilter implements Filter {
 
         // Cache-Control for sensitive pages
         String path = httpRequest.getRequestURI();
-        if (path.contains("/login") || path.contains("/register") || 
+        if (path.contains("/login") || path.contains("/register") ||
+            path.contains("/forgot-password") || path.contains("/reset-password") ||
             path.contains("/checkout") || path.contains("/payment")) {
             httpResponse.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
             httpResponse.setHeader("Pragma", "no-cache");

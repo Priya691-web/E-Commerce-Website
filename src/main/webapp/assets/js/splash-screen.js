@@ -1,8 +1,7 @@
 /**
  * SPLASH SCREEN CONTROLLER (DEPRECATED)
  *
- * The luxury splash experience now lives in `luxury-motion.js`
- * (cinematic letter-rise reveal + champagne progress bar).
+ * Historical cinematic splash lived in removed JS/CSS bundles (unused).
  *
  * This file is intentionally a no-op to avoid:
  *   - duplicate splash overlays firing simultaneously

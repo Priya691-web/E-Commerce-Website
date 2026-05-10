@@ -61,6 +61,26 @@
             </form>
 
             <nav class="nav-actions" id="nav-actions" aria-label="Customer actions">
+                <div class="mobile-nav-panel" aria-label="Mobile primary navigation">
+                    <form class="nav-search nav-search-mobile" action="<%= request.getContextPath() %>/products" method="get" role="search">
+                        <label class="sr-only" for="nav-search-mobile-input">Search catalog</label>
+                        <input type="text" id="nav-search-mobile-input" name="search" placeholder="Search products..." autocomplete="off" data-search-input>
+                        <button type="submit" class="nav-search-btn" aria-label="Search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <circle cx="11" cy="11" r="7"></circle>
+                                <line x1="20" y1="20" x2="16.2" y2="16.2"></line>
+                            </svg>
+                        </button>
+                    </form>
+                    <div class="mobile-nav-links">
+                        <a href="<%= request.getContextPath() %>/products?category=women">Women</a>
+                        <a href="<%= request.getContextPath() %>/products?category=men">Men</a>
+                        <a href="<%= request.getContextPath() %>/products?category=footwear">Footwear</a>
+                        <a href="<%= request.getContextPath() %>/products?category=accessories">Accessories</a>
+                        <a href="<%= request.getContextPath() %>/products?tag=new">New</a>
+                        <a href="<%= request.getContextPath() %>/products?tag=deals">Sale</a>
+                    </div>
+                </div>
                 <button id="dark-mode-toggle" class="nav-action-btn nav-icon-btn" aria-label="Switch to dark mode" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="5"></circle>
@@ -131,7 +151,7 @@
                 <span class="mega-kicker">Editorial</span>
                 <strong>Modern uniform dressing</strong>
                 <p>Sharp silhouettes, wearable layers, and elevated everyday accessories.</p>
-                <a href="<%= request.getContextPath() %>/products" class="btn btn-outline btn-sm" style="margin-top: var(--space-3);">Shop the collection</a>
+                <a href="<%= request.getContextPath() %>/products" class="btn btn-outline btn-sm mega-feature__cta">Shop the collection</a>
             </div>
         </div>
     </header>
@@ -143,6 +163,56 @@
 
     <!-- TOAST CONTAINER -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <a href="<%= request.getContextPath() %>/home" class="mobile-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="<%= request.getContextPath() %>/products" class="mobile-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+            <span>Shop</span>
+        </a>
+        <a href="<%= request.getContextPath() %>/cart" class="mobile-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <span>Cart</span>
+            <span class="mobile-nav-badge" id="mobile-cart-badge"><%= initialCartCount %></span>
+        </a>
+        <a href="<%= request.getContextPath() %>/wishlist" class="mobile-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.3 5.7a5.1 5.1 0 0 0-7.2 0L12 6.8l-1.1-1.1a5.1 5.1 0 0 0-7.2 7.2L12 21l8.3-8.1a5.1 5.1 0 0 0 0-7.2z"></path>
+            </svg>
+            <span>Wishlist</span>
+        </a>
+        <% if (user != null) { %>
+            <a href="<%= request.getContextPath() %>/account/profile" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Account</span>
+            </a>
+        <% } else { %>
+            <a href="<%= request.getContextPath() %>/login" class="mobile-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Login</span>
+            </a>
+        <% } %>
+    </nav>
 
     <!-- MINI CART DRAWER -->
     <div id="mini-cart-overlay" class="mini-cart-overlay" onclick="toggleMiniCart(event)"></div>
@@ -166,7 +236,7 @@
 
     <script>
         const contextPath = '<%= request.getContextPath() %>';
-        const csrfToken = '<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>';
+        const csrfToken = '<%= request.getAttribute("csrfToken") != null ? org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(request.getAttribute("csrfToken").toString()) : "" %>';
         window.contextPath = contextPath;
         window.csrfToken = csrfToken;
         
@@ -225,7 +295,22 @@
 
         window.addEventListener('scroll', () => {
             commerceNavbar?.classList.toggle('scrolled', window.scrollY > 12);
+            
+            // Smart navbar: hide when scrolling down, show when scrolling up
+            const currentScroll = window.pageYOffset;
+            if (currentScroll > 100) {
+                if (currentScroll > lastScroll && currentScroll > 200) {
+                    commerceNavbar?.classList.add('hidden');
+                } else {
+                    commerceNavbar?.classList.remove('hidden');
+                }
+            } else {
+                commerceNavbar?.classList.remove('hidden');
+            }
+            lastScroll = currentScroll;
         }, { passive: true });
+        
+        let lastScroll = 0;
 
         const accountTrigger = document.querySelector('[data-account-trigger]');
         const accountDropdown = document.querySelector('[data-account-dropdown]');
@@ -265,7 +350,21 @@
                 .then(data => {
                     if (data.cartCount !== undefined) {
                         const badge = document.getElementById('nav-cart-badge');
-                        if (badge) badge.innerText = data.cartCount;
+                        if (badge) {
+                            const oldCount = parseInt(badge.innerText);
+                            badge.innerText = data.cartCount;
+                            // Animate badge if count changed
+                            if (oldCount !== data.cartCount) {
+                                badge.classList.remove('animate');
+                                void badge.offsetWidth; // Trigger reflow
+                                badge.classList.add('animate');
+                            }
+                        }
+                        // Sync mobile badge
+                        const mobileBadge = document.getElementById('mobile-cart-badge');
+                        if (mobileBadge) {
+                            mobileBadge.innerText = data.cartCount;
+                        }
                     }
                 })
                 .catch(err => {

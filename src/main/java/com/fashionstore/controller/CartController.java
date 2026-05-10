@@ -12,6 +12,8 @@ import com.fashionstore.model.CartItem;
 import com.fashionstore.model.Coupon;
 import com.fashionstore.model.SavedItem;
 import com.fashionstore.model.User;
+import com.fashionstore.util.JsonUtil;
+import com.fashionstore.util.ValidationUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -103,6 +105,9 @@ public class CartController extends HttpServlet {
             String action = request.getParameter("action");
             boolean isAjax = isAjaxRequest(request);
 
+            // CSRF is enforced globally by com.fashionstore.filter.CSRFFilter for all
+            // state-changing methods, so the request reaching this point is already trusted.
+
             if ("increase".equals(action)) {
                 Integer cartItemId = parseIntOrNull(request.getParameter("cartItemId"));
                 Integer currentQty = parseIntOrNull(request.getParameter("currentQty"));
@@ -110,7 +115,7 @@ public class CartController extends HttpServlet {
                     if (isAjax) { sendErrorResponse(response, "Invalid cart parameters", 400); return; }
                     response.sendRedirect(request.getContextPath() + "/cart"); return;
                 }
-                int newQty = currentQty + 1;
+                int newQty = Math.min(currentQty + 1, ValidationUtil.MAX_PRODUCT_QUANTITY_PER_LINE);
                 cartDAO.updateQuantity(cartItemId, userId, newQty);
                 syncSessionCart(session, userId);
                 
@@ -126,22 +131,57 @@ public class CartController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/cart"); return;
                 }
                 int newQty = currentQty - 1;
+                if (newQty < 1) {
+                    cartDAO.removeCartItem(cartItemId, userId);
+                    syncSessionCart(session, userId);
+                    if (isAjax) {
+                        sendAjaxResponse(response, cartItemId, 0, userId);
+                        return;
+                    }
+                } else {
+                    cartDAO.updateQuantity(cartItemId, userId, newQty);
+                    syncSessionCart(session, userId);
+                    if (isAjax) {
+                        sendAjaxResponse(response, cartItemId, newQty, userId);
+                        return;
+                    }
+                }
+            } else if ("update".equals(action)) {
+                Integer cartItemId = parseIntOrNull(request.getParameter("cartItemId"));
+                Integer requestedQty = parseIntOrNull(request.getParameter("currentQty"));
+                if (cartItemId == null || requestedQty == null) {
+                    if (isAjax) { sendErrorResponse(response, "Invalid cart parameters", 400); return; }
+                    response.sendRedirect(request.getContextPath() + "/cart"); return;
+                }
+                int newQty = ValidationUtil.clampInt(requestedQty, 1, ValidationUtil.MAX_PRODUCT_QUANTITY_PER_LINE);
                 cartDAO.updateQuantity(cartItemId, userId, newQty);
                 syncSessionCart(session, userId);
-                
                 if (isAjax) {
                     sendAjaxResponse(response, cartItemId, newQty, userId);
                     return;
                 }
             } else if ("remove".equals(action)) {
                 Integer cartItemId = parseIntOrNull(request.getParameter("cartItemId"));
-                if (cartItemId == null) {
+                if (cartItemId == null || cartItemId <= 0) {
                     if (isAjax) { sendErrorResponse(response, "Invalid cart item id", 400); return; }
                     response.sendRedirect(request.getContextPath() + "/cart"); return;
                 }
-                cartDAO.removeCartItem(cartItemId, userId);
+
+                boolean deleted = cartDAO.removeCartItem(cartItemId, userId);
+                if (!deleted) {
+                    // Either already removed, or belongs to another user. Treat as 404.
+                    logger.info("Cart remove no-op: item #{} not found for user #{}", cartItemId, userId);
+                    if (isAjax) {
+                        sendErrorResponse(response, "Item not found in your cart", 404);
+                        return;
+                    }
+                    response.sendRedirect(request.getContextPath() + "/cart");
+                    return;
+                }
+
                 syncSessionCart(session, userId);
-                
+                logger.info("Cart item #{} removed for user #{}", cartItemId, userId);
+
                 if (isAjax) {
                     sendAjaxResponse(response, cartItemId, 0, userId);
                     return;
@@ -156,8 +196,8 @@ public class CartController extends HttpServlet {
                 String size = request.getParameter("size");
                 int qty = 1;
                 Integer parsedQty = parseIntOrNull(request.getParameter("quantity"));
-                if (parsedQty != null && parsedQty > 0) {
-                    qty = Math.min(parsedQty, 10); // bound max per add
+                if (parsedQty != null) {
+                    qty = ValidationUtil.clampInt(parsedQty, 1, ValidationUtil.MAX_PRODUCT_QUANTITY_PER_LINE);
                 }
 
                 CartItem item = new CartItem();
@@ -180,7 +220,7 @@ public class CartController extends HttpServlet {
                     return;
                 }
             } else if ("applyCoupon".equals(action)) {
-                String couponCode = request.getParameter("couponCode");
+                String couponCode = ValidationUtil.normalizeCouponCode(request.getParameter("couponCode"));
                 // Server-side recalculation: never trust client-supplied total.
                 List<CartItem> liveCart = cartDAO.getCartItemsByUserId(userId);
                 double cartTotal = 0;
@@ -269,8 +309,7 @@ public class CartController extends HttpServlet {
         map.put("removed", removed);
         map.put("cartItems", cartItems);
         
-        com.google.gson.Gson gson = new com.google.gson.Gson();
-        response.getWriter().write(gson.toJson(map));
+        response.getWriter().write(JsonUtil.toJson(map));
     }
 
     private void sendFullCartResponse(HttpServletResponse response, int userId) throws IOException {
@@ -293,8 +332,7 @@ public class CartController extends HttpServlet {
         map.put("cartCount", cartCount);
         map.put("cartItems", cartItems);
         
-        com.google.gson.Gson gson = new com.google.gson.Gson();
-        response.getWriter().write(gson.toJson(map));
+        response.getWriter().write(JsonUtil.toJson(map));
     }
 
     private void applyCouponResponse(HttpServletResponse response, String couponCode, double cartTotal, int userId) throws IOException {
@@ -327,8 +365,7 @@ public class CartController extends HttpServlet {
             map.put("message", "Error validating coupon");
         }
         
-        com.google.gson.Gson gson = new com.google.gson.Gson();
-        response.getWriter().write(gson.toJson(map));
+        response.getWriter().write(JsonUtil.toJson(map));
     }
 
     private boolean isAjaxRequest(HttpServletRequest request) {
@@ -359,7 +396,6 @@ public class CartController extends HttpServlet {
         map.put("message", message);
         map.put("status", "error");
         
-        com.google.gson.Gson gson = new com.google.gson.Gson();
-        response.getWriter().write(gson.toJson(map));
+        response.getWriter().write(JsonUtil.toJson(map));
     }
 }

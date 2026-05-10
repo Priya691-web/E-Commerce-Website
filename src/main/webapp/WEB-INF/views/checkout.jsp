@@ -1,6 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page import="java.util.*" %>
 <%@ page import="com.fashionstore.model.CartItem" %>
+<%@ page import="com.fashionstore.model.Address" %>
+<%@ page import="com.fashionstore.model.User" %>
+<%@ page import="java.util.Map" %>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -25,12 +28,45 @@
         List<CartItem> temp = (List<CartItem>) cartItemsObj;
         cartItems = temp;
     }
-    
+
     Object totalObj = request.getAttribute("cartTotal");
     double cartTotal = (totalObj instanceof Number) ? ((Number) totalObj).doubleValue() : 0.0;
+
+    // Get saved addresses
+    List<Address> addresses = (List<Address>) request.getAttribute("addresses");
+    Address defaultShipping = (Address) request.getAttribute("defaultShipping");
+    Address defaultBilling = (Address) request.getAttribute("defaultBilling");
+
+    String selectedShippingId = (String) request.getAttribute("selectedShippingAddressId");
+    String selectedBillingId = (String) request.getAttribute("selectedBillingAddressId");
+    Boolean useNewShipping = (Boolean) request.getAttribute("useNewShipping");
+    Boolean useNewBilling = (Boolean) request.getAttribute("useNewBilling");
+    @SuppressWarnings("unchecked")
+    Map<String, String> fieldErrors = (Map<String, String>) request.getAttribute("fieldErrors");
+
+    // Resolve which option should be checked initially:
+    //  1) Whatever the user previously selected (after a validation error)
+    //  2) The default shipping address
+    //  3) The first available shipping address
+    //  4) Otherwise: "new"
+    String effectiveSelectedId = selectedShippingId;
+    if ((effectiveSelectedId == null || effectiveSelectedId.isEmpty()) && !Boolean.TRUE.equals(useNewShipping)) {
+        if (defaultShipping != null) {
+            effectiveSelectedId = String.valueOf(defaultShipping.getAddressId());
+        } else if (addresses != null) {
+            for (Address a : addresses) {
+                if ("shipping".equals(a.getAddressType()) || "both".equals(a.getAddressType())) {
+                    effectiveSelectedId = String.valueOf(a.getAddressId());
+                    break;
+                }
+            }
+        }
+    }
+    boolean showNewForm = Boolean.TRUE.equals(useNewShipping)
+            || (effectiveSelectedId == null || effectiveSelectedId.isEmpty() || "new".equals(effectiveSelectedId));
 %>
 
-<main class="checkout-page">
+<main class="site-main checkout-page">
     <div class="checkout-container">
         
         <div class="checkout-header">
@@ -62,19 +98,63 @@
             <div class="checkout-form-col">
                 <form action="<%= request.getContextPath() %>/checkout" method="post" class="modern-form" id="checkoutForm">
                     <% String formError = (String) request.getAttribute("error"); %>
-                    <div id="form-error" class="checkout-form-error" style="<%= formError != null ? "display:block;" : "display:none;" %>">
+                    <div id="form-error" class="checkout-form-error <%= formError != null ? "is-visible" : "" %>">
                         <%= formError != null ? formError : "" %>
                     </div>
                     <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                     
                     <!-- Step 1: Shipping -->
-                    <div class="form-section checkout-step-section" id="step1">
+                    <div class="form-section checkout-step-section is-active" id="step1">
                         <h3 class="checkout-section-title">Shipping Information</h3>
-                        <div class="saved-addresses">
-                            <button type="button" class="saved-address-card active">Home address</button>
-                            <button type="button" class="saved-address-card">Office address</button>
-                        </div>
-                        <div class="form-grid">
+
+                        <% if (addresses != null && !addresses.isEmpty()) { %>
+                            <div class="saved-addresses">
+                                <div class="saved-addresses-header">
+                                    <h4 class="saved-addresses-title">Deliver to a saved address</h4>
+                                    <a href="<%= request.getContextPath() %>/account/addresses" class="saved-addresses-manage" target="_blank" rel="noopener">Manage</a>
+                                </div>
+                                <div class="saved-addresses-list" id="savedAddressesList">
+                                    <% for (Address addr : addresses) {
+                                        if (!("shipping".equals(addr.getAddressType()) || "both".equals(addr.getAddressType()))) continue;
+                                        boolean isChecked = effectiveSelectedId != null
+                                                && effectiveSelectedId.equals(String.valueOf(addr.getAddressId()));
+                                    %>
+                                        <label class="saved-address-card <%= isChecked ? "active" : "" %>" data-address-id="<%= addr.getAddressId() %>">
+                                            <input type="radio" name="shippingAddressId" value="<%= addr.getAddressId() %>" <%= isChecked ? "checked" : "" %> data-address-radio>
+                                            <div class="saved-address-content">
+                                                <div class="saved-address-label">
+                                                    <%= addr.getFullName() %>
+                                                    <% if (addr.isDefault()) { %>
+                                                        <span class="badge-default">Default</span>
+                                                    <% } %>
+                                                </div>
+                                                <div class="saved-address-details">
+                                                    <%= addr.getAddressLine1() %><% if (addr.getAddressLine2() != null && !addr.getAddressLine2().isEmpty()) { %>, <%= addr.getAddressLine2() %><% } %><br>
+                                                    <%= addr.getCity() %>, <%= addr.getState() %> <%= addr.getPostalCode() %><br>
+                                                    <%= addr.getPhone() %>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    <% } %>
+
+                                    <label class="saved-address-card saved-address-card--new <%= showNewForm ? "active" : "" %>" id="newAddressOption">
+                                        <input type="radio" name="shippingAddressId" value="new" <%= showNewForm ? "checked" : "" %> data-address-radio>
+                                        <div class="saved-address-content">
+                                            <div class="saved-address-label">+ Add a new address</div>
+                                            <div class="saved-address-details">Use a different shipping address</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        <% } else { %>
+                            <input type="hidden" name="shippingAddressId" value="new">
+                        <% } %>
+
+                        <div class="new-address-form<%= showNewForm ? " is-visible" : "" %>" id="newAddressForm" style="display:<%= showNewForm ? "block" : "none" %>;">
+                            <% if (addresses != null && !addresses.isEmpty()) { %>
+                                <h4 class="saved-addresses-title">New shipping address</h4>
+                            <% } %>
+                            <div class="form-grid">
                             <div class="form-group full-width">
                                 <label for="fullName">Full Name</label>
                                 <input type="text" id="fullName" name="fullName" placeholder="John Doe" value="<%= request.getAttribute("fullName") != null ? request.getAttribute("fullName") : "" %>" required>
@@ -91,14 +171,30 @@
                                 <label for="state">State</label>
                                 <input type="text" id="state" name="state" placeholder="Maharashtra" value="<%= request.getAttribute("state") != null ? request.getAttribute("state") : "" %>" required>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group <%= fieldErrors != null && fieldErrors.containsKey("postalCode") ? "has-error" : "" %>">
                                 <label for="zip">ZIP Code</label>
-                                <input type="text" id="zip" name="zip" placeholder="400001" value="<%= request.getAttribute("zip") != null ? request.getAttribute("zip") : "" %>" required pattern="[0-9]{6}" title="6-digit ZIP code">
+                                <input type="text" id="zip" name="zip" placeholder="400001" value="<%= request.getAttribute("zip") != null ? request.getAttribute("zip") : "" %>" pattern="[0-9]{6}" title="6-digit ZIP code">
+                                <% if (fieldErrors != null && fieldErrors.get("postalCode") != null) { %>
+                                    <span class="field-error"><%= fieldErrors.get("postalCode") %></span>
+                                <% } %>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group <%= fieldErrors != null && fieldErrors.containsKey("phone") ? "has-error" : "" %>">
                                 <label for="phone">Phone Number</label>
-                                <input type="tel" id="phone" name="phone" placeholder="9876543210" value="<%= request.getAttribute("phone") != null ? request.getAttribute("phone") : "" %>" required pattern="[6-9][0-9]{9}" title="10-digit mobile number">
+                                <input type="tel" id="phone" name="phone" placeholder="9876543210" value="<%= request.getAttribute("phone") != null ? request.getAttribute("phone") : "" %>" pattern="[6-9][0-9]{9}" title="10-digit mobile number">
+                                <% if (fieldErrors != null && fieldErrors.get("phone") != null) { %>
+                                    <span class="field-error"><%= fieldErrors.get("phone") %></span>
+                                <% } %>
                             </div>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="saveAddress" value="true" checked>
+                                <span class="checkbox-text">
+                                    <span class="checkbox-title">Save this address to my account</span>
+                                    <span class="checkbox-hint">Speeds up your future checkouts</span>
+                                </span>
+                            </label>
+                        </div>
                         </div>
                         <div class="shipping-methods">
                             <label class="payment-card">
@@ -122,7 +218,7 @@
                     </div>
 
                     <!-- Step 2: Payment -->
-                    <div class="form-section checkout-step-section" id="step2" style="display: none;">
+                    <div class="form-section checkout-step-section" id="step2">
                         <h3 class="checkout-section-title">Payment Method</h3>
                         <div class="payment-options">
                             <label class="payment-card">
@@ -156,7 +252,7 @@
                     </div>
 
                     <!-- Step 3: Review -->
-                    <div class="form-section checkout-step-section" id="step3" style="display: none;">
+                    <div class="form-section checkout-step-section" id="step3">
                         <h3 class="checkout-section-title">Review Your Order</h3>
                         <div class="order-review">
                             <p>Please review your shipping and payment details before placing the order.</p>
@@ -181,7 +277,7 @@
                             for (CartItem item : cartItems) { %>
                         <div class="summary-item">
                             <div class="item-img-wrap">
-                                <img src="<%= item.getImageUrl() %>" alt="<%= item.getProductName() %>">
+                                <img src="<%= item.getImageUrl() %>" alt="<%= item.getProductName() %>" onerror="this.src='<%= request.getContextPath() %>/assets/images/placeholder-product.jpg'; this.onerror=null;">
                                 <span class="item-qty-badge"><%= item.getQuantity() %></span>
                             </div>
                             <div class="item-details">
@@ -218,6 +314,8 @@
                 </div>
             </div>
 
+        </div>
+
     </div>
 </main>
 
@@ -225,33 +323,78 @@
 <jsp:include page="/WEB-INF/views/partials/footer.jsp" />
 
 <script>
+// Handle address selection - saved vs new
+document.addEventListener('DOMContentLoaded', function() {
+    const radios = document.querySelectorAll('input[name="shippingAddressId"]');
+    const newAddressForm = document.getElementById('newAddressForm');
+    const newAddressInputs = newAddressForm
+        ? newAddressForm.querySelectorAll('input[name="fullName"], input[name="address"], input[name="city"], input[name="state"], input[name="zip"], input[name="phone"]')
+        : [];
+
+    function syncCardActive() {
+        document.querySelectorAll('.saved-address-card').forEach(card => {
+            const input = card.querySelector('input[type="radio"]');
+            card.classList.toggle('active', !!(input && input.checked));
+        });
+    }
+
+    function toggleAddressForm() {
+        const selected = document.querySelector('input[name="shippingAddressId"]:checked');
+        const useNew = !selected || selected.value === 'new' || selected.value === '';
+        if (newAddressForm) {
+            newAddressForm.style.display = useNew ? 'block' : 'none';
+            newAddressForm.classList.toggle('is-visible', useNew);
+        }
+        // Toggle 'required' on new address inputs based on visibility
+        newAddressInputs.forEach(inp => {
+            if (useNew) {
+                inp.setAttribute('required', 'required');
+            } else {
+                inp.removeAttribute('required');
+            }
+        });
+        syncCardActive();
+    }
+
+    radios.forEach(radio => radio.addEventListener('change', toggleAddressForm));
+    toggleAddressForm();
+});
+
 document.getElementById('checkoutForm').addEventListener('submit', function(e) {
     const form = this;
     const errorEl = document.getElementById('form-error');
+    const selectedAddress = document.querySelector('input[name="shippingAddressId"]:checked');
+
+    const usingNew = !selectedAddress || selectedAddress.value === '' || selectedAddress.value === 'new';
+
+    // If using saved address, skip validation for new address fields
+    if (!usingNew) {
+        if (errorEl) errorEl.classList.remove('is-visible');
+        const btn = form.querySelector('.place-order-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Processing...';
+        return;
+    }
+
     const requiredFields = ['fullName', 'address', 'city', 'state', 'zip', 'phone'];
-    
-    // NOTE: dollar-brace expressions below are JSP-escaped (\$\{) so Jasper's EL
-    // parser ignores them and the literal dollar-brace reaches the browser as a
-    // JS template literal. Without the backslash, Jasper would see the regex
-    // /([A-Z])/g inside the dollar-brace and throw ELException at compile time,
-    // causing HTTP 500 on /checkout.
+
     for (const fieldName of requiredFields) {
-        const input = form.querySelector(`[name="\${fieldName}"]`);
+        const input = form.querySelector('[name="' + fieldName + '"]');
         if (!input || !input.value || !input.value.trim()) {
             e.preventDefault();
             if (errorEl) {
                 const pretty = fieldName.replace(/([A-Z])/g, ' $1').toLowerCase();
                 errorEl.textContent = 'Please fill in the ' + pretty;
-                errorEl.style.display = 'block';
+                errorEl.classList.add('is-visible');
             }
             if (input) input.focus();
             return;
         }
     }
-    
-    if (errorEl) errorEl.style.display = 'none';
-    
-    const btn = form.querySelector('.place-order-btn');
+
+    if (errorEl) errorEl.classList.remove('is-visible');
+
+    const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Processing...';
 });

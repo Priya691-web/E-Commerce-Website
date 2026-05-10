@@ -1,112 +1,230 @@
 /**
- * PRODUCTS PAGE - Enterprise Ecommerce
- * Layout, category pills, pagination, empty state.
- * Filter sidebar / sort header rules removed (phantom design \u2014 not wired into JSP).
+ * Products / catalog — synchronized with products.jsp
+ * Mobile filter drawer: filter-chips.css (do not duplicate off-canvas rules here).
  */
 
-/* ============================================
-   PRODUCTS LAYOUT
-   ============================================ */
-
-.products-layout {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-8);
-    margin-top: var(--space-6);
+.products-page {
     padding-bottom: var(--space-12);
 }
 
-@media (min-width: 1024px) {
-    .products-layout {
-        grid-template-columns: 280px 1fr;
-        align-items: start;
-    }
+.products-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--space-5);
+    width: min(var(--container-xl), 100%);
+    margin: var(--space-6) auto;
+    padding-inline: var(--space-4);
 }
 
-/* ============================================
-   CATEGORY PILLS (Sticky Filter Bar)
-   ============================================ */
-
 .category-pills {
-    position: sticky;
-    top: 72px;
-    z-index: 20;
     display: flex;
     gap: var(--space-2);
     overflow-x: auto;
     padding: var(--space-3) var(--space-4);
-    background: var(--glass-ivory);
-    backdrop-filter: blur(var(--glass-blur-strong));
-    -webkit-backdrop-filter: blur(var(--glass-blur-strong));
-    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-    margin: 0 calc(-1 * var(--space-4)) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    position: sticky;
+    top: 72px;
+    z-index: var(--z-sticky);
     scrollbar-width: none;
-    box-shadow: var(--shadow-sm);
 }
 
-.category-pills::-webkit-scrollbar { display: none; }
+.category-pills::-webkit-scrollbar {
+    display: none;
+}
+
+.category-pills .pill {
+    text-decoration: none;
+    color: inherit;
+}
 
 .pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 40px;
+    min-height: 38px;
     padding: 0 var(--space-4);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
     background: var(--color-surface);
-    text-decoration: none;
     white-space: nowrap;
-    transition: all var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        border-color var(--transition-fast),
+        background var(--transition-fast),
+        color var(--transition-fast);
 }
 
 .pill:hover {
-    border-color: var(--color-champagne);
-    color: var(--color-champagne);
-    transform: translateY(-1px);
+    border-color: var(--color-primary);
 }
 
 .pill.active {
-    background: var(--gradient-gold);
-    color: var(--color-text-inverse);
-    border-color: transparent;
-    box-shadow: var(--glow-gold);
+    background: var(--color-text-primary);
+    color: var(--color-inverse);
+    border-color: var(--color-text-primary);
+    box-shadow: none;
 }
 
-.filter-title {
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    margin-bottom: var(--space-3);
+.catalog-header {
+    width: min(var(--container-xl), 100%);
+    margin: var(--space-6) auto 0;
+    padding-inline: var(--space-4);
+}
+
+.catalog-hero {
+    display: grid;
+    grid-template-columns: 1fr 0.85fr;
+    gap: var(--space-5);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    background: var(--color-footer-bg);
+    color: var(--color-inverse);
+    border: 1px solid var(--color-footer-border);
+}
+
+.catalog-hero h1,
+.catalog-hero p {
+    color: var(--color-inverse);
+}
+
+.catalog-hero h1 {
+    font-family: var(--font-family-display);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: var(--space-2);
+}
+
+.catalog-hero p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.82);
+    max-width: 48ch;
+}
+
+.eyebrow,
+.catalog-hero .eyebrow {
+    display: inline-block;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: var(--letter-spacing-wider);
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: var(--space-2);
 }
 
-/* ============================================
-   FILTER INPUTS (remove inline styles)
-   ============================================ */
-
-.price-inputs {
+.catalog-search {
     display: flex;
     gap: var(--space-2);
+    align-items: stretch;
+}
+
+.catalog-search input {
+    flex: 1;
+    min-height: 42px;
+    border-radius: var(--radius-pill);
+    border: 1px solid #3f3f3f;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 0 var(--space-3);
+}
+
+.catalog-search button {
+    min-height: 42px;
+    border-radius: var(--radius-pill);
+    border: 0;
+    background: #fff;
+    color: #111;
+    padding: 0 var(--space-4);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.filter-sidebar {
+    position: sticky;
+    top: 124px;
+    align-self: start;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    padding: var(--space-4);
+}
+
+.filter-group {
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.filter-group:last-child {
+    border-bottom: 0;
+    margin-bottom: 0;
+}
+
+.checkbox-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.products-main {
+    min-width: 0;
+}
+
+.catalog-toolbar {
+    display: flex;
     align-items: center;
-    margin-bottom: var(--space-3);
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
 }
 
-.price-inputs .form-input {
-    padding: var(--space-2);
+.catalog-query {
+    color: var(--color-text-tertiary);
 }
 
-.filter-clear-btn {
-    margin-top: var(--space-2);
+.sort-form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
 }
 
-/* ============================================
-   PAGINATION
-   ============================================ */
+.sort-form label {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+}
+
+.sort-form select {
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0 var(--space-3);
+    background: var(--color-surface);
+    font-size: var(--text-sm);
+}
+
+.filter-overlay {
+    display: none;
+}
+
+.filter-toggle-btn,
+.mobile-filter-toggle {
+    display: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    font-size: var(--text-sm);
+    cursor: pointer;
+}
+
+.filter-close-btn {
+    display: none;
+}
 
 .pagination-container {
     display: flex;
@@ -127,8 +245,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 40px;
-    height: 40px;
+    min-width: 44px;
+    height: 44px;
     padding: 0 var(--space-3);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
@@ -137,24 +255,31 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     text-decoration: none;
-    transition: all var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
+    transition:
+        background var(--transition-hover),
+        border-color var(--transition-hover),
+        color var(--transition-hover),
+        transform var(--transition-hover);
 }
 
 .pagination-link:hover:not(.disabled):not(.active) {
-    background: var(--gradient-gold);
-    color: var(--color-text-inverse);
-    border-color: transparent;
-    transform: translateY(-2px);
-    box-shadow: var(--glow-gold);
+    background: var(--color-primary);
+    color: var(--color-inverse);
+    border-color: var(--color-primary);
+    transform: translateY(-0.5px);
+    box-shadow: var(--shadow-xs);
 }
 
 .pagination-link.active {
-    background: var(--gradient-gold);
-    color: var(--color-text-inverse);
-    border-color: transparent;
+    background: var(--color-primary);
+    color: var(--color-inverse);
+    border-color: var(--color-primary);
     font-weight: var(--font-weight-semibold);
-    box-shadow: var(--glow-gold);
+}
+
+.pagination-link:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
 }
 
 .pagination-link.disabled {
@@ -173,55 +298,104 @@
     font-size: var(--text-sm);
 }
 
-/* ============================================
-   EMPTY STATE
-   ============================================ */
-/* Empty States - Unified in style.css (authoritative) */
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-
-@media (max-width: 768px) {
-    .category-pills { top: 64px; }
-    .products-layout { margin-top: var(--space-4); gap: var(--space-6); }
+.products-main .product-grid:has(> .empty-state) {
+    display: block;
 }
 
-/* ============================================
-   DARK MODE
-   ============================================ */
+.products-main .empty-state {
+    max-width: none;
+    margin: 0;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: var(--z-modal);
+}
+
+.modal-overlay.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    width: min(920px, 94vw);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+@media (max-width: 1024px) {
+    .products-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-toggle-btn,
+    .mobile-filter-toggle {
+        display: inline-flex;
+    }
+
+    .filter-close-btn {
+        display: flex;
+    }
+
+    .category-pills {
+        top: 64px;
+    }
+
+    .catalog-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .catalog-search,
+    .catalog-toolbar,
+    .sort-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-body {
+        grid-template-columns: 1fr;
+    }
+
+    .products-layout {
+        margin-top: var(--space-4);
+        gap: var(--space-6);
+    }
+}
 
 [data-theme="dark"] .category-pills {
-    background: var(--glass-bg-dark);
-    border-color: var(--color-border-dark);
+    background: var(--color-surface);
+    border-color: var(--color-border);
 }
 
 [data-theme="dark"] .pill {
-    background: var(--color-surface-dark);
-    border-color: var(--color-border-dark);
-    color: var(--color-text-primary-dark);
-}
-
-[data-theme="dark"] .pill:hover,
-[data-theme="dark"] .pill.active {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    border-color: var(--color-primary);
+    background: var(--color-surface);
+    border-color: var(--color-border);
 }
 
 [data-theme="dark"] .pagination-link {
-    background: var(--color-surface-dark);
-    border-color: var(--color-border-dark);
-    color: var(--color-text-primary-dark);
-}
-
-[data-theme="dark"] .pagination-link:hover:not(.disabled):not(.active),
-[data-theme="dark"] .pagination-link.active {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    border-color: var(--color-primary);
-}
-
-[data-theme="dark"] .empty-state-icon {
-    color: var(--color-border-dark);
+    background: var(--color-surface);
+    border-color: var(--color-border);
 }

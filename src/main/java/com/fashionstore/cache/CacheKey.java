@@ -28,6 +28,14 @@ public class CacheKey {
         return PREFIX + "trending:products";
     }
     
+    public static String newProducts() {
+        return PREFIX + "new:products";
+    }
+    
+    public static String saleProducts() {
+        return PREFIX + "sale:products";
+    }
+    
     public static String userCart(int userId) {
         return PREFIX + "cart" + SEPARATOR + userId;
     }
@@ -40,8 +48,24 @@ public class CacheKey {
         return PREFIX + "search" + SEPARATOR + query.hashCode();
     }
     
+    public static String searchSuggestions(String query) {
+        return PREFIX + "search:suggestions" + SEPARATOR + query.hashCode();
+    }
+    
+    public static String trendingSearches() {
+        return PREFIX + "search:trending";
+    }
+    
     public static String recommendations(int productId) {
         return PREFIX + "recommendations" + SEPARATOR + productId;
+    }
+    
+    public static String relatedProducts(int productId) {
+        return PREFIX + "related" + SEPARATOR + productId;
+    }
+    
+    public static String recentlyViewed(int userId) {
+        return PREFIX + "recently:viewed" + SEPARATOR + userId;
     }
     
     public static String adminStats() {
@@ -54,5 +78,21 @@ public class CacheKey {
     
     public static String userOrders(int userId) {
         return PREFIX + "orders" + SEPARATOR + userId;
+    }
+    
+    public static String session(String sessionId) {
+        return PREFIX + "session" + SEPARATOR + sessionId;
+    }
+    
+    public static String coupon(String code) {
+        return PREFIX + "coupon" + SEPARATOR + code;
+    }
+    
+    public static String productSizes(int productId) {
+        return PREFIX + "product:sizes" + SEPARATOR + productId;
+    }
+    
+    public static String lowStockProducts() {
+        return PREFIX + "inventory:low:stock";
     }
 }

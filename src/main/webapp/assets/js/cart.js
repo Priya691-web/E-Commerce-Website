@@ -2,7 +2,7 @@
  * FashionStore - Cart AJAX Logic
  */
 document.addEventListener('DOMContentLoaded', function() {
-    const contextPath = document.querySelector('.cart-page')?.getAttribute('data-context-path') || '';
+    const contextPath = window.contextPath || '';
     
     // Quantity Buttons (+ / -)
     const qtyButtons = document.querySelectorAll('.ajax-qty-btn');
@@ -31,6 +31,24 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const cartItemId = this.getAttribute('data-id');
             updateCart('saveForLater', cartItemId, 0);
+        });
+    });
+
+    // Quantity Input Field Changes
+    const qtyInputs = document.querySelectorAll('.qty-input');
+    qtyInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const cartItemId = this.getAttribute('data-id');
+            const newQty = parseInt(this.value);
+            const min = parseInt(this.getAttribute('min')) || 1;
+            const max = parseInt(this.getAttribute('max')) || 10;
+
+            if (newQty >= min && newQty <= max) {
+                updateCart('update', cartItemId, newQty);
+            } else {
+                this.value = min;
+                showToast(`Quantity must be between ${min} and ${max}`, 'error');
+            }
         });
     });
 
@@ -68,15 +86,21 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success || data.status === 'success') {
                 updateDOM(data);
-                showToast('Cart updated', 'success');
+                syncMiniCart(data);
+                if (action === 'remove') {
+                    showToast('Item removed from cart', 'success');
+                } else if (action === 'saveForLater') {
+                    showToast('Saved for later', 'success');
+                } else {
+                    showToast('Cart updated', 'success');
+                }
             } else {
-                showToast('Failed to update cart. Please try again.', 'error');
+                showToast(data.message || 'Failed to update cart. Please try again.', 'error');
             }
         })
         .catch(error => {
             console.error('Cart update error:', error);
-            showToast('An error occurred. Please refresh the page.', 'error');
-            setTimeout(() => window.location.reload(), 2000);
+            showToast('An error occurred. Please try again.', 'error');
         })
         .finally(() => {
             setLoadingState(false);
@@ -88,45 +112,78 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function updateDOM(data) {
         if (data.removed || data.newQuantity <= 0) {
-            // Remove the item card from DOM
-            const itemCard = document.getElementById(`cart-item-${data.cartItemId}`);
+            // Remove the item card from DOM with animation
+            const itemCard = document.querySelector(`.cart-item[data-id="${data.cartItemId}"]`);
             if (itemCard) {
-                itemCard.classList.add('is-removing');
+                itemCard.classList.add('removing');
                 setTimeout(() => {
                     itemCard.remove();
                     checkEmptyCart();
                 }, 300);
             }
         } else {
-            // Update quantity display
-            const qtyVal = document.getElementById(`qty-val-${data.cartItemId}`);
-            if (qtyVal) qtyVal.innerText = data.newQuantity;
+            // Update quantity input
+            const qtyInput = document.querySelector(`.qty-input[data-id="${data.cartItemId}"]`);
+            if (qtyInput) qtyInput.value = data.newQuantity;
 
-            // Update item subtotal
+            // Update item subtotal with pulse animation
             const itemTotal = document.getElementById(`item-total-${data.cartItemId}`);
-            if (itemTotal) itemTotal.innerText = data.itemTotal.toFixed(2);
+            if (itemTotal) {
+                itemTotal.innerText = `₹${data.itemTotal.toFixed(2)}`;
+                itemTotal.classList.remove('updating');
+                void itemTotal.offsetWidth;
+                itemTotal.classList.add('updating');
+            }
 
-            // Update data-qty attribute on buttons
+            // Update data-qty attribute on buttons; toggle disabled on minus button
             const buttons = document.querySelectorAll(`.ajax-qty-btn[data-id="${data.cartItemId}"]`);
-            buttons.forEach(b => b.setAttribute('data-qty', data.newQuantity));
+            buttons.forEach(b => {
+                b.setAttribute('data-qty', data.newQuantity);
+                if (b.getAttribute('data-action') === 'decrease') {
+                    b.disabled = data.newQuantity <= 1;
+                }
+            });
         }
 
-        // Update global totals
+        // Update global totals with animation
         const summarySubtotal = document.getElementById('summary-subtotal');
-        if (summarySubtotal) summarySubtotal.innerText = data.cartTotal.toFixed(2);
+        if (summarySubtotal) {
+            summarySubtotal.innerText = data.cartTotal.toFixed(2);
+            summarySubtotal.classList.remove('updating');
+            void summarySubtotal.offsetWidth; // Trigger reflow
+            summarySubtotal.classList.add('updating');
+        }
 
         const summaryTotal = document.getElementById('summary-total');
-        if (summaryTotal) summaryTotal.innerText = data.cartTotal.toFixed(2);
+        if (summaryTotal) {
+            summaryTotal.innerText = data.cartTotal.toFixed(2);
+            summaryTotal.classList.remove('updating');
+            void summaryTotal.offsetWidth; // Trigger reflow
+            summaryTotal.classList.add('updating');
+        }
 
-        const summaryCount = document.getElementById('summary-count');
-        if (summaryCount) summaryCount.innerText = data.cartCount;
-
-        const countHeader = document.getElementById('cart-count-header');
-        if (countHeader) countHeader.innerText = data.cartCount;
+        // Update cart count in header
+        const cartCount = document.querySelector('.cart-count');
+        if (cartCount) cartCount.innerText = `${data.cartCount} item${data.cartCount !== 1 ? 's' : ''}`;
 
         // Sync navbar badge
         const navBadge = document.getElementById('nav-cart-badge');
-        if (navBadge) navBadge.innerText = data.cartCount;
+        if (navBadge) {
+            const oldCount = parseInt(navBadge.innerText);
+            navBadge.innerText = data.cartCount;
+            // Animate badge if count changed
+            if (oldCount !== data.cartCount) {
+                navBadge.classList.remove('animate');
+                void navBadge.offsetWidth;
+                navBadge.classList.add('animate');
+            }
+        }
+
+        // Sync mobile bottom nav badge
+        const mobileBadge = document.getElementById('mobile-cart-badge');
+        if (mobileBadge) {
+            mobileBadge.innerText = data.cartCount;
+        }
     }
 
     function setLoadingState(isLoading) {
@@ -138,10 +195,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function checkEmptyCart() {
-        const itemsList = document.getElementById('cart-items-list');
-        if (itemsList && itemsList.children.length === 0) {
-            // Reload to show empty cart state from JSP
+        const remaining = document.querySelectorAll('.cart-item').length;
+        if (remaining === 0) {
             window.location.reload();
+        }
+    }
+
+    /**
+     * Sync mini-cart drawer + navbar badge after any cart mutation.
+     * Server already returned cartItems/cartTotal/cartCount so we update inline,
+     * avoiding an extra round trip.
+     */
+    function syncMiniCart(data) {
+        if (!data) return;
+        if (window.FashionStore && typeof window.FashionStore.updateMiniCartUI === 'function') {
+            window.FashionStore.updateMiniCartUI(data);
+        }
+        const badge = document.getElementById('nav-cart-badge');
+        if (badge && typeof data.cartCount === 'number') {
+            const oldCount = parseInt(badge.innerText, 10);
+            badge.innerText = data.cartCount;
+            if (oldCount !== data.cartCount) {
+                badge.classList.remove('animate');
+                void badge.offsetWidth;
+                badge.classList.add('animate');
+            }
+        }
+        const mobileBadge = document.getElementById('mobile-cart-badge');
+        if (mobileBadge && typeof data.cartCount === 'number') {
+            mobileBadge.innerText = data.cartCount;
         }
     }
 

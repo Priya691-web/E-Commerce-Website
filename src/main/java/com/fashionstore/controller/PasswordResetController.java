@@ -6,8 +6,11 @@ import com.fashionstore.model.PasswordResetToken;
 import com.fashionstore.model.User;
 import com.fashionstore.service.EmailService;
 import com.fashionstore.service.UserService;
+import com.fashionstore.security.CSRFProtection;
+import com.fashionstore.security.RateLimiter;
 import com.fashionstore.util.AuditLogger;
 import com.fashionstore.util.NullSafetyUtil;
+import com.fashionstore.validation.Validator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,12 +51,14 @@ public class PasswordResetController extends HttpServlet {
         String path = request.getServletPath();
 
         if ("/forgot-password".equals(path)) {
+            attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
         } else if ("/reset-password".equals(path)) {
             String token = request.getParameter("token");
             
             if (token == null || token.isBlank()) {
                 request.setAttribute("error", "Invalid reset link. Please request a new password reset.");
+                attachCsrfForView(request);
                 request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
                 return;
             }
@@ -62,11 +67,13 @@ public class PasswordResetController extends HttpServlet {
             
             if (resetToken == null || !resetToken.isValid()) {
                 request.setAttribute("error", "Invalid or expired reset link. Please request a new password reset.");
+                attachCsrfForView(request);
                 request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
                 return;
             }
 
             request.setAttribute("token", token);
+            attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/reset-password.jsp").forward(request, response);
         }
     }
@@ -87,10 +94,18 @@ public class PasswordResetController extends HttpServlet {
     private void handleForgotPassword(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        if (!RateLimiter.checkRateLimit(request, "/forgot-password")) {
+            request.setAttribute("error", "Too many reset attempts. Please try again shortly.");
+            attachCsrfForView(request);
+            request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
+            return;
+        }
+
         String email = NullSafetyUtil.safeString(request.getParameter("email"), null);
 
         if (NullSafetyUtil.isNullOrEmpty(email)) {
             request.setAttribute("error", "Email address is required");
+            attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
             return;
         }
@@ -99,6 +114,7 @@ public class PasswordResetController extends HttpServlet {
 
         if (user == null) {
             request.setAttribute("error", "No account found with this email address");
+            attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
             return;
         }
@@ -138,6 +154,7 @@ public class PasswordResetController extends HttpServlet {
             request.setAttribute("error", "An error occurred. Please try again.");
         }
 
+        attachCsrfForView(request);
         request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
     }
 
@@ -150,27 +167,18 @@ public class PasswordResetController extends HttpServlet {
 
         if (NullSafetyUtil.isNullOrEmpty(token)) {
             request.setAttribute("error", "Invalid reset link");
+            attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
             return;
         }
 
-        if (NullSafetyUtil.isNullOrEmpty(password)) {
-            request.setAttribute("error", "Password is required");
+        Validator passwordRules = Validator.create()
+                .validatePassword(password, "Password")
+                .validateMatch(password, confirmPassword, "Passwords");
+        if (passwordRules.hasErrors()) {
+            request.setAttribute("error", passwordRules.getFirstError());
             request.setAttribute("token", token);
-            request.getRequestDispatcher("/WEB-INF/views/reset-password.jsp").forward(request, response);
-            return;
-        }
-
-        if (!NullSafetyUtil.safeEquals(password, confirmPassword)) {
-            request.setAttribute("error", "Passwords do not match");
-            request.setAttribute("token", token);
-            request.getRequestDispatcher("/WEB-INF/views/reset-password.jsp").forward(request, response);
-            return;
-        }
-
-        if (NullSafetyUtil.safeLength(password) < 8) {
-            request.setAttribute("error", "Password must be at least 8 characters long");
-            request.setAttribute("token", token);
+            attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/reset-password.jsp").forward(request, response);
             return;
         }
@@ -180,6 +188,7 @@ public class PasswordResetController extends HttpServlet {
 
             if (resetToken == null || !resetToken.isValid()) {
                 request.setAttribute("error", "Invalid or expired reset link. Please request a new password reset.");
+                attachCsrfForView(request);
                 request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
                 return;
             }
@@ -198,6 +207,7 @@ public class PasswordResetController extends HttpServlet {
             } else {
                 request.setAttribute("error", "Failed to update password. Please try again.");
                 request.setAttribute("token", token);
+                attachCsrfForView(request);
                 request.getRequestDispatcher("/WEB-INF/views/reset-password.jsp").forward(request, response);
             }
 
@@ -205,8 +215,13 @@ public class PasswordResetController extends HttpServlet {
             logger.error("Error in reset password: {}", e.getMessage(), e);
             request.setAttribute("error", "An error occurred. Please try again.");
             request.setAttribute("token", token);
+            attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/reset-password.jsp").forward(request, response);
         }
+    }
+
+    private static void attachCsrfForView(HttpServletRequest request) {
+        CSRFProtection.addTokenToRequest(request);
     }
 
     private String generateSecureToken() {

@@ -57,7 +57,8 @@ public class RegisterController extends HttpServlet {
             .validateEmail(email, "Email")
             .validatePhone(phone, "Phone")
             .validatePassword(password, "Password")
-            .validateMatch(password, confirmPassword, "Passwords");
+            .validateMatch(password, confirmPassword, "Passwords")
+            .validateOptionalAddress(address, "Address", 500);
 
         if (validator.hasErrors()) {
             request.setAttribute("error", validator.getFirstError());

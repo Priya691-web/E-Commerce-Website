@@ -10,8 +10,9 @@
 </head>
 <body>
 
-<div class="auth-page">
-    <div class="auth-container">
+<jsp:include page="/WEB-INF/views/partials/navbar.jsp" />
+
+<main class="site-main auth-page">
         <div class="auth-card">
             <div class="auth-header">
                 <h1>Reset Password</h1>
@@ -26,6 +27,9 @@
 
             <form class="auth-form" action="<%= request.getContextPath() %>/reset-password?token=<%= request.getAttribute("token") %>" method="post" novalidate>
                 <input type="hidden" name="token" value="<%= request.getAttribute("token") %>">
+                <% if (request.getAttribute("csrfToken") != null) { %>
+                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") %>">
+                <% } %>
 
                 <div class="form-group">
                     <label for="password" class="form-label">New Password</label>
@@ -71,8 +75,7 @@
                 <p>Remember your password? <a href="<%= request.getContextPath() %>/login" aria-label="Go to sign in page">Sign in</a></p>
             </div>
         </div>
-    </div>
-</div>
+</main>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

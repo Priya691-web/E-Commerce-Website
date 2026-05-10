@@ -10,8 +10,9 @@
 </head>
 <body>
 
-<div class="auth-page">
-    <div class="auth-container">
+<jsp:include page="/WEB-INF/views/partials/navbar.jsp" />
+
+<main class="site-main auth-page">
         <div class="auth-card">
             <div class="auth-header">
                 <h1>Forgot Password</h1>
@@ -37,6 +38,9 @@
             <% } %>
 
             <form class="auth-form" action="<%= request.getContextPath() %>/forgot-password" method="post" novalidate>
+                <% if (request.getAttribute("csrfToken") != null) { %>
+                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") %>">
+                <% } %>
                 <div class="form-group">
                     <label for="email" class="form-label">Email Address</label>
                     <input type="email" id="email" name="email" required 
@@ -58,8 +62,7 @@
                 <p>Remember your password? <a href="<%= request.getContextPath() %>/login" aria-label="Go to sign in page">Sign in</a></p>
             </div>
         </div>
-    </div>
-</div>
+</main>
 
 <jsp:include page="/WEB-INF/views/partials/footer.jsp" />
 

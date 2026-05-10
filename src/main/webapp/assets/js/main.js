@@ -1,5 +1,365 @@
 // Modern Commerce UX System
+const contextPath = window.contextPath || '';
 window.FashionStore = {
+    // Performance Optimization - DOM Query Cache
+    cache: {
+        get: function(selector) {
+            if (!this._cache) this._cache = {};
+            if (!this._cache[selector]) {
+                this._cache[selector] = document.querySelector(selector);
+            }
+            return this._cache[selector];
+        },
+        getAll: function(selector) {
+            if (!this._cacheAll) this._cacheAll = {};
+            if (!this._cacheAll[selector]) {
+                this._cacheAll[selector] = document.querySelectorAll(selector);
+            }
+            return this._cacheAll[selector];
+        },
+        clear: function() {
+            this._cache = {};
+            this._cacheAll = {};
+        }
+    },
+    
+    // Event Delegation - Prevent Listener Duplication
+    events: {
+        listeners: new Map(),
+        
+        on: function(element, event, handler, options = {}) {
+            const key = `${element}_${event}`;
+            if (this.listeners.has(key)) {
+                element.removeEventListener(event, this.listeners.get(key));
+            }
+            element.addEventListener(event, handler, options);
+            this.listeners.set(key, handler);
+        },
+        
+        off: function(element, event) {
+            const key = `${element}_${event}`;
+            if (this.listeners.has(key)) {
+                element.removeEventListener(event, this.listeners.get(key));
+                this.listeners.delete(key);
+            }
+        }
+    },
+    
+    // Request Animation Frame Throttling
+    rafThrottle: function(callback) {
+        let rafId = null;
+        return function(...args) {
+            if (rafId) return;
+            rafId = requestAnimationFrame(() => {
+                callback.apply(this, args);
+                rafId = null;
+            });
+        };
+    },
+    
+    // Debounce Function
+    debounce: function(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func.apply(this, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+    
+    // Search Suggestions System
+    search: {
+        debounceTimer: null,
+        suggestionsContainer: null,
+        selectedIndex: -1,
+        
+        // Trending searches (can be loaded from backend)
+        trendingSearches: [
+            'Summer Collection',
+            'Casual Shirts',
+            'Denim Jeans',
+            'Sneakers',
+            'Blazers'
+        ],
+        
+        init: function() {
+            const searchInput = document.querySelector('.nav-search input, .catalog-search input');
+            if (!searchInput) return;
+            
+            this.suggestionsContainer = document.createElement('div');
+            this.suggestionsContainer.className = 'search-suggestions';
+            this.suggestionsContainer.style.display = 'none';
+            searchInput.parentNode.appendChild(this.suggestionsContainer);
+            
+            searchInput.addEventListener('input', (e) => this.handleInput(e));
+            searchInput.addEventListener('focus', () => this.showTrendingAndRecent());
+            searchInput.addEventListener('blur', () => {
+                setTimeout(() => this.hideSuggestions(), 200);
+            });
+            searchInput.addEventListener('keydown', (e) => this.handleKeyboard(e));
+            
+            // Mobile-specific optimizations
+            if (window.innerWidth <= 768) {
+                searchInput.setAttribute('autocomplete', 'off');
+                searchInput.setAttribute('autocorrect', 'off');
+                searchInput.setAttribute('autocapitalize', 'off');
+            }
+        },
+        
+        handleInput: function(e) {
+            const query = e.target.value.trim();
+            clearTimeout(this.debounceTimer);
+            this.selectedIndex = -1;
+            
+            if (query.length < 2) {
+                this.showTrendingAndRecent();
+                return;
+            }
+            
+            // Optimized debounce: faster for short queries, slower for long queries
+            const debounceTime = query.length < 4 ? 150 : 300;
+            this.debounceTimer = setTimeout(() => this.fetchSuggestions(query), debounceTime);
+        },
+        
+        fetchSuggestions: function(query) {
+            fetch(`${contextPath}/search/suggestions?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(suggestions => this.displaySuggestions(suggestions, query))
+                .catch(err => {
+                    console.error('Error fetching suggestions:', err);
+                    this.displayEmptyState(query);
+                });
+        },
+        
+        displaySuggestions: function(suggestions, query) {
+            if (!this.suggestionsContainer) return;
+            
+            let html = '';
+            
+            if (suggestions.length === 0) {
+                this.displayEmptyState(query);
+                return;
+            }
+            
+            // Add "See all results" option
+            html += `
+                <div class="suggestion-item search-all" data-value="${this.escapeHtml(query)}" data-type="search">
+                    <span class="suggestion-icon">🔍</span>
+                    <span class="suggestion-text">Search for "${this.escapeHtml(query)}"</span>
+                </div>
+            `;
+            
+            suggestions.forEach((s, index) => {
+                const icon = s.type === 'brand' ? '🏷️' : '👕';
+                html += `
+                    <div class="suggestion-item ${index === 0 ? 'selected' : ''}" 
+                         data-value="${this.escapeHtml(s.value)}" 
+                         data-type="${s.type}"
+                         data-index="${index}">
+                        <span class="suggestion-icon">${icon}</span>
+                        <span class="suggestion-text">${this.highlightMatch(s.value, query)}</span>
+                    </div>
+                `;
+            });
+            
+            this.suggestionsContainer.innerHTML = html;
+            this.suggestionsContainer.style.display = 'block';
+            this.selectedIndex = suggestions.length > 0 ? 0 : -1;
+            
+            // Add click handlers
+            this.suggestionsContainer.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const searchInput = document.querySelector('.nav-search input, .catalog-search input');
+                    if (searchInput) {
+                        searchInput.value = item.dataset.value;
+                        this.saveSearch(item.dataset.value);
+                        searchInput.closest('form').submit();
+                    }
+                });
+            });
+        },
+        
+        showTrendingAndRecent: function() {
+            if (!this.suggestionsContainer) return;
+            
+            const recentSearches = JSON.parse(sessionStorage.getItem('recentSearches') || '[]');
+            let html = '';
+            
+            // Show trending searches
+            if (this.trendingSearches.length > 0) {
+                html += '<div class="suggestion-header">Trending Searches</div>';
+                html += '<div class="suggestion-row trending-row">';
+                this.trendingSearches.slice(0, 4).forEach((search, index) => {
+                    html += `
+                        <div class="suggestion-chip" data-value="${this.escapeHtml(search)}">
+                            <span class="trend-rank">${index + 1}</span>
+                            <span class="trend-text">${this.escapeHtml(search)}</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            // Show recent searches
+            if (recentSearches.length > 0) {
+                html += '<div class="suggestion-header">Recent Searches</div>';
+                recentSearches.slice(0, 5).forEach(search => {
+                    html += `
+                        <div class="suggestion-item" data-value="${this.escapeHtml(search)}">
+                            <span class="suggestion-icon">🕐</span>
+                            <span class="suggestion-text">${this.escapeHtml(search)}</span>
+                            <span class="suggestion-remove" data-search="${this.escapeHtml(search)}">✕</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (html === '') {
+                this.suggestionsContainer.style.display = 'none';
+                return;
+            }
+            
+            this.suggestionsContainer.innerHTML = html;
+            this.suggestionsContainer.style.display = 'block';
+            
+            // Add click handlers
+            this.suggestionsContainer.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('suggestion-remove')) {
+                        e.stopPropagation();
+                        this.removeRecentSearch(e.target.dataset.search);
+                        return;
+                    }
+                    
+                    const searchInput = document.querySelector('.nav-search input, .catalog-search input');
+                    if (searchInput) {
+                        searchInput.value = item.dataset.value;
+                        this.saveSearch(item.dataset.value);
+                        searchInput.closest('form').submit();
+                    }
+                });
+            });
+            
+            // Add click handlers for trending chips
+            this.suggestionsContainer.querySelectorAll('.suggestion-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const searchInput = document.querySelector('.nav-search input, .catalog-search input');
+                    if (searchInput) {
+                        searchInput.value = chip.dataset.value;
+                        this.saveSearch(chip.dataset.value);
+                        searchInput.closest('form').submit();
+                    }
+                });
+            });
+        },
+        
+        displayEmptyState: function(query) {
+            if (!this.suggestionsContainer) return;
+            
+            let html = `
+                <div class="suggestion-empty">
+                    <div class="empty-icon">🔍</div>
+                    <div class="empty-text">No results found for "${this.escapeHtml(query)}"</div>
+                    <div class="empty-hint">Try different keywords or browse our categories</div>
+                </div>
+                <div class="suggestion-item search-all" data-value="${this.escapeHtml(query)}" data-type="search">
+                    <span class="suggestion-icon">🔍</span>
+                    <span class="suggestion-text">See all products matching "${this.escapeHtml(query)}"</span>
+                </div>
+            `;
+            
+            this.suggestionsContainer.innerHTML = html;
+            this.suggestionsContainer.style.display = 'block';
+            
+            // Add click handler for search all
+            this.suggestionsContainer.querySelector('.search-all').addEventListener('click', () => {
+                const searchInput = document.querySelector('.nav-search input, .catalog-search input');
+                if (searchInput) {
+                    searchInput.value = query;
+                    searchInput.closest('form').submit();
+                }
+            });
+        },
+        
+        saveSearch: function(search) {
+            let recentSearches = JSON.parse(sessionStorage.getItem('recentSearches') || '[]');
+            
+            // Remove if already exists (to move to top)
+            recentSearches = recentSearches.filter(s => s !== search);
+            
+            // Add to front
+            recentSearches.unshift(search);
+            
+            // Keep only last 10
+            recentSearches = recentSearches.slice(0, 10);
+            
+            sessionStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+        },
+        
+        removeRecentSearch: function(search) {
+            let recentSearches = JSON.parse(sessionStorage.getItem('recentSearches') || '[]');
+            recentSearches = recentSearches.filter(s => s !== search);
+            sessionStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+            this.showTrendingAndRecent();
+        },
+        
+        hideSuggestions: function() {
+            if (this.suggestionsContainer) {
+                this.suggestionsContainer.style.display = 'none';
+            }
+        },
+        
+        highlightMatch: function(text, query) {
+            const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        },
+        
+        escapeHtml: function(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+        
+        escapeRegex: function(text) {
+            return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        },
+        
+        handleKeyboard: function(e) {
+            const items = this.suggestionsContainer?.querySelectorAll('.suggestion-item');
+            if (!items || items.length === 0) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.selectedIndex = this.selectedIndex < items.length - 1 ? this.selectedIndex + 1 : 0;
+                this.selectItem(items, this.selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.selectedIndex = this.selectedIndex > 0 ? this.selectedIndex - 1 : items.length - 1;
+                this.selectItem(items, this.selectedIndex);
+            } else if (e.key === 'Enter') {
+                if (this.selectedIndex >= 0) {
+                    e.preventDefault();
+                    items[this.selectedIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                this.hideSuggestions();
+            }
+        },
+        
+        selectItem: function(items, index) {
+            items.forEach((item, i) => {
+                item.classList.toggle('selected', i === index);
+            });
+            
+            // Scroll selected item into view
+            if (items[index]) {
+                items[index].scrollIntoView({ block: 'nearest' });
+            }
+        }
+    },
     // Dark Mode Management
     darkMode: {
         STORAGE_KEY: 'fashionstore-theme',
@@ -42,17 +402,26 @@ window.FashionStore = {
     },
 
     // Toast System
-    showToast: function(message, type = 'success') {
+    showToast: function(message, type = 'success', duration = 3000) {
         const container = document.getElementById('toast-container');
         if (!container) return;
 
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'polite');
+        
+        const icons = {
+            success: '✓',
+            error: '✕',
+            info: 'ℹ',
+            warning: '⚠'
+        };
+        
         toast.innerHTML = `
-            <div class="toast-icon">
-                ${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}
-            </div>
+            <div class="toast-icon">${icons[type] || icons.info}</div>
             <div class="toast-message">${message}</div>
+            <button class="toast-close" aria-label="Close notification">✕</button>
         `;
         
         container.appendChild(toast);
@@ -60,10 +429,22 @@ window.FashionStore = {
         // Trigger reflow for transition
         setTimeout(() => toast.classList.add('show'), 10);
 
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        // Auto dismiss
+        const dismissTimer = setTimeout(() => {
+            this.dismissToast(toast);
+        }, duration);
+
+        // Manual dismiss
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            clearTimeout(dismissTimer);
+            this.dismissToast(toast);
+        });
+    },
+    
+    dismissToast: function(toast) {
+        if (!toast) return;
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
     },
 
     // Loading States
@@ -601,15 +982,9 @@ window.FashionStore = {
             }
         });
         
-        // Show/hide sections
         sections.forEach((section, index) => {
             const sectionNum = index + 1;
-            if (sectionNum === stepNumber) {
-                section.style.display = 'block';
-                section.style.animation = 'fadeIn 0.3s ease-out';
-            } else {
-                section.style.display = 'none';
-            }
+            section.classList.toggle('is-active', sectionNum === stepNumber);
         });
     },
 
@@ -758,36 +1133,39 @@ function toggleMiniCart(event) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Shared image fallback to prevent broken media rendering across pages.
+    document.querySelectorAll('img').forEach((img) => {
+        img.addEventListener('error', () => {
+            if (img.dataset.fallbackApplied === 'true') return;
+            img.dataset.fallbackApplied = 'true';
+            img.src = `${window.contextPath || ''}/assets/images/placeholder-product.jpg`;
+        }, { once: true });
+    });
+
+    // Initialize search suggestions
+    FashionStore.search.init();
+    
     // Initialize dark mode
     FashionStore.darkMode.init();
     
+    // Clear DOM cache on page unload
+    window.addEventListener('beforeunload', () => {
+        FashionStore.cache.clear();
+    });
+
     // Dark mode toggle handler
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', () => {
+        FashionStore.events.on(darkModeToggle, 'click', () => {
             const isDark = FashionStore.darkMode.toggle();
             darkModeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
         });
     }
-    
+
     const badge = document.getElementById('nav-cart-badge');
     if (badge && parseInt(badge.innerText, 10) > 0) {
         FashionStore.fetchCart();
     }
-
-    document.querySelectorAll('.product-card, .cart-card, .order-card, .stat-card').forEach((element) => {
-        element.addEventListener('pointermove', (event) => {
-            const rect = element.getBoundingClientRect();
-            const x = ((event.clientX - rect.left) / rect.width - 0.5) * 4;
-            const y = ((event.clientY - rect.top) / rect.height - 0.5) * -4;
-            element.style.setProperty('--tilt-x', `${y}deg`);
-            element.style.setProperty('--tilt-y', `${x}deg`);
-        });
-        element.addEventListener('pointerleave', () => {
-            element.style.removeProperty('--tilt-x');
-            element.style.removeProperty('--tilt-y');
-        });
-    });
 
     // PDP gallery: thumbnail click swaps main image with fade
     const galleryMain = document.querySelector('.product-gallery-main');
@@ -815,22 +1193,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Delegated ripple (single listener, avoids per-button handlers)
-    document.addEventListener('click', (event) => {
-        const target = event.target.closest('button, .btn, .product-card-add-btn');
-        if (!target) return;
+    // Mobile drawer stability: close navigation after selecting a destination.
+    document.querySelectorAll('#nav-actions a').forEach((link) => {
+        link.addEventListener('click', () => {
+            const navActions = document.getElementById('nav-actions');
+            const overlay = document.getElementById('mobile-nav-overlay');
+            const trigger = document.getElementById('mobile-menu-btn');
+            navActions?.classList.remove('open');
+            overlay?.classList.remove('active');
+            document.body.classList.remove('nav-drawer-open');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+    });
 
-        // Don’t ripple disabled controls
-        if (target.matches('button:disabled, .btn:disabled')) return;
+    function closeAdminSidebar() {
+        const sidebar = document.querySelector('.admin-sidebar');
+        const backdrop = document.querySelector('.admin-sidebar-backdrop');
+        sidebar?.classList.remove('is-open');
+        backdrop?.classList.remove('is-open');
+        document.body.style.overflow = '';
+    }
 
-        const ripple = document.createElement('span');
-        ripple.className = 'button-ripple';
-        const rect = target.getBoundingClientRect();
-        ripple.style.left = `${event.clientX - rect.left}px`;
-        ripple.style.top = `${event.clientY - rect.top}px`;
-        target.appendChild(ripple);
-        window.setTimeout(() => ripple.remove(), 520);
-    }, { passive: true });
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('[data-admin-menu-open]')) {
+            const sidebar = document.querySelector('.admin-sidebar');
+            const backdrop = document.querySelector('.admin-sidebar-backdrop');
+            if (sidebar?.classList.contains('is-open')) {
+                closeAdminSidebar();
+            } else {
+                sidebar?.classList.add('is-open');
+                backdrop?.classList.add('is-open');
+                document.body.style.overflow = 'hidden';
+            }
+            return;
+        }
+        if (e.target.closest('[data-admin-menu-close]')) {
+            closeAdminSidebar();
+        }
+    });
+
+    document.querySelectorAll('.admin-sidebar a').forEach((link) => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 1024) closeAdminSidebar();
+        });
+    });
 });
 
 // Backward compatibility

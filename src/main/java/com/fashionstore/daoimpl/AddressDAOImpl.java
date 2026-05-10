@@ -30,7 +30,7 @@ public class AddressDAOImpl implements AddressDAO {
             
             // If this is set as default, unset other defaults first
             if (address.isDefault()) {
-                unsetDefaultAddresses(address.getUserId(), address.getAddressType());
+                unsetDefaultAddresses(conn, address.getUserId(), address.getAddressType());
             }
             
             pstmt.setInt(1, address.getUserId());
@@ -73,7 +73,7 @@ public class AddressDAOImpl implements AddressDAO {
             
             // If this is set as default, unset other defaults first
             if (address.isDefault()) {
-                unsetDefaultAddresses(address.getUserId(), address.getAddressType());
+                unsetDefaultAddresses(conn, address.getUserId(), address.getAddressType());
             }
             
             pstmt.setString(1, address.getAddressType());
@@ -183,25 +183,48 @@ public class AddressDAOImpl implements AddressDAO {
         String sql = "UPDATE addresses SET is_default = FALSE WHERE user_id = ? AND " +
                      "(address_type = (SELECT address_type FROM addresses WHERE address_id = ?) " +
                      "OR address_type = 'both')";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, userId);
-            pstmt.setInt(2, addressId);
-            pstmt.executeUpdate();
-            
+
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, userId);
+                pstmt.setInt(2, addressId);
+                pstmt.executeUpdate();
+            }
+
             // Now set the new default
             String updateSql = "UPDATE addresses SET is_default = TRUE, updated_at = CURRENT_TIMESTAMP " +
-                              "WHERE address_id = ? AND user_id = ?";
-            
+                    "WHERE address_id = ? AND user_id = ?";
+
+            boolean updated;
             try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
                 updatePstmt.setInt(1, addressId);
                 updatePstmt.setInt(2, userId);
-                return updatePstmt.executeUpdate() > 0;
+                updated = updatePstmt.executeUpdate() > 0;
             }
+            conn.commit();
+            return updated;
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    logger.error("AddressDAOImpl.setDefaultAddress Rollback Error: {}", rollbackEx.getMessage());
+                }
+            }
             logger.error("AddressDAOImpl.setDefaultAddress Error: {}", e.getMessage());
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException closeEx) {
+                    logger.error("AddressDAOImpl.setDefaultAddress Close Error: {}", closeEx.getMessage());
+                }
+            }
         }
         return false;
     }
@@ -268,12 +291,11 @@ public class AddressDAOImpl implements AddressDAO {
     }
 
     // Helper method to unset default addresses
-    private void unsetDefaultAddresses(int userId, String addressType) throws SQLException {
+    private void unsetDefaultAddresses(Connection conn, int userId, String addressType) throws SQLException {
         String sql = "UPDATE addresses SET is_default = FALSE WHERE user_id = ? AND " +
                      "(address_type = ? OR address_type = 'both')";
         
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setInt(1, userId);
             pstmt.setString(2, addressType);

@@ -74,7 +74,7 @@
 .form-textarea:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 0 3px rgba(16, 16, 14, 0.06);
 }
 
 .form-input:disabled,
@@ -338,9 +338,9 @@
 [data-theme="dark"] .form-input,
 [data-theme="dark"] .form-select,
 [data-theme="dark"] .form-textarea {
-    background: var(--color-bg-tertiary-dark);
-    border-color: var(--color-border-dark);
-    color: var(--color-text-primary-dark);
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
 }
 
 [data-theme="dark"] .form-input:focus,
@@ -352,7 +352,7 @@
 [data-theme="dark"] .form-input:disabled,
 [data-theme="dark"] .form-select:disabled,
 [data-theme="dark"] .form-textarea:disabled {
-    background: var(--color-bg-secondary-dark);
+    background: var(--color-bg);
 }
 
 [data-theme="dark"] .form-select {
@@ -360,30 +360,30 @@
 }
 
 [data-theme="dark"] .form-file-label {
-    background: var(--color-bg-tertiary-dark);
-    border-color: var(--color-border-dark);
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
 }
 
 [data-theme="dark"] .form-file-label:hover {
-    background: var(--color-bg-secondary-dark);
+    background: var(--color-surface);
 }
 
 [data-theme="dark"] .form-search-icon {
-    color: var(--color-text-tertiary-dark);
+    color: var(--color-text-tertiary);
 }
 
 [data-theme="dark"] .input-group {
-    border-color: var(--color-border-dark);
+    border-color: var(--color-border);
 }
 
 [data-theme="dark"] .input-group-addon {
-    background: var(--color-bg-tertiary-dark);
-    border-color: var(--color-border-dark);
-    color: var(--color-text-secondary-dark);
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
 }
 
 [data-theme="dark"] .form-floating label {
-    color: var(--color-text-tertiary-dark);
+    color: var(--color-text-tertiary);
 }
 
 [data-theme="dark"] .form-floating input:focus + label,

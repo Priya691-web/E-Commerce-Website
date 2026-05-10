@@ -58,9 +58,22 @@ public class AdminUsersController extends HttpServlet {
 
         HttpSession session = request.getSession(true);
         String action = request.getParameter("action");
+        Integer userId = parseUserId(request.getParameter("userId"));
+
+        if (userId == null || userId <= 0) {
+            session.setAttribute("error", "Invalid user id");
+            response.sendRedirect(request.getContextPath() + "/admin/users");
+            return;
+        }
+
+        User currentUser = SecurityUtil.getCurrentUser(request);
+        if ("disableUser".equals(action) && currentUser != null && currentUser.getUserId() == userId) {
+            session.setAttribute("error", "You cannot disable your own admin account.");
+            response.sendRedirect(request.getContextPath() + "/admin/users");
+            return;
+        }
 
         if ("disableUser".equals(action)) {
-            int userId = Integer.parseInt(request.getParameter("userId"));
             boolean success = userDAO.updateUserRole(userId, "disabled");
             
             if (success) {
@@ -73,7 +86,6 @@ public class AdminUsersController extends HttpServlet {
         }
 
         if ("enableUser".equals(action)) {
-            int userId = Integer.parseInt(request.getParameter("userId"));
             boolean success = userDAO.updateUserRole(userId, "user");
             
             if (success) {
@@ -86,7 +98,6 @@ public class AdminUsersController extends HttpServlet {
         }
 
         if ("setAdmin".equals(action)) {
-            int userId = Integer.parseInt(request.getParameter("userId"));
             boolean success = userDAO.updateUserRole(userId, "admin");
             
             if (success) {
@@ -99,5 +110,16 @@ public class AdminUsersController extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/users");
+    }
+
+    private Integer parseUserId(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

@@ -54,8 +54,13 @@ public class AdminOrderController extends HttpServlet {
         }
 
         try {
-            int orderId = Integer.parseInt(request.getParameter("orderId"));
+            Integer orderId = parseIntOrNull(request.getParameter("orderId"));
             HttpSession session = request.getSession(true);
+            if (orderId == null || orderId <= 0) {
+                session.setAttribute("error", "Invalid order id.");
+                response.sendRedirect(request.getContextPath() + "/admin/orders");
+                return;
+            }
 
             // Handle shipment simulation
             if (request.getParameter("simulateDelivery") != null) {
@@ -107,5 +112,16 @@ public class AdminOrderController extends HttpServlet {
                 || "Shipped".equalsIgnoreCase(status)
                 || "Delivered".equalsIgnoreCase(status)
                 || "Cancelled".equalsIgnoreCase(status);
+    }
+
+    private Integer parseIntOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

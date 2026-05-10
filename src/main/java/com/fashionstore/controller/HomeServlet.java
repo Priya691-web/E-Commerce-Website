@@ -4,6 +4,7 @@ import com.fashionstore.model.Category;
 import com.fashionstore.model.Product;
 import com.fashionstore.service.CategoryService;
 import com.fashionstore.service.ProductService;
+import com.fashionstore.service.RecommendationService;
 import com.fashionstore.util.DBConnection;
 import com.fashionstore.util.NullSafetyUtil;
 
@@ -15,6 +16,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -28,11 +30,13 @@ public class HomeServlet extends HttpServlet {
 
     private ProductService productService;
     private CategoryService categoryService;
+    private RecommendationService recommendationService;
 
     @Override
     public void init() {
         productService = new ProductService();
         categoryService = new CategoryService();
+        recommendationService = new RecommendationService();
     }
 
     @Override
@@ -70,8 +74,25 @@ public class HomeServlet extends HttpServlet {
                 logger.warn("Categories list is empty or null");
             }
 
+            // Get trending products for intelligent discovery
+            List<Product> trendingProducts = NullSafetyUtil.safeGet(() -> {
+                List<Product> result = recommendationService.getTrendingProducts(8);
+                return result != null ? result : Collections.emptyList();
+            }, Collections.emptyList());
+
+            // Get recently viewed products from session
+            HttpSession session = request.getSession();
+            @SuppressWarnings("unchecked")
+            List<Integer> recentlyViewedIds = (List<Integer>) session.getAttribute("recentlyViewed");
+            List<Product> recentlyViewedProducts = NullSafetyUtil.safeGet(() -> {
+                List<Product> result = recommendationService.getRecentlyViewed(recentlyViewedIds, 4);
+                return result != null ? result : Collections.emptyList();
+            }, Collections.emptyList());
+
             request.setAttribute("products", products);
             request.setAttribute("categories", categories);
+            request.setAttribute("trendingProducts", trendingProducts);
+            request.setAttribute("recentlyViewedProducts", recentlyViewedProducts);
 
             request.getRequestDispatcher("/WEB-INF/views/home.jsp").forward(request, response);
 

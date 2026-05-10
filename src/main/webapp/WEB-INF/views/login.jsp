@@ -14,7 +14,7 @@
 
 <jsp:include page="/WEB-INF/views/partials/navbar.jsp" />
 
-<main class="auth-page">
+<main class="site-main auth-page">
     <section class="auth-card">
         <h1>Welcome back</h1>
         <p>Login to continue shopping your favorite fashion picks.</p>

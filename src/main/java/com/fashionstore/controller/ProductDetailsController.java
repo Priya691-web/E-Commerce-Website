@@ -61,6 +61,22 @@ public class ProductDetailsController extends HttpServlet {
                 return;
             }
 
+            // Track recently viewed products in session
+            jakarta.servlet.http.HttpSession session = request.getSession();
+            @SuppressWarnings("unchecked")
+            java.util.List<Integer> recentlyViewed = (java.util.List<Integer>) session.getAttribute("recentlyViewed");
+            if (recentlyViewed == null) {
+                recentlyViewed = new java.util.ArrayList<>();
+            }
+            // Remove if already exists and add to front
+            recentlyViewed.remove(Integer.valueOf(productId));
+            recentlyViewed.add(0, productId);
+            // Keep only last 20 viewed products
+            if (recentlyViewed.size() > 20) {
+                recentlyViewed = recentlyViewed.subList(0, 20);
+            }
+            session.setAttribute("recentlyViewed", recentlyViewed);
+
             request.setAttribute("product", product);
 
             // Fetch Reviews

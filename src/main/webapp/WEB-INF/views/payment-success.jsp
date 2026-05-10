@@ -20,7 +20,7 @@
     Order order = (Order) request.getAttribute("order");
 %>
 
-<main class="success-page">
+<main class="site-main success-page">
     <div class="container">
         <div class="success-container">
             <div class="success-icon">

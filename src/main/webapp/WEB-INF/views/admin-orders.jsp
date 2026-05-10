@@ -14,6 +14,10 @@
 <body class="admin-dashboard">
 
 <div class="admin-layout">
+    <button type="button" class="admin-menu-toggle" data-admin-menu-open aria-label="Open admin menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="admin-sidebar-backdrop" data-admin-menu-close tabindex="-1" aria-hidden="true"></div>
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
         <div class="sidebar-brand">FashionStore Admin</div>
@@ -68,15 +72,15 @@
         </div>
 
         <!-- ORDER FILTERING -->
-        <div class="glass-card" style="padding: var(--space-4); margin-bottom: var(--space-5);">
-            <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center;">
-                <div style="flex: 1; min-width: 200px;">
-                    <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 4px; display: block;">Search Orders</label>
-                    <input type="text" id="searchOrders" placeholder="Search by Order ID, Customer Name..." style="width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 14px;">
+        <div class="glass-card admin-toolbar-card">
+            <div class="admin-filter-row">
+                <div class="admin-filter-field admin-filter-field--grow">
+                    <label class="admin-filter-label" for="searchOrders">Search Orders</label>
+                    <input type="text" id="searchOrders" class="admin-filter-input" placeholder="Search by Order ID, Customer Name...">
                 </div>
-                <div style="min-width: 150px;">
-                    <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 4px; display: block;">Status Filter</label>
-                    <select id="statusFilter" style="width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 14px; background: var(--color-surface);">
+                <div class="admin-filter-field">
+                    <label class="admin-filter-label" for="statusFilter">Status Filter</label>
+                    <select id="statusFilter" class="admin-filter-select">
                         <option value="">All Status</option>
                         <option value="Pending">Pending</option>
                         <option value="Shipped">Shipped</option>
@@ -84,9 +88,9 @@
                         <option value="Cancelled">Cancelled</option>
                     </select>
                 </div>
-                <div style="min-width: 150px;">
-                    <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 4px; display: block;">Date Range</label>
-                    <select id="dateFilter" style="width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 14px; background: var(--color-surface);">
+                <div class="admin-filter-field">
+                    <label class="admin-filter-label" for="dateFilter">Date Range</label>
+                    <select id="dateFilter" class="admin-filter-select">
                         <option value="">All Time</option>
                         <option value="7">Last 7 Days</option>
                         <option value="30">Last 30 Days</option>
@@ -99,12 +103,12 @@
         <!-- ALERTS -->
         <% String message = (String) session.getAttribute("message"); %>
         <% if (message != null) { %>
-            <div class="alert alert-success" style="margin-bottom: var(--space-4);"><%= message %></div>
+            <div class="alert alert-success admin-alert-spacing"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(message) %></div>
             <% session.removeAttribute("message"); %>
         <% } %>
         <% String error = (String) session.getAttribute("error"); %>
         <% if (error != null) { %>
-            <div class="alert alert-danger" style="margin-bottom: var(--space-4);"><%= error %></div>
+            <div class="alert alert-danger admin-alert-spacing"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(error) %></div>
             <% session.removeAttribute("error"); %>
         <% } %>
 
@@ -120,18 +124,18 @@
         %>
 
         <% if (orders.isEmpty()) { %>
-            <div class="glass-card" style="padding: var(--space-7) var(--space-5); text-align: center;">
-                <p style="color: var(--color-secondary);">No orders found.</p>
+            <div class="glass-card admin-empty-state">
+                <p>No orders found.</p>
             </div>
         <% } %>
 
         <% for (Order order : orders) { %>
-            <article class="glass-card" style="padding: var(--space-5); margin-bottom: var(--space-4);">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <article class="glass-card admin-order-card">
+                <div class="admin-order-card__header">
                     <div>
-                        <strong style="font-size: 16px; color: var(--text-primary);">Order #<%= order.getOrderId() %></strong>
-                        <div style="font-size:13px; color:var(--color-secondary); margin-top:4px;">
-                            <%= order.getFullName() != null ? order.getFullName() : "User " + order.getUserId() %> | 
+                        <div class="admin-order-card__title">Order #<%= order.getOrderId() %></div>
+                        <div class="admin-order-card__meta">
+                            <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(order.getFullName() != null ? order.getFullName() : "User " + order.getUserId()) %> | 
                             Total: ₹<%= String.format("%.2f", order.getTotalAmount()) %> |
                             <%= order.getOrderDate() != null ? new java.text.SimpleDateFormat("MMM dd, yyyy").format(order.getOrderDate()) : "" %>
                         </div>
@@ -142,14 +146,14 @@
                             String css = "status-pending";
                             if ("Shipped".equalsIgnoreCase(status)) css = "status-shipped";
                             if ("Delivered".equalsIgnoreCase(status)) css = "status-delivered";
-                            if ("Cancelled".equalsIgnoreCase(status)) css = "badge-cancelled";
+                            if ("Cancelled".equalsIgnoreCase(status)) css = "status-cancelled";
                         %>
-                        <span class="status-badge <%= css %>"><%= status %></span>
+                        <span class="status-badge <%= css %>"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(status) %></span>
                     </div>
                 </div>
 
                 <!-- STATUS UPDATE & SHIPMENT SIMULATION -->
-                <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-border);">
+                <div class="admin-order-card__actions">
                     <form action="<%= request.getContextPath() %>/admin/orders" method="post" class="status-form">
                         <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                         <input type="hidden" name="orderId" value="<%= order.getOrderId() %>">
@@ -163,11 +167,11 @@
                         <button type="submit" name="updateStatus" value="true">Update Status</button>
                         
                         <% if ("Shipped".equalsIgnoreCase(status)) { %>
-                            <button type="submit" name="simulateDelivery" value="true" style="background: var(--color-success);">Simulate Delivery</button>
+                            <button type="submit" name="simulateDelivery" value="true">Simulate Delivery</button>
                         <% } %>
                         
                         <% if ("Delivered".equalsIgnoreCase(status)) { %>
-                            <button type="submit" name="simulateRefund" value="true" style="background: var(--color-danger);">Simulate Refund</button>
+                            <button type="submit" name="simulateRefund" value="true">Simulate Refund</button>
                         <% } %>
                     </form>
                 </div>
@@ -178,7 +182,7 @@
                     <% if (items != null && !items.isEmpty()) { %>
                         <% for (OrderItem item : items) { %>
                             <div class="item-row">
-                                Product #<%= item.getProductId() %> | Size: <%= item.getSizeLabel() %> | Qty: <%= item.getQuantity() %> | ₹<%= String.format("%.2f", item.getPrice()) %>
+                                Product #<%= item.getProductId() %> | Size: <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(item.getSizeLabel() != null ? item.getSizeLabel() : "-") %> | Qty: <%= item.getQuantity() %> | ₹<%= String.format("%.2f", item.getPrice()) %>
                             </div>
                         <% } %>
                     <% } else { %>
@@ -187,10 +191,10 @@
                 </div>
 
                 <!-- CUSTOMER DETAILS -->
-                <div style="margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px dashed var(--color-border); font-size: 13px; color: var(--color-secondary);">
-                    <div><strong>Shipping Address:</strong> <%= order.getAddress() %>, <%= order.getCity() %>, <%= order.getState() %> - <%= order.getZip() %></div>
-                    <div style="margin-top: 4px;"><strong>Phone:</strong> <%= order.getPhone() %></div>
-                    <div style="margin-top: 4px;"><strong>Payment Method:</strong> <%= order.getPaymentMethod() %></div>
+                <div class="admin-order-card__footer">
+                    <div><strong>Shipping Address:</strong> <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(order.getAddress() != null ? order.getAddress() : "-") %>, <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(order.getCity() != null ? order.getCity() : "-") %>, <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(order.getState() != null ? order.getState() : "-") %> - <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(order.getZip() != null ? order.getZip() : "-") %></div>
+                    <div class="admin-order-card__footer-row"><strong>Phone:</strong> <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(order.getPhone() != null ? order.getPhone() : "-") %></div>
+                    <div class="admin-order-card__footer-row"><strong>Payment Method:</strong> <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(order.getPaymentMethod() != null ? order.getPaymentMethod() : "-") %></div>
                 </div>
             </article>
         <% } %>
@@ -209,10 +213,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const searchTerm = searchInput.value.toLowerCase();
             const statusValue = statusFilter.value;
             
-            document.querySelectorAll('article.glass-card').forEach(card => {
-                const orderId = card.querySelector('strong')?.textContent.toLowerCase() || '';
+            document.querySelectorAll('article.admin-order-card').forEach(card => {
+                const orderId = card.querySelector('.admin-order-card__title')?.textContent.toLowerCase() || '';
                 const statusBadge = card.querySelector('.status-badge')?.textContent.toLowerCase() || '';
-                const customerInfo = card.querySelector('div:nth-child(2)')?.textContent.toLowerCase() || '';
+                const customerInfo = card.querySelector('.admin-order-card__meta')?.textContent.toLowerCase() || '';
                 
                 const matchesSearch = orderId.includes(searchTerm) || customerInfo.includes(searchTerm);
                 const matchesStatus = statusValue === '' || statusBadge === statusValue.toLowerCase();

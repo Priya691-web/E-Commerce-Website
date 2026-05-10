@@ -10,6 +10,7 @@ import com.fashionstore.daoimpl.ProductDAOImpl;
 import com.fashionstore.daoimpl.UserDAOImpl;
 import com.fashionstore.model.Order;
 import com.fashionstore.util.SecurityUtil;
+import com.fashionstore.util.JsonUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -67,8 +68,10 @@ public class AdminDashboardController extends HttpServlet {
             request.setAttribute("totalOrders", totalOrders);
             request.setAttribute("lowStockCount", lowStockCount);
             request.setAttribute("recentOrders", recentOrders);
-            request.setAttribute("revenueData", revenueData.get("data"));
-            request.setAttribute("revenueLabels", revenueData.get("labels"));
+            
+            // Properly serialize to JSON
+            request.setAttribute("revenueDataJson", JsonUtil.toJson(revenueData.get("data")));
+            request.setAttribute("revenueLabelsJson", JsonUtil.toJson(revenueData.get("labels")));
 
             request.getRequestDispatcher("/WEB-INF/views/admin-dashboard.jsp")
                    .forward(request, response);

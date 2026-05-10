@@ -11,6 +11,10 @@
 <body class="admin-dashboard">
 
 <div class="admin-layout">
+    <button type="button" class="admin-menu-toggle" data-admin-menu-open aria-label="Open admin menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="admin-sidebar-backdrop" data-admin-menu-close tabindex="-1" aria-hidden="true"></div>
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
         <div class="sidebar-brand">FashionStore Admin</div>
@@ -94,18 +98,21 @@
                         <td>
                             <div class="admin-actions">
                                 <% if (!"admin".equals(user.getRole()) && !"disabled".equals(user.getRole())) { %>
-                                <form action="<%= request.getContextPath() %>/admin/users" method="post" style="display:inline;">
+                                <form action="<%= request.getContextPath() %>/admin/users" method="post" class="admin-form-inline">
+                                    <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                                     <input type="hidden" name="action" value="setAdmin">
                                     <input type="hidden" name="userId" value="<%= user.getUserId() %>">
                                     <button type="submit" class="admin-btn" onclick="return confirm('Promote this user to admin?')">Make Admin</button>
                                 </form>
-                                <form action="<%= request.getContextPath() %>/admin/users" method="post" style="display:inline;">
+                                <form action="<%= request.getContextPath() %>/admin/users" method="post" class="admin-form-inline">
+                                    <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                                     <input type="hidden" name="action" value="disableUser">
                                     <input type="hidden" name="userId" value="<%= user.getUserId() %>">
                                     <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirm('Disable this user account?')">Disable</button>
                                 </form>
                                 <% } else if ("disabled".equals(user.getRole())) { %>
-                                <form action="<%= request.getContextPath() %>/admin/users" method="post" style="display:inline;">
+                                <form action="<%= request.getContextPath() %>/admin/users" method="post" class="admin-form-inline">
+                                    <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                                     <input type="hidden" name="action" value="enableUser">
                                     <input type="hidden" name="userId" value="<%= user.getUserId() %>">
                                     <button type="submit" class="admin-btn" onclick="return confirm('Enable this user account?')">Enable</button>
@@ -116,7 +123,7 @@
                     </tr>
                     <% } } else { %>
                     <tr>
-                        <td colspan="6" style="text-align: center; color: var(--color-secondary);">No users found</td>
+                        <td colspan="6" class="admin-table-empty">No users found</td>
                     </tr>
                     <% } %>
                 </tbody>

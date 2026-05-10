@@ -117,8 +117,18 @@ public class AdminProductController extends HttpServlet {
 
     private void showEditForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        int id = Integer.parseInt(request.getParameter("id"));
+        Integer id = parseIntOrNull(request.getParameter("id"));
+        if (id == null || id <= 0) {
+            request.getSession(true).setAttribute("error", "Invalid product id.");
+            response.sendRedirect(request.getContextPath() + "/admin/products");
+            return;
+        }
         Product product = productDAO.getProductById(id);
+        if (product == null) {
+            request.getSession(true).setAttribute("error", "Product not found.");
+            response.sendRedirect(request.getContextPath() + "/admin/products");
+            return;
+        }
         request.setAttribute("product", product);
         request.setAttribute("categories", safeActiveCategories());
         request.setAttribute("mode", "edit");
@@ -226,8 +236,24 @@ public class AdminProductController extends HttpServlet {
 
     private void deleteProduct(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int id = Integer.parseInt(request.getParameter("id"));
+        Integer id = parseIntOrNull(request.getParameter("id"));
+        if (id == null || id <= 0) {
+            request.getSession(true).setAttribute("error", "Invalid product id.");
+            response.sendRedirect(request.getContextPath() + "/admin/products");
+            return;
+        }
         productDAO.deleteProduct(id);
         response.sendRedirect(request.getContextPath() + "/admin/products");
+    }
+
+    private Integer parseIntOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

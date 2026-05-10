@@ -59,7 +59,7 @@ public class LoginController extends HttpServlet {
                 HttpSession session = request.getSession(true);
                 session.setAttribute("userId", user.getUserId());
                 session.setAttribute("user", user);
-                session.setAttribute("csrfToken", CSRFProtection.generateToken(request));
+                CSRFProtection.generateToken(request);
 
                 AuditLogger.log("LOGIN_SUCCESS", "User logged in: " + email, String.valueOf(user.getUserId()), request);
                 

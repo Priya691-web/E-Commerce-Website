@@ -33,10 +33,7 @@ public class CSRFProtection {
      * @return CSRF token
      */
     public static String generateToken(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session == null) {
-            return null;
-        }
+        HttpSession session = request.getSession(true);
         
         // Generate secure random token
         byte[] randomBytes = new byte[TOKEN_LENGTH];
@@ -198,31 +195,66 @@ public class CSRFProtection {
     }
     
     /**
+     * Servlet path relative to the application context (no query string, no session suffix).
+     */
+    static String contextRelativePath(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        String ctx = request.getContextPath();
+        if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
+            uri = uri.substring(ctx.length());
+        }
+        if (uri.isEmpty()) {
+            uri = "/";
+        }
+        int semi = uri.indexOf(';');
+        if (semi >= 0) {
+            uri = uri.substring(0, semi);
+        }
+        if (uri.length() > 1 && uri.endsWith("/")) {
+            uri = uri.substring(0, uri.length() - 1);
+        }
+        return uri;
+    }
+
+    /**
      * Checks if the request should be protected from CSRF
      * @param request HTTP request
      * @return true if request should be protected
      */
     public static boolean requiresProtection(HttpServletRequest request) {
         String method = request.getMethod();
-        String uri = request.getRequestURI();
-        
+
         // Only protect state-changing methods
-        if (!"POST".equalsIgnoreCase(method) && 
-            !"PUT".equalsIgnoreCase(method) && 
-            !"DELETE".equalsIgnoreCase(method) && 
+        if (!"POST".equalsIgnoreCase(method) &&
+            !"PUT".equalsIgnoreCase(method) &&
+            !"DELETE".equalsIgnoreCase(method) &&
             !"PATCH".equalsIgnoreCase(method)) {
             return false;
         }
-        
-        // Skip protection for certain endpoints
-        if (uri.contains("/login") || 
-            uri.contains("/logout") || 
-            uri.contains("/register") ||
-            uri.contains("/password-reset") ||
-            uri.contains("/csrf-token")) {
+
+        String path = contextRelativePath(request);
+
+        // Login / register / logout forms use their own flow; still safe when tokens are absent only if skipped here.
+        if ("/login".equals(path) || "/logout".equals(path) || "/register".equals(path)) {
             return false;
         }
-        
+
+        // Payment gateway callbacks cannot supply browser session CSRF tokens.
+        if ("/payment".equals(path) && "webhook".equals(request.getParameter("action"))) {
+            return false;
+        }
+
+        // Optional dedicated CSRF refresh endpoint (reserved).
+        if ("/csrf-token".equals(path)) {
+            return false;
+        }
+
+        // Admin JSON API: protected by Origin/CORS allow-list + session cookie.
+        // CSRF tokens cannot be shared across origins (Vite dev server runs on :5173).
+        if (path != null && path.startsWith("/api/admin/")) {
+            return false;
+        }
+
         return true;
     }
     

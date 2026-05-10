@@ -16,8 +16,9 @@
 
 <body>
 
-<!-- NAVBAR -->
 <jsp:include page="/WEB-INF/views/partials/navbar.jsp" />
+
+<main class="site-main products-page" id="catalog-main">
 
 <%
     List<Product> products = new ArrayList<>();
@@ -104,7 +105,7 @@
     </nav>
     <div class="catalog-hero">
         <div>
-            <span class="eyebrow">FashionStore Catalog</span>
+            <span class="section-label eyebrow">FashionStore Catalog</span>
             <h1>Shop the complete edit</h1>
             <p>Refined essentials, premium footwear, and polished accessories filtered by real category mapping.</p>
         </div>
@@ -116,21 +117,12 @@
     </div>
 </section>
 
-<div class="divider-luxury"></div>
+<div class="divider-luxury" aria-hidden="true"></div>
 
-<!-- Mobile filter overlay -->
-<div class="filter-overlay" id="filter-overlay" onclick="closeFilterSidebar()"></div>
+<div class="filter-overlay" id="filter-overlay" onclick="closeFilterSidebar()" aria-hidden="true"></div>
 
 <div class="container">
     <div class="products-layout">
-
-        <!-- Mobile Filter Toggle -->
-        <button class="mobile-filter-toggle" onclick="openFilterSidebar()" aria-label="Open filters">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-            </svg>
-            Filters
-        </button>
 
         <!-- SIDEBAR -->
         <aside class="filter-sidebar" id="filter-sidebar" aria-label="Product filters">
@@ -184,11 +176,55 @@
 
         <!-- MAIN PRODUCT GRID -->
         <main class="products-main">
+            <!-- Active Filters Chips -->
+            <% if (!searchVal.isBlank() || !minPriceVal.isBlank() || !maxPriceVal.isBlank() || !brandVal.isBlank() || !sortByVal.isBlank() || !selectedSizes.isEmpty() || currentTag != null && !currentTag.isBlank()) { %>
+            <div class="active-filters">
+                <span class="active-filters-label">Active Filters:</span>
+                <% if (!searchVal.isBlank()) { %>
+                    <span class="filter-chip">
+                        Search: "<%= searchVal %>"
+                        <a href="<%= request.getContextPath() %>/products?category=<%= currentCategorySlug %>&tag=<%= currentTag %>" class="filter-chip-remove" aria-label="Remove search filter">✕</a>
+                    </span>
+                <% } %>
+                <% if (!minPriceVal.isBlank() && !maxPriceVal.isBlank()) { %>
+                    <span class="filter-chip">
+                        ₹<%= minPriceVal %> - ₹<%= maxPriceVal %>
+                        <a href="<%= request.getContextPath() %>/products?search=<%= URLEncoder.encode(searchVal, "UTF-8") %>&category=<%= currentCategorySlug %>&tag=<%= currentTag %>&brand=<%= URLEncoder.encode(brandVal, "UTF-8") %>&sortBy=<%= sortByVal %>" class="filter-chip-remove" aria-label="Remove price filter">✕</a>
+                    </span>
+                <% } %>
+                <% if (!brandVal.isBlank()) { %>
+                    <span class="filter-chip">
+                        Brand: <%= brandVal %>
+                        <a href="<%= request.getContextPath() %>/products?search=<%= URLEncoder.encode(searchVal, "UTF-8") %>&category=<%= currentCategorySlug %>&tag=<%= currentTag %>&minPrice=<%= minPriceVal %>&maxPrice=<%= maxPriceVal %>&sortBy=<%= sortByVal %>" class="filter-chip-remove" aria-label="Remove brand filter">✕</a>
+                    </span>
+                <% } %>
+                <% if (!sortByVal.isBlank()) { %>
+                    <span class="filter-chip">
+                        Sort: <%= sortByVal %>
+                        <a href="<%= request.getContextPath() %>/products?search=<%= URLEncoder.encode(searchVal, "UTF-8") %>&category=<%= currentCategorySlug %>&tag=<%= currentTag %>&minPrice=<%= minPriceVal %>&maxPrice=<%= maxPriceVal %>&brand=<%= URLEncoder.encode(brandVal, "UTF-8") %>" class="filter-chip-remove" aria-label="Remove sort filter">✕</a>
+                    </span>
+                <% } %>
+                <% for (String size : selectedSizes) { %>
+                    <span class="filter-chip">
+                        Size: <%= size %>
+                        <a href="<%= request.getContextPath() %>/products?search=<%= URLEncoder.encode(searchVal, "UTF-8") %>&category=<%= currentCategorySlug %>&tag=<%= currentTag %>&minPrice=<%= minPriceVal %>&maxPrice=<%= maxPriceVal %>&brand=<%= URLEncoder.encode(brandVal, "UTF-8") %>&sortBy=<%= sortByVal %>" class="filter-chip-remove" aria-label="Remove size filter">✕</a>
+                    </span>
+                <% } %>
+                <% if (!currentTag.isBlank()) { %>
+                    <span class="filter-chip">
+                        Tag: <%= currentTag %>
+                        <a href="<%= request.getContextPath() %>/products?search=<%= URLEncoder.encode(searchVal, "UTF-8") %>&category=<%= currentCategorySlug %>" class="filter-chip-remove" aria-label="Remove tag filter">✕</a>
+                    </span>
+                <% } %>
+                <a href="<%= request.getContextPath() %>/products" class="btn btn-secondary btn-sm filter-clear-all">Clear All</a>
+            </div>
+            <% } %>
+            
             <div class="catalog-toolbar">
                 <div>
                     <strong><%= products.size() %></strong>
                     <span>styles shown</span>
-                    <% if (!searchVal.isBlank()) { %><span class="catalog-query">for “<%= searchVal %>”</span><% } %>
+                    <% if (!searchVal.isBlank()) { %><span class="catalog-query">for "<%= searchVal %>"</span><% } %>
                 </div>
                 <form action="<%= request.getContextPath() %>/products" method="get" class="sort-form">
                     <% if (!searchVal.isBlank()) { %><input type="hidden" name="search" value="<%= searchVal %>"><% } %>
@@ -225,7 +261,7 @@
                     %>
                         <article class="product-card">
                             <div class="product-card-image-wrapper">
-                                <img class="product-card-image" src="<%= p.getImageUrl() %>" alt="<%= p.getProductName() %>">
+                                <img class="product-card-image" src="<%= p.getImageUrl() %>" alt="<%= p.getProductName() %>" onerror="this.src='<%= request.getContextPath() %>/assets/images/placeholder-product.jpg'; this.onerror=null;">
                                 
                                 <!-- Product Badges -->
                                 <div class="product-card-badges">
@@ -240,17 +276,17 @@
                                     <% } %>
                                 </div>
                                 
-                                <button class="product-card-wishlist" onclick="event.preventDefault(); FashionStore.toggleWishlist(<%= p.getProductId() %>, this)" aria-label="Add <%= p.getProductName() %> to wishlist">
+                                <button class="product-card-wishlist" onclick="event.preventDefault(); FashionStore.toggleWishlist('<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(String.valueOf(p.getProductId())) %>', this)" aria-label="Add <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getProductName()) %> to wishlist">
                                     <svg class="wishlist-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                                     </svg>
                                 </button>
                             </div>
                             <div class="product-card-content">
-                                <span class="product-card-brand"><%= p.getBrand() != null && !p.getBrand().isBlank() ? p.getBrand() : p.getCategoryName() %></span>
-                                <h3 class="product-card-name"><%= p.getProductName() %></h3>
+                                <span class="product-card-brand"><%= p.getBrand() != null && !p.getBrand().isBlank() ? org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getBrand()) : org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getCategoryName()) %></span>
+                                <h3 class="product-card-name"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getProductName()) %></h3>
                                 <% if (p.getCategoryName() != null) { %>
-                                    <span class="product-card-category"><%= p.getCategoryName() %></span>
+                                    <span class="product-card-category"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getCategoryName()) %></span>
                                 <% } %>
                                 <div class="product-card-bottom">
                                     <div class="product-card-price">
@@ -274,8 +310,8 @@
                                         </div>
                                     <% } %>
                                     <div class="product-card-actions">
-                                        <a href="<%= request.getContextPath() %>/product?id=<%= p.getProductId() %>" class="btn btn-primary product-card-add-btn">View Details</a>
-                                        <button class="btn btn-outline product-card-add-btn" onclick="event.preventDefault(); FashionStore.addToCart(<%= p.getProductId() %>)" aria-label="Add <%= p.getProductName() %> to cart">
+                                        <a href="<%= request.getContextPath() %>/product?id=<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(String.valueOf(p.getProductId())) %>" class="btn btn-primary product-card-add-btn">View Details</a>
+                                        <button class="btn btn-outline product-card-add-btn" onclick="event.preventDefault(); FashionStore.addToCart('<%= org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(String.valueOf(p.getProductId())) %>')" aria-label="Add <%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(p.getProductName()) %> to cart">
                                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                             </svg>
@@ -293,8 +329,8 @@
                         <h3 class="empty-state-title">No products found</h3>
                         <p class="empty-state-description">We couldn't find any products matching your criteria. Try adjusting your filters or search terms.</p>
                         <div class="empty-state-action">
-                            <a href="<%= request.getContextPath() %>/products" class="btn btn-primary">Clear Filters</a>
-                            <a href="<%= request.getContextPath() %>/products" class="btn btn-outline" style="margin-left: var(--space-2);">View All Products</a>
+                            <a href="<%= request.getContextPath() %>/products" class="btn btn-primary">Clear filters</a>
+                            <a href="<%= request.getContextPath() %>/products" class="btn btn-outline">View all products</a>
                         </div>
                     </div>
                 <% } %>
@@ -410,7 +446,8 @@
     </div>
 </div>
 
-<!-- FOOTER -->
+</main>
+
 <jsp:include page="/WEB-INF/views/partials/footer.jsp" />
 
 <!-- Product Quick View Modal -->

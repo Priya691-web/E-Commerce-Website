@@ -11,6 +11,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.DispatcherType;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -30,6 +31,11 @@ public class ExceptionHandler implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
+        if (httpRequest.getDispatcherType() == DispatcherType.ERROR) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         try {
             chain.doFilter(request, response);
         } catch (Exception e) {
@@ -38,7 +44,7 @@ public class ExceptionHandler implements Filter {
             boolean isAjax = "XMLHttpRequest".equals(httpRequest.getHeader("X-Requested-With")) ||
                              (httpRequest.getHeader("Accept") != null && httpRequest.getHeader("Accept").contains("application/json"));
             
-            if (isAjax) {
+            if (isAjax && !httpResponse.isCommitted()) {
                 sendSanitizedError(httpResponse);
             } else {
                 if (e instanceof ServletException) {

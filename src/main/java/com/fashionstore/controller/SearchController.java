@@ -2,8 +2,8 @@ package com.fashionstore.controller;
 
 import com.fashionstore.model.Product;
 import com.fashionstore.service.SearchService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fashionstore.util.JsonUtil;
+import com.fashionstore.util.ValidationUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -20,12 +20,10 @@ import java.util.List;
 public class SearchController extends HttpServlet {
     
     private SearchService searchService;
-    private Gson gson;
-    
+
     @Override
     public void init() throws ServletException {
         searchService = new SearchService();
-        gson = new GsonBuilder().create();
     }
     
     @Override
@@ -51,109 +49,83 @@ public class SearchController extends HttpServlet {
      * Handle autocomplete search
      */
     private void handleAutocomplete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String query = req.getParameter("q");
-        int limit = parseIntDefault(req.getParameter("limit"), 10);
+        String query = ValidationUtil.sanitizeSearchInput(req.getParameter("q"));
+        int limit = ValidationUtil.clampSearchLimit(req.getParameter("limit"), 10);
         
         List<Product> products = searchService.autocomplete(query, limit);
         
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        resp.getWriter().write(gson.toJson(products));
+        resp.getWriter().write(JsonUtil.toJson(products));
     }
     
     /**
      * Handle keyword suggestions
      */
     private void handleSuggestions(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String query = req.getParameter("q");
-        int limit = parseIntDefault(req.getParameter("limit"), 10);
+        String query = ValidationUtil.sanitizeSearchInput(req.getParameter("q"));
+        int limit = ValidationUtil.clampSearchLimit(req.getParameter("limit"), 10);
         
         List<String> suggestions = searchService.getKeywordSuggestions(query, limit);
         
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        resp.getWriter().write(gson.toJson(suggestions));
+        resp.getWriter().write(JsonUtil.toJson(suggestions));
     }
     
     /**
      * Handle category suggestions
      */
     private void handleCategorySuggestions(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String query = req.getParameter("q");
+        String query = ValidationUtil.sanitizeSearchInput(req.getParameter("q"));
         
         List<String> categories = searchService.getCategorySuggestions(query);
         
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        resp.getWriter().write(gson.toJson(categories));
+        resp.getWriter().write(JsonUtil.toJson(categories));
     }
     
     /**
      * Handle fuzzy search (typo tolerance)
      */
     private void handleFuzzySearch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String query = req.getParameter("q");
-        int maxDistance = parseIntDefault(req.getParameter("distance"), 2);
-        int limit = parseIntDefault(req.getParameter("limit"), 10);
+        String query = ValidationUtil.sanitizeSearchInput(req.getParameter("q"));
+        int maxDistance = ValidationUtil.clampFuzzDistance(req.getParameter("distance"), 2);
+        int limit = ValidationUtil.clampSearchLimit(req.getParameter("limit"), 10);
         
         List<Product> products = searchService.fuzzySearch(query, maxDistance, limit);
         
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        resp.getWriter().write(gson.toJson(products));
+        resp.getWriter().write(JsonUtil.toJson(products));
     }
     
     /**
      * Handle advanced search with filters
      */
     private void handleAdvancedSearch(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String query = req.getParameter("q");
-        String category = req.getParameter("category");
-        String color = req.getParameter("color");
-        String material = req.getParameter("material");
-        String season = req.getParameter("season");
-        String occasion = req.getParameter("occasion");
-        double minPrice = parseDoubleDefault(req.getParameter("minPrice"), 0);
-        double maxPrice = parseDoubleDefault(req.getParameter("maxPrice"), 999999);
-        String sortBy = stringDefault(req.getParameter("sortBy"), "newest");
-        int limit = parseIntDefault(req.getParameter("limit"), 20);
+        String query = ValidationUtil.sanitizeSearchInput(req.getParameter("q"));
+        String category = ValidationUtil.truncatePlaintext(req.getParameter("category"), 80);
+        String color = ValidationUtil.truncatePlaintext(req.getParameter("color"), 40);
+        String material = ValidationUtil.truncatePlaintext(req.getParameter("material"), 60);
+        String season = ValidationUtil.truncatePlaintext(req.getParameter("season"), 40);
+        String occasion = ValidationUtil.truncatePlaintext(req.getParameter("occasion"), 60);
+        double minPrice = ValidationUtil.clampPrice(req.getParameter("minPrice"), 0);
+        double maxPrice = ValidationUtil.clampPrice(req.getParameter("maxPrice"), ValidationUtil.MAX_FILTER_PRICE);
+        if (minPrice > maxPrice) {
+            double tmp = minPrice;
+            minPrice = maxPrice;
+            maxPrice = tmp;
+        }
+        String sortBy = ValidationUtil.sanitizeAdvancedSearchSort(req.getParameter("sortBy"));
+        int limit = ValidationUtil.clampSearchLimit(req.getParameter("limit"), 20);
         
         List<Product> products = searchService.advancedSearch(query, category, color, material, season, occasion, 
                                                          minPrice, maxPrice, sortBy, limit);
         
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-        resp.getWriter().write(gson.toJson(products));
-    }
-    
-    /**
-     * Helper method to parse int with default value
-     */
-    private int parseIntDefault(String value, int defaultValue) {
-        if (value == null || value.isEmpty()) return defaultValue;
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
-    
-    /**
-     * Helper method to parse double with default value
-     */
-    private double parseDoubleDefault(String value, double defaultValue) {
-        if (value == null || value.isEmpty()) return defaultValue;
-        try {
-            return Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
-    
-    /**
-     * Helper method to get string with default value
-     */
-    private String stringDefault(String value, String defaultValue) {
-        return value == null || value.isEmpty() ? defaultValue : value;
+        resp.getWriter().write(JsonUtil.toJson(products));
     }
 }
