@@ -101,9 +101,7 @@ public class CartServiceImpl implements CartService {
                     logger.warn("Combined quantity exceeds maximum: {}", newQuantity);
                     return false;
                 }
-                // return cartDAO.updateCartItemQuantity(existingItem.getCartItemId(), newQuantity);
-                // Method doesn't exist, need to implement or remove
-                return false;
+                return cartDAO.updateQuantity(existingItem.getCartItemId(), userId, newQuantity);
             } else {
                 CartItem newItem = new CartItem();
                 newItem.setUserId(userId);
