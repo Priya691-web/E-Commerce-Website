@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Plus, Pencil, Trash2, Save, X, ImageIcon } from 'lucide-react';
 import { CategoriesApi } from '../../api/client.js';
 import { useToast } from '../../context/ToastContext.jsx';
@@ -10,19 +10,30 @@ export default function Categories() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ name: '', description: '' });
   const [saving, setSaving] = useState(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchCats();
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const fetchCats = async () => {
     try {
       const data = await CategoriesApi.list();
-      setCategories(Array.isArray(data) ? data : []);
+      if (mountedRef.current) {
+        setCategories(Array.isArray(data) ? data : []);
+      }
     } catch {
-      addToast('Failed to load categories', 'error');
+      if (mountedRef.current) {
+        addToast('Failed to load categories', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

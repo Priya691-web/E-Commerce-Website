@@ -31,7 +31,15 @@
             <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
 
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+            <div class="password-field">
+                <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+                <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" onclick="togglePassword(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
 
             <button type="submit" class="btn btn-primary">Login</button>
         </form>
@@ -39,10 +47,6 @@
         <p class="auth-links">
             New to FashionStore?
             <a href="<%= request.getContextPath() %>/register">Create account</a>
-        </p>
-        <p class="auth-links" style="margin-top: 0.5rem;">
-            Need an admin account?
-            <a href="<%= request.getContextPath() %>/admin/register">Register as admin</a>
         </p>
     </section>
 </main>

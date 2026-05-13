@@ -46,37 +46,41 @@ public class ReviewDAOImpl implements ReviewDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
             
             ps.setInt(1, productId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Review r = new Review();
-                r.setReviewId(rs.getInt("review_id"));
-                r.setUserId(rs.getInt("user_id"));
-                r.setProductId(rs.getInt("product_id"));
-                r.setRating(rs.getInt("rating"));
-                r.setComment(rs.getString("comment"));
-                r.setCreatedAt(rs.getTimestamp("created_at"));
-                r.setUserName(rs.getString("user_name"));
-                list.add(r);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Review r = new Review();
+                    r.setReviewId(rs.getInt("review_id"));
+                    r.setUserId(rs.getInt("user_id"));
+                    r.setProductId(rs.getInt("product_id"));
+                    r.setRating(rs.getInt("rating"));
+                    r.setComment(rs.getString("comment"));
+                    r.setCreatedAt(rs.getTimestamp("created_at"));
+                    r.setUserName(rs.getString("user_name"));
+                    list.add(r);
+                }
             }
         } catch (Exception e) {
-            logger.error("ReviewDAOImpl.getReviewsByProductId Error: {}", e.getMessage());
+            logger.error("ReviewDAOImpl.getReviewsByProductId Error: {}", e.getMessage(), e);
         }
         return list;
     }
 
     @Override
     public double getAverageRating(int productId) {
-        String sql = "SELECT AVG(rating) as avg_rating FROM reviews WHERE product_id = ?";
+        // COALESCE so "no reviews yet" returns 0.0 explicitly instead of relying on
+        // JDBC's silent NULL→0.0 coercion (which makes 0-star averages ambiguous).
+        String sql = "SELECT COALESCE(AVG(rating), 0) AS avg_rating FROM reviews WHERE product_id = ?";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            
+
             ps.setInt(1, productId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getDouble("avg_rating");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("avg_rating");
+                }
             }
         } catch (Exception e) {
-            logger.error("ReviewDAOImpl.getAverageRating Error: {}", e.getMessage());
+            logger.error("ReviewDAOImpl.getAverageRating Error: {}", e.getMessage(), e);
         }
         return 0.0;
     }
@@ -88,12 +92,13 @@ public class ReviewDAOImpl implements ReviewDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
             
             ps.setInt(1, productId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("count");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("count");
+                }
             }
         } catch (Exception e) {
-            logger.error("ReviewDAOImpl.getReviewCount Error: {}", e.getMessage());
+            logger.error("ReviewDAOImpl.getReviewCount Error: {}", e.getMessage(), e);
         }
         return 0;
     }

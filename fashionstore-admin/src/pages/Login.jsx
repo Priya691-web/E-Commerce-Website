@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function Login() {
@@ -11,10 +11,11 @@ export default function Login() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // If already authenticated, redirect to dashboard
+  // If already authenticated, redirect to dashboard.
+  // Using <Navigate> avoids the "Cannot update a component while rendering"
+  // warning that navigate() would trigger during render.
   if (user) {
-    navigate('/dashboard', { replace: true });
-    return null;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -96,9 +97,9 @@ export default function Login() {
 
         <p className="text-center text-sm text-ink-600 dark:text-ink-400 mt-6">
           Need an admin account?{' '}
-          <a href="/register" className="text-primary hover:underline">
+          <Link to="/register" className="text-primary hover:underline">
             Register as admin
-          </a>
+          </Link>
         </p>
       </div>
     </div>

@@ -45,12 +45,13 @@ public class ProductSizeDAOImpl implements ProductSizeDAO {
             int rows = ps.executeUpdate();
 
             if (rows > 0) {
-                ResultSet rs = ps.getGeneratedKeys();
-                if (rs.next()) return rs.getInt(1);
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) return rs.getInt(1);
+                }
             }
 
         } catch (Exception e) {
-            logger.error("ProductSizeDAOImpl.addProductSize Error: {}", e.getMessage());
+            logger.error("ProductSizeDAOImpl.addProductSize Error: {}", e.getMessage(), e);
         }
 
         return 0;
@@ -104,11 +105,12 @@ public class ProductSizeDAOImpl implements ProductSizeDAO {
 
             ps.setInt(1, productSizeId);
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapSize(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapSize(rs);
+            }
 
         } catch (Exception e) {
-            logger.error("ProductSizeDAOImpl.getProductSizeById Error: {}", e.getMessage());
+            logger.error("ProductSizeDAOImpl.getProductSizeById Error: {}", e.getMessage(), e);
         }
 
         return null;
@@ -123,14 +125,14 @@ public class ProductSizeDAOImpl implements ProductSizeDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, productId);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                list.add(mapSize(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapSize(rs));
+                }
             }
 
         } catch (Exception e) {
-            logger.error("ProductSizeDAOImpl.getSizesByProductId Error: {}", e.getMessage());
+            logger.error("ProductSizeDAOImpl.getSizesByProductId Error: {}", e.getMessage(), e);
         }
 
         return list;
@@ -145,14 +147,14 @@ public class ProductSizeDAOImpl implements ProductSizeDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, productId);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                list.add(mapSize(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapSize(rs));
+                }
             }
 
         } catch (Exception e) {
-            logger.error("ProductSizeDAOImpl.getAvailableSizesByProductId Error: {}", e.getMessage());
+            logger.error("ProductSizeDAOImpl.getAvailableSizesByProductId Error: {}", e.getMessage(), e);
         }
 
         return list;
@@ -240,6 +242,7 @@ public class ProductSizeDAOImpl implements ProductSizeDAO {
         String insertSql = "INSERT INTO product_sizes (product_id, size_label, stock_quantity, is_available) VALUES (?, ?, ?, ?)";
 
         try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false);
             try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
                 checkPs.setInt(1, size.getProductId());
                 checkPs.setString(2, size.getSizeLabel());
@@ -251,6 +254,7 @@ public class ProductSizeDAOImpl implements ProductSizeDAO {
                             updatePs.setBoolean(2, size.getStockQuantity() > 0);
                             updatePs.setInt(3, rs.getInt("product_size_id"));
                             updatePs.executeUpdate();
+                            con.commit();
                         }
                     } else {
                         try (PreparedStatement insertPs = con.prepareStatement(insertSql)) {
@@ -259,12 +263,16 @@ public class ProductSizeDAOImpl implements ProductSizeDAO {
                             insertPs.setInt(3, size.getStockQuantity());
                             insertPs.setBoolean(4, size.getStockQuantity() > 0);
                             insertPs.executeUpdate();
+                            con.commit();
                         }
                     }
                 }
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
             }
         } catch (Exception e) {
-            logger.error("ProductSizeDAOImpl.addOrUpdateSize Error: {}", e.getMessage());
+            logger.error("ProductSizeDAOImpl.addOrUpdateSize Error: {}", e.getMessage(), e);
         }
     }
 }

@@ -1,3 +1,6 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
 <%-- 
     head.jsp: Shared meta tags and font loading.
     USAGE: Call request.setAttribute("_pageTitle","...") and request.setAttribute("_pageCSS","css-name")
@@ -6,13 +9,26 @@
 <%
     String _pageTitle = (String) request.getAttribute("_pageTitle");
     if (_pageTitle == null || _pageTitle.trim().isEmpty()) _pageTitle = "FashionStore";
+    String _pageDescription = (String) request.getAttribute("_pageDescription");
+    if (_pageDescription == null || _pageDescription.trim().isEmpty()) _pageDescription = "FashionStore - premium fashion marketplace with curated styles for every season.";
+    String _canonical = (String) request.getAttribute("_canonical");
     String _pageCSS   = (String) request.getAttribute("_pageCSS");
 %>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="FashionStore - premium fashion marketplace with curated styles for every season.">
+<meta name="description" content="<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(_pageDescription) %>">
+<% if (_canonical != null && !_canonical.trim().isEmpty()) { %>
+<link rel="canonical" href="<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(_canonical) %>">
+<% } %>
 <title><%= _pageTitle %> | FashionStore</title>
+
+<%-- Open Graph / Social Sharing --%>
+<meta property="og:title" content="<%= _pageTitle %> | FashionStore">
+<meta property="og:description" content="<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(_pageDescription) %>">
+<meta property="og:type" content="website">
+<meta property="og:url" content="<%= request.getRequestURL() %>">
+<meta property="og:image" content="<%= request.getContextPath() %>/assets/images/logo-mark.svg">
 
 <%-- Favicon & Brand Icons --%>
 <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/logo-mark.svg">

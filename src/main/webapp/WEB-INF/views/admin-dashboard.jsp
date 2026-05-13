@@ -74,7 +74,7 @@
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                     </svg>
                 </div>
-                <div class="stat-value">₹<%= StringEscapeUtils.escapeHtml4((String) request.getAttribute("totalSales")) %></div>
+                <div class="stat-value">₹<%= StringEscapeUtils.escapeHtml4((String) (request.getAttribute("totalSales") != null ? request.getAttribute("totalSales") : "0")) %></div>
                 <div class="stat-label">Total Sales</div>
                 <div class="stat-change positive">↑ 12% from last month</div>
             </div>
@@ -88,7 +88,7 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
                 </div>
-                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("totalUsers"))) %></div>
+                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("totalUsers") != null ? request.getAttribute("totalUsers") : "0")) %></div>
                 <div class="stat-label">Total Users</div>
                 <div class="stat-change positive">↑ 8% from last month</div>
             </div>
@@ -101,7 +101,7 @@
                         <path d="M16 10a4 4 0 0 1-8 0"/>
                     </svg>
                 </div>
-                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("totalOrders"))) %></div>
+                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("totalOrders") != null ? request.getAttribute("totalOrders") : "0")) %></div>
                 <div class="stat-label">Total Orders</div>
                 <div class="stat-change positive">↑ 15% from last month</div>
             </div>
@@ -114,7 +114,7 @@
                         <line x1="12" y1="17" x2="12.01" y2="17"/>
                     </svg>
                 </div>
-                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("lowStockCount"))) %></div>
+                <div class="stat-value"><%= StringEscapeUtils.escapeHtml4(String.valueOf(request.getAttribute("lowStockCount") != null ? request.getAttribute("lowStockCount") : "0")) %></div>
                 <div class="stat-label">Low Stock Alerts</div>
                 <div class="stat-change negative">⚠ Needs attention</div>
             </div>

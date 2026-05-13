@@ -38,17 +38,15 @@ public class AuthFilter implements Filter {
             "/search",
             "/success",
             "/payment",
-            "/index.jsp",
-            "/admin/register"
+            "/index.jsp"
     );
 
     private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of(
             "/assets/",
-            "/api/admin/login",
-            "/api/admin/register"
+            "/api/admin/login"
     );
 
-    /** Admin JSON API: handles its own auth + role check via AdminApiController. */
+    /** Admin JSON API endpoints. */
     private static final String ADMIN_API_PREFIX = "/api/admin/";
 
     @Override
@@ -77,9 +75,16 @@ public class AuthFilter implements Filter {
 
         HttpSession session = req.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
-        boolean isLoggedIn = (user != null);
+        Integer legacyUserId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+        String legacyRole = (session != null) ? (String) session.getAttribute("role") : null;
+        boolean isLoggedIn = (user != null) || (legacyUserId != null);
+        boolean isAdmin = (user != null && user.isAdmin()) || "admin".equalsIgnoreCase(legacyRole);
 
         if (!isLoggedIn) {
+            if (relativePath.startsWith(ADMIN_API_PREFIX)) {
+                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
             boolean isAjax = "XMLHttpRequest".equals(req.getHeader("X-Requested-With"));
             if (isAjax) {
                 resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -94,8 +99,13 @@ public class AuthFilter implements Filter {
         }
 
         boolean isAdminPath = "/admin".equals(relativePath) || relativePath.startsWith("/admin/");
-        if (isAdminPath && !user.isAdmin()) {
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Admin only.");
+        if (isAdminPath && !isAdmin) {
+            resp.sendRedirect(contextPath + "/home");
+            return;
+        }
+
+        if (relativePath.startsWith(ADMIN_API_PREFIX) && !isAdmin) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
@@ -107,9 +117,6 @@ public class AuthFilter implements Filter {
             if (relativePath.startsWith(prefix)) {
                 return true;
             }
-        }
-        if (relativePath.startsWith(ADMIN_API_PREFIX)) {
-            return true; // AdminApiController enforces its own auth + role check
         }
         return PUBLIC_EXACT_PATHS.contains(relativePath)
                 || relativePath.startsWith("/search/");
@@ -148,7 +155,9 @@ public class AuthFilter implements Filter {
     }
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {}
+    public void init(FilterConfig filterConfig) throws ServletException {
+        System.out.println("AuthFilter initialized");
+    }
 
     @Override
     public void destroy() {}

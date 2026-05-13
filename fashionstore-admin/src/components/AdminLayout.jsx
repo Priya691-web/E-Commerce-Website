@@ -7,7 +7,7 @@ export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-ink-50 dark:bg-ink-900">
+    <div className="admin-shell min-h-screen flex bg-ink-50 dark:bg-ink-900">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -19,9 +19,9 @@ export default function AdminLayout() {
 
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-      <div className="flex-1 min-w-0 flex flex-col lg:ml-60">
+      <div className="flex-1 min-w-0 flex flex-col lg:ml-64">
         <Topbar onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-[1400px] w-full">
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1440px] w-full">
           <Outlet />
         </main>
       </div>

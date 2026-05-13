@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext.jsx';
 import {
   LayoutDashboard,
   Package,
@@ -26,16 +27,24 @@ const NAV = [
 ];
 
 export default function Sidebar({ mobileOpen, onClose }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <aside
       aria-label="Primary navigation"
       className={[
-        'fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-ink-800',
-        'border-r border-ink-200 dark:border-ink-700',
-        'flex flex-col px-4 py-5 transition-transform duration-300 ease-out',
+        'fixed inset-y-0 left-0 z-40 w-64 bg-white/98 dark:bg-ink-800/98 backdrop-blur-xl',
+        'border-r border-ink-100 dark:border-ink-700',
+        'flex flex-col px-4 py-5 transition-all duration-300 ease-out',
         mobileOpen ? 'translate-x-0' : '-translate-x-full',
         'lg:translate-x-0',
-        'shadow-xl lg:shadow-none',
+        'shadow-2xl lg:shadow-lg',
       ].join(' ')}
     >
       <div className="flex items-center gap-3 px-2 pb-6 mb-4 border-b border-ink-200 dark:border-ink-700">
@@ -69,11 +78,11 @@ export default function Sidebar({ mobileOpen, onClose }) {
             end={to === '/dashboard'}
             className={({ isActive }) =>
               [
-                'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-                'hover:shadow-sm',
+                'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300',
+                'hover:shadow-md hover:scale-[1.02]',
                 isActive
-                  ? 'bg-ink-900 text-white dark:bg-white dark:text-ink-900 shadow-md'
-                  : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-700 dark:hover:text-white',
+                  ? 'bg-gradient-to-r from-ink-900 to-ink-800 text-white dark:from-white dark:to-ink-50 dark:text-ink-900 shadow-lg border border-ink-700 dark:border-white'
+                  : 'text-ink-600 hover:bg-gradient-to-r hover:from-ink-50 hover:to-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:from-ink-700 dark:hover:to-ink-600 dark:hover:text-white',
               ].join(' ')
             }
           >
@@ -92,13 +101,13 @@ export default function Sidebar({ mobileOpen, onClose }) {
       </nav>
 
       <div className="mt-auto pt-4 border-t border-ink-200 dark:border-ink-700">
-        <NavLink
-          to="/logout"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-ink-600 hover:bg-red-50 hover:text-red-600 dark:text-ink-300 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-all duration-200"
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-ink-600 hover:bg-red-50 hover:text-red-600 dark:text-ink-300 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-all duration-200 w-full"
         >
           <LogOut size={18} strokeWidth={2} />
           <span>Logout</span>
-        </NavLink>
+        </button>
         <div className="mt-4 px-3 py-2 text-[11px] uppercase tracking-wider text-ink-400 dark:text-ink-500 font-medium">
           <div className="flex items-center justify-between">
             <span>Version</span>

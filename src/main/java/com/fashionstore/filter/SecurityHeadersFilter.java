@@ -7,14 +7,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SecurityHeadersFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityHeadersFilter.class);
+    private Set<String> allowedFrameAncestors;
 
     @Override
     public void init(FilterConfig filterConfig) {
-        logger.info("SecurityHeadersFilter initialized");
+        // Load allowed frame ancestors from environment variable
+        String allowedFrameAncestorsEnv = System.getenv("CSP_ALLOWED_FRAME_ANCESTORS");
+        
+        if (allowedFrameAncestorsEnv != null && !allowedFrameAncestorsEnv.isBlank()) {
+            allowedFrameAncestors = new HashSet<>(Arrays.asList(allowedFrameAncestorsEnv.split(",")));
+            logger.info("SecurityHeadersFilter initialized with allowed frame ancestors from env: {}", allowedFrameAncestors);
+        } else {
+            // Fallback to localhost for local development only
+            allowedFrameAncestors = new HashSet<>(Arrays.asList(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+            ));
+            logger.info("SecurityHeadersFilter initialized with default localhost frame ancestors for development");
+        }
     }
 
     @Override
@@ -28,16 +47,20 @@ public class SecurityHeadersFilter implements Filter {
         // NOTE: style-src must include https://fonts.googleapis.com because Google
         // Fonts serves the @font-face stylesheet from that domain. style-src-elem
         // falls back to style-src when not set explicitly.
-        // Allow localhost:5173 for development iframe embedding
         String origin = httpRequest.getHeader("Origin");
         String cspFrameAncestors = "frame-ancestors 'none'";
-        if (origin != null && (origin.contains("localhost:5173") || origin.contains("127.0.0.1:5173"))) {
-            cspFrameAncestors = "frame-ancestors 'self' http://localhost:5173 http://127.0.0.1:5173";
+        
+        if (origin != null && allowedFrameAncestors.contains(origin)) {
+            cspFrameAncestors = "frame-ancestors 'self' " + String.join(" ", allowedFrameAncestors);
         }
         
+        // Content Security Policy
+        // SECURITY FIX: Remove 'unsafe-inline' and 'unsafe-eval' to prevent XSS attacks
+        // Use nonce or hash-based CSP for inline scripts/styles instead
+        // For now, keeping minimal 'unsafe-inline' for style-src only as Google Fonts requires it
         httpResponse.setHeader("Content-Security-Policy",
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+            "script-src 'self' https://cdn.jsdelivr.net; " +
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
             "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
             "img-src 'self' data: https:; " +
@@ -51,8 +74,8 @@ public class SecurityHeadersFilter implements Filter {
         httpResponse.setHeader("X-Content-Type-Options", "nosniff");
 
         // X-Frame-Options
-        // Allow framing from localhost:5173 (Vite dev server) in development
-        if (origin != null && (origin.contains("localhost:5173") || origin.contains("127.0.0.1:5173"))) {
+        // Allow framing from configured origins
+        if (origin != null && allowedFrameAncestors.contains(origin)) {
             httpResponse.setHeader("X-Frame-Options", "SAMEORIGIN");
         } else {
             httpResponse.setHeader("X-Frame-Options", "DENY");

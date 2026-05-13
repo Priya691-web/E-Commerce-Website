@@ -6,9 +6,13 @@
   html, body, #root { height: 100%; }
   body {
     @apply font-sans bg-ink-50 text-ink-800 antialiased;
+    background-image: radial-gradient(circle at 5% 0%, rgba(16, 24, 40, 0.04), transparent 40%),
+      radial-gradient(circle at 95% 0%, rgba(99, 102, 241, 0.08), transparent 32%);
   }
   .dark body {
     @apply bg-ink-900 text-ink-100;
+    background-image: radial-gradient(circle at 5% 0%, rgba(255, 255, 255, 0.04), transparent 38%),
+      radial-gradient(circle at 95% 0%, rgba(99, 102, 241, 0.15), transparent 30%);
   }
   *:focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-white dark:ring-offset-ink-900;
@@ -42,7 +46,7 @@
 
   /* Cards */
   .card {
-    @apply bg-white border border-ink-200 rounded-xl shadow-card overflow-hidden
+    @apply bg-white/95 backdrop-blur-sm border border-ink-200 rounded-2xl shadow-card overflow-hidden
            dark:bg-ink-800 dark:border-ink-700;
   }
   .card-head {
@@ -52,6 +56,14 @@
     @apply text-sm font-semibold tracking-tight text-ink-900 dark:text-ink-100;
   }
   .card-body { @apply p-5; }
+
+  .admin-shell {
+    @apply min-h-screen bg-transparent;
+  }
+
+  .section-title {
+    @apply text-2xl font-bold tracking-tight text-ink-900 dark:text-white;
+  }
 
   /* Pills */
   .pill {

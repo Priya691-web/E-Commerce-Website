@@ -5,13 +5,13 @@
     z-index: var(--z-sticky);
     background: var(--nav-surface);
     border-bottom: 1px solid var(--color-border);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     transition: transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .navbar.scrolled {
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
 }
 
 .navbar.hidden {
@@ -92,7 +92,7 @@
     padding: 0 42px 0 var(--space-3);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
-    background: var(--color-surface);
+    background: var(--gradient-card-glass);
     font-size: var(--text-sm);
     color: var(--color-text-primary);
 }
@@ -206,7 +206,8 @@
     border-radius: var(--radius-pill);
     color: var(--color-text-primary);
     cursor: pointer;
-    transition: background var(--transition-fast);
+    transition: background var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
+    border: 1px solid transparent;
 }
 
 .nav-icon-btn svg {
@@ -216,6 +217,8 @@
 
 .nav-icon-btn:hover {
     background: var(--color-surface-alt);
+    transform: translateY(-1px);
+    border-color: var(--color-border);
 }
 
 /* Cart Badge */
@@ -277,7 +280,7 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     padding: var(--space-3);
     opacity: 0;
     visibility: hidden;
@@ -305,6 +308,77 @@
 .account-dropdown a:hover {
     background: var(--color-bg-tertiary);
     color: var(--color-text-primary);
+}
+
+.account-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.account-dropdown a svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.account-dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.account-dropdown-avatar {
+    width: 36px;
+    height: 36px;
+    background: var(--color-primary);
+    color: var(--color-bg-inverted);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.account-dropdown-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.account-dropdown-name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.account-dropdown-email {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.account-dropdown-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-2) var(--space-3);
+}
+
+.account-dropdown-logout {
+    color: var(--color-danger) !important;
+}
+
+.account-dropdown-logout:hover {
+    background: var(--color-danger-bg, rgba(163,44,44,0.08)) !important;
 }
 
 /* ============================================
@@ -503,6 +577,8 @@
         box-shadow: var(--shadow-md);
         z-index: var(--z-overlay);
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
     
     .nav-actions.open {
@@ -1056,7 +1132,9 @@
 }
 
 [data-theme="dark"] .navbar.scrolled {
-    background: var(--color-surface);
+    background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-bg) 100%);
+    position: sticky;
+    bottom: 0;
 }
 
 [data-theme="dark"] .nav-search input {

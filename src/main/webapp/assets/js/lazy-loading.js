@@ -422,27 +422,21 @@ class FashionStorePerformance {
     monitorContentLoadTimes() {
         document.addEventListener('contentloaded', (event) => {
             const { element, url } = event.detail;
-            const loadTime = performance.now();
-            this.sendMetric('content_load_time', loadTime, { url });
-        });
-    }
 
-    sendMetric(name, value, metadata = {}) {
-        // Send metrics to analytics service (only if gtag is loaded).
-        if (window.gtag) {
-            window.gtag('event', name, {
-                value: Math.round(value),
-                ...metadata
-            });
-        }
+    // DNS prefetch for external domains we actually use.
+    const externalDomains = [
+        'https://fonts.googleapis.com',
+        'https://fonts.gstatic.com',
+        'https://images.unsplash.com'
+    ];
 
-        // Custom analytics endpoint is not implemented server-side yet.
-        // Posting to /api/analytics/metrics produced 404 spam on every page,
-        // so the call is intentionally disabled. To enable, implement a servlet
-        // mapped to /api/analytics/metrics and flip the flag below to true.
-        const ANALYTICS_ENDPOINT_ENABLED = false;
-        if (ANALYTICS_ENDPOINT_ENABLED) {
-            fetch('/api/analytics/metrics', {
+    externalDomains.forEach(domain => {
+        const link = document.createElement('link');
+        link.rel = 'dns-prefetch';
+        link.href = domain;
+        document.head.appendChild(link);
+    });
+}
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -495,11 +489,41 @@ class FashionStorePerformance {
             loadedImages: this.loadedImages.size
         };
     }
+    
+    cleanup() {
+        // Disconnect all observers to prevent memory leaks
+        if (this.imageObserver) {
+            this.imageObserver.disconnect();
+            this.imageObserver = null;
+        }
+        
+        if (this.contentObserver) {
+            this.contentObserver.disconnect();
+            this.contentObserver = null;
+        }
+        
+        // Clear loaded images set
+        this.loadedImages.clear();
+        
+        // Remove event listeners
+        if (this.scrollHandler) {
+            window.removeEventListener('scroll', this.scrollHandler);
+            window.removeEventListener('resize', this.scrollHandler);
+            this.scrollHandler = null;
+        }
+    }
 }
 
-// Initialize performance optimization
+// Initialize performance optimization with cleanup
 document.addEventListener('DOMContentLoaded', () => {
     window.fashionStorePerformance = new FashionStorePerformance();
+    
+    // Cleanup observers on page unload to prevent memory leaks
+    window.addEventListener('beforeunload', () => {
+        if (window.fashionStorePerformance) {
+            window.fashionStorePerformance.cleanup();
+        }
+    });
 });
 
 // Global functions for manual control

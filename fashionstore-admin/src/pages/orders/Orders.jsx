@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Eye, PackageCheck, PackageX, Truck, CheckCircle, RotateCcw } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
 import { OrdersApi } from '../../api/client.js';
 import { useToast } from '../../context/ToastContext.jsx';
+import StatusBadge from '../../components/StatusBadge.jsx';
 
 const STATUS_TABS = ['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -13,18 +14,49 @@ export default function Orders() {
   const [activeTab, setActiveTab] = useState('all');
   const [actionId, setActionId] = useState(null);
   const [detailOrder, setDetailOrder] = useState(null);
+  const mountedRef = useRef(true);
+  const modalRef = useRef(null);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (detailOrder) {
+      document.body.style.overflow = 'hidden';
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') setDetailOrder(null);
+      };
+      document.addEventListener('keydown', handleEscape);
+      // Focus the modal when it opens
+      if (modalRef.current) {
+        modalRef.current.focus();
+      }
+      return () => {
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [detailOrder]);
 
   useEffect(() => {
+    mountedRef.current = true;
     (async () => {
       try {
         const data = await OrdersApi.list(100);
-        setOrders(Array.isArray(data) ? data : []);
+        if (mountedRef.current) {
+          setOrders(Array.isArray(data) ? data : []);
+        }
       } catch {
-        addToast('Failed to load orders', 'error');
+        if (mountedRef.current) {
+          addToast('Failed to load orders', 'error');
+        }
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     })();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [addToast]);
 
   const filtered = useMemo(() => {
@@ -118,11 +150,11 @@ export default function Orders() {
 
       {/* Order Detail Modal */}
       {detailOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-ink-800 rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-auto p-6 border border-ink-200 dark:border-ink-700">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <div ref={modalRef} className="bg-white dark:bg-ink-800 rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-auto p-6 border border-ink-200 dark:border-ink-700">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-ink-900 dark:text-white">Order #{detailOrder.id}</h2>
-              <button onClick={() => setDetailOrder(null)} className="text-ink-400 hover:text-ink-600 dark:hover:text-ink-200">×</button>
+              <h2 id="modal-title" className="text-lg font-bold text-ink-900 dark:text-white">Order #{detailOrder.id}</h2>
+              <button onClick={() => setDetailOrder(null)} className="text-ink-400 hover:text-ink-600 dark:hover:text-ink-200" aria-label="Close modal">×</button>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-ink-500">Customer</span><span className="font-medium text-ink-900 dark:text-white">{detailOrder.customerName || detailOrder.customer?.name || '—'}</span></div>
@@ -152,18 +184,6 @@ export default function Orders() {
       )}
     </div>
   );
-}
-
-function StatusBadge({ status }) {
-  const map = {
-    pending: 'pill-pending',
-    processing: 'pill-info',
-    shipped: 'pill-shipped',
-    delivered: 'pill-delivered',
-    cancelled: 'pill-cancelled',
-    completed: 'pill-completed',
-  };
-  return <span className={`pill ${map[status] || 'pill'}`}>{status}</span>;
 }
 
 function ActionBtn({ icon: Icon, onClick, disabled, danger, title }) {

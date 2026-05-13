@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Plus, Pencil, Trash2, Save, X, Percent } from 'lucide-react';
 import { CouponsApi } from '../../api/client.js';
 import { useToast } from '../../context/ToastContext.jsx';
@@ -17,19 +17,30 @@ export default function Coupons() {
     expiresAt: '',
   });
   const [saving, setSaving] = useState(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchCoupons();
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const fetchCoupons = async () => {
     try {
       const data = await CouponsApi.list();
-      setCoupons(Array.isArray(data) ? data : []);
+      if (mountedRef.current) {
+        setCoupons(Array.isArray(data) ? data : []);
+      }
     } catch {
-      addToast('Failed to load coupons', 'error');
+      if (mountedRef.current) {
+        addToast('Failed to load coupons', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -102,11 +113,11 @@ export default function Coupons() {
             <option value="percentage">Percentage %</option>
             <option value="fixed">Fixed Amount</option>
           </select>
-          <input type="number" placeholder="Discount value" value={form.discountValue} onChange={(e) => setForm((f) => ({ ...f, discountValue: e.target.value }))} className="input" />
+          <input type="number" min="0" step="0.01" placeholder="Discount value" value={form.discountValue} onChange={(e) => setForm((f) => ({ ...f, discountValue: e.target.value }))} className="input" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input type="number" placeholder="Min order ($)" value={form.minOrder} onChange={(e) => setForm((f) => ({ ...f, minOrder: e.target.value }))} className="input" />
-          <input type="number" placeholder="Max uses" value={form.maxUses} onChange={(e) => setForm((f) => ({ ...f, maxUses: e.target.value }))} className="input" />
+          <input type="number" min="0" step="0.01" placeholder="Min order ($)" value={form.minOrder} onChange={(e) => setForm((f) => ({ ...f, minOrder: e.target.value }))} className="input" />
+          <input type="number" min="0" placeholder="Max uses" value={form.maxUses} onChange={(e) => setForm((f) => ({ ...f, maxUses: e.target.value }))} className="input" />
           <input type="date" value={form.expiresAt} onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))} className="input" />
         </div>
         <div className="flex items-center gap-2">

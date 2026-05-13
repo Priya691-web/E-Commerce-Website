@@ -52,8 +52,18 @@ public class ReviewController extends HttpServlet {
         }
 
         try {
-            int productId = Integer.parseInt(request.getParameter("productId"));
-            int rating = Integer.parseInt(request.getParameter("rating"));
+            int productId;
+            int rating;
+            try {
+                productId = Integer.parseInt(request.getParameter("productId"));
+                rating = Integer.parseInt(request.getParameter("rating"));
+            } catch (NumberFormatException e) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                map.put("success", false);
+                map.put("message", "Invalid productId or rating format");
+                response.getWriter().write(JsonUtil.toJson(map));
+                return;
+            }
             String comment = request.getParameter("comment");
             if (productId <= 0 || rating < 1 || rating > 5) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);

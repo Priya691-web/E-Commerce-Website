@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   DollarSign, ShoppingBag, Package, Users, Clock, AlertTriangle,
 } from 'lucide-react';
@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import StatCard from '../../components/StatCard.jsx';
 import DataTable from '../../components/DataTable.jsx';
+import StatusBadge from '../../components/StatusBadge.jsx';
 import { DashboardApi, OrdersApi, UsersApi, ProductsApi } from '../../api/client.js';
 import { useToast } from '../../context/ToastContext.jsx';
 
@@ -23,19 +24,22 @@ const SALES_MOCK = [
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
-    revenue: '$24,500',
-    orders: 142,
+    revenue: '$0',
+    orders: 0,
     products: 0,
     customers: 0,
     pending: 0,
     lowStock: 0,
   });
+  const [salesData, setSalesData] = useState(SALES_MOCK);
   const [recentOrders, setRecentOrders] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     (async () => {
       try {
         const [dash, prodRes, userRes, orderRes] = await Promise.allSettled([
@@ -49,21 +53,41 @@ export default function Dashboard() {
         const customers = userRes.status === 'fulfilled' ? userRes.value?.length || 0 : 0;
         const orders = orderRes.status === 'fulfilled' ? orderRes.value || [] : [];
 
-        setStats((s) => ({
-          ...s,
-          products,
-          customers,
-          pending: orders.filter((o) => (o.status || '').toLowerCase() === 'pending').length,
-          lowStock: 0,
-        }));
-        setRecentOrders(orders.slice(0, 5));
-        setRecentUsers(userRes.status === 'fulfilled' ? (userRes.value || []).slice(0, 5) : []);
+        // Use dashboard API data if available
+        const dashData = dash.status === 'fulfilled' ? dash.value : {};
+
+        if (mountedRef.current) {
+          setStats((s) => ({
+            ...s,
+            revenue: dashData.revenue ? `$${Number(dashData.revenue).toLocaleString()}` : s.revenue,
+            orders: dashData.orders || orders.length,
+            products,
+            customers,
+            pending: orders.filter((o) => (o.status || '').toLowerCase() === 'pending').length,
+            lowStock: dashData.lowStock || 0,
+          }));
+          
+          // Use real sales data if available
+          if (dashData.salesData && Array.isArray(dashData.salesData)) {
+            setSalesData(dashData.salesData);
+          }
+          
+          setRecentOrders(orders.slice(0, 5));
+          setRecentUsers(userRes.status === 'fulfilled' ? (userRes.value || []).slice(0, 5) : []);
+        }
       } catch {
-        addToast('Failed to load dashboard data', 'error');
+        if (mountedRef.current) {
+          addToast('Failed to load dashboard data', 'error');
+        }
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     })();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [addToast]);
 
   if (loading) {
@@ -80,6 +104,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="section-title">Executive Dashboard</h1>
+        <span className="pill">Live overview</span>
+      </div>
+
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={DollarSign} label="Total Revenue" value={stats.revenue} delta={12.5} accent="success" />
@@ -92,17 +121,17 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-ink-800 rounded-2xl border border-ink-200 dark:border-ink-700 p-6 hover:shadow-xl transition-shadow duration-300">
+        <div className="bg-white dark:bg-ink-800 rounded-2xl border border-ink-200 dark:border-ink-700 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-semibold text-ink-900 dark:text-white uppercase tracking-wider">Revenue Trend</h3>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />
               <span className="text-xs text-ink-500 dark:text-ink-400">This week</span>
             </div>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={SALES_MOCK} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={salesData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
@@ -152,17 +181,17 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-ink-800 rounded-2xl border border-ink-200 dark:border-ink-700 p-6 hover:shadow-xl transition-shadow duration-300">
+        <div className="bg-white dark:bg-ink-800 rounded-2xl border border-ink-200 dark:border-ink-700 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-semibold text-ink-900 dark:text-white uppercase tracking-wider">Orders Trend</h3>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-indigo-500" />
+              <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm" />
               <span className="text-xs text-ink-500 dark:text-ink-400">This week</span>
             </div>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={SALES_MOCK} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <BarChart data={salesData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="stroke-ink-200 dark:stroke-ink-700" opacity={0.5} />
                 <XAxis 
                   dataKey="name" 
@@ -244,16 +273,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
-
-function StatusBadge({ status }) {
-  const map = {
-    pending: 'pill-pending',
-    processing: 'pill-info',
-    shipped: 'pill-shipped',
-    delivered: 'pill-delivered',
-    cancelled: 'pill-cancelled',
-    completed: 'pill-completed',
-  };
-  return <span className={`pill ${map[status] || 'pill'}`}>{status}</span>;
 }

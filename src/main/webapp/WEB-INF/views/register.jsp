@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,7 +24,7 @@
         <% } %>
 
         <form action="<%= request.getContextPath() %>/register" method="post" class="auth-form">
-            <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+            <input type="hidden" name="csrf_token" value="${csrfToken != null ? csrfToken : ''}">
             <label for="fullName">Full Name</label>
             <input type="text" id="fullName" name="fullName" value="<%= request.getAttribute("fullName") != null ? request.getAttribute("fullName") : "" %>" autocomplete="name" required>
 
@@ -34,10 +35,26 @@
             <input type="tel" id="phone" name="phone" value="<%= request.getAttribute("phone") != null ? request.getAttribute("phone") : "" %>" autocomplete="tel" required>
 
             <label for="reg-password">Password</label>
-            <input type="password" id="reg-password" name="password" placeholder="Create password" autocomplete="new-password" required>
+            <div class="password-field">
+                <input type="password" id="reg-password" name="password" placeholder="Create password" autocomplete="new-password" required>
+                <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" onclick="togglePassword(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
 
             <label for="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" autocomplete="new-password" required>
+            <div class="password-field">
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" autocomplete="new-password" required>
+                <button type="button" class="password-toggle" aria-label="Show confirm password" aria-pressed="false" onclick="togglePassword(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
 
             <label for="gender">Gender</label>
             <select id="gender" name="gender" required>

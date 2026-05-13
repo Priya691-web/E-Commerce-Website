@@ -46,8 +46,34 @@ public class LoginController extends HttpServlet {
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
+        // Input sanitization and validation
         if (email == null || email.isBlank() || password == null || password.isBlank()) {
             request.setAttribute("error", "Email and password are required");
+            request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
+            return;
+        }
+        
+        // Sanitize email to prevent injection
+        email = email.trim().toLowerCase();
+        
+        // Validate email format
+        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+            request.setAttribute("error", "Invalid email format");
+            request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
+            return;
+        }
+        
+        // Validate password length
+        if (password.length() < 6 || password.length() > 128) {
+            request.setAttribute("error", "Invalid password length");
+            request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
+            return;
+        }
+        
+        // Check if account is locked out
+        if (RateLimiter.isAccountLockedOut(email)) {
+            request.setAttribute("error", "Account temporarily locked due to too many failed attempts. Please try again later.");
+            AuditLogger.log("LOGIN_BLOCKED", "Blocked login attempt for locked account: " + email, null, request);
             request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
             return;
         }
@@ -56,6 +82,12 @@ public class LoginController extends HttpServlet {
             User user = userService.loginUser(email, password);
 
             if (user != null) {
+                // Session fixation protection: invalidate existing session and create new one
+                HttpSession oldSession = request.getSession(false);
+                if (oldSession != null) {
+                    oldSession.invalidate();
+                }
+                
                 HttpSession session = request.getSession(true);
                 session.setAttribute("userId", user.getUserId());
                 session.setAttribute("user", user);
@@ -63,8 +95,9 @@ public class LoginController extends HttpServlet {
 
                 AuditLogger.log("LOGIN_SUCCESS", "User logged in: " + email, String.valueOf(user.getUserId()), request);
 
-                // Reset rate limit on successful login
+                // Reset rate limit and failed login attempts on successful login
                 RateLimiter.resetRateLimit(request, "/login");
+                RateLimiter.resetFailedLogins(email);
 
                 // Redirect based on role
                 if (user.isAdmin()) {
@@ -73,6 +106,8 @@ public class LoginController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/home");
                 }
             } else {
+                // Record failed login attempt for account lockout
+                RateLimiter.recordFailedLogin(email);
                 request.setAttribute("error", "Invalid email or password");
                 AuditLogger.log("LOGIN_FAILED", "Failed login attempt: " + email, null, request);
                 request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);

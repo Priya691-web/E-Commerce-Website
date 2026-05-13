@@ -1,3 +1,22 @@
+# Multi-stage build for FashionStore backend
+# Stage 1: Build stage with Maven
+FROM maven:3.9.6-eclipse-temurin-21 AS builder
+
+WORKDIR /build
+
+# Copy pom.xml first for better Docker layer caching
+COPY pom.xml .
+
+# Download dependencies
+RUN mvn dependency:go-offline -B
+
+# Copy source code
+COPY src ./src
+
+# Build WAR file
+RUN mvn clean package -DskipTests -B
+
+# Stage 2: Runtime stage with Tomcat
 FROM tomcat:10.1-jdk21
 
 # Set working directory
@@ -14,8 +33,8 @@ RUN rm -rf /usr/local/tomcat/webapps/ROOT \
            /usr/local/tomcat/webapps/host-manager \
            /usr/local/tomcat/webapps/manager
 
-# Copy WAR file to webapps
-COPY target/FashionStore-0.0.1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
+# Copy WAR file from builder stage
+COPY --from=builder /build/target/FashionStore-0.0.1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
 
 # Create non-root user for security
 RUN groupadd -r tomcat && useradd -r -g tomcat tomcat

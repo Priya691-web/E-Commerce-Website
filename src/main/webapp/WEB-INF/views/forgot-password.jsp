@@ -27,19 +27,19 @@
 
             <% if (request.getAttribute("success") != null) { %>
                 <div class="alert alert-success" role="alert" aria-live="polite">
-                    <%= request.getAttribute("success") %>
+                    <%= request.getAttribute("success") != null ? request.getAttribute("success") : "" %>
                 </div>
                 <% if (request.getAttribute("resetLink") != null) { %>
                     <div class="alert alert-info" role="alert" aria-live="polite">
                         <strong>Development Mode - Reset Link:</strong><br>
-                        <a href="<%= request.getAttribute("resetLink") %>" target="_blank" rel="noopener noreferrer"><%= request.getAttribute("resetLink") %></a>
+                        <a href="<%= request.getAttribute("resetLink") != null ? request.getAttribute("resetLink") : "#" %>" target="_blank" rel="noopener noreferrer"><%= request.getAttribute("resetLink") != null ? request.getAttribute("resetLink") : "" %></a>
                     </div>
                 <% } %>
             <% } %>
 
             <form class="auth-form" action="<%= request.getContextPath() %>/forgot-password" method="post" novalidate>
                 <% if (request.getAttribute("csrfToken") != null) { %>
-                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") %>">
+                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                 <% } %>
                 <div class="form-group">
                     <label for="email" class="form-label">Email Address</label>

@@ -13,6 +13,7 @@ public class RateLimiter {
     private static final Logger logger = LoggerFactory.getLogger(RateLimiter.class);
     
     private static final Map<String, RateLimitEntry> rateLimits = new ConcurrentHashMap<>();
+    private static final Map<String, FailedLoginEntry> failedLogins = new ConcurrentHashMap<>();
     private static final long CLEANUP_INTERVAL = 60000; // 1 minute
     private static volatile long lastCleanup = System.currentTimeMillis();
     
@@ -21,6 +22,10 @@ public class RateLimiter {
     private static final int REGISTRATION_ATTEMPTS_PER_MINUTE = 3;
     private static final int GENERAL_REQUESTS_PER_MINUTE = 100;
     private static final int PASSWORD_RESET_ATTEMPTS_PER_MINUTE = 3;
+    
+    // Account lockout settings
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final long LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
     
     private static class RateLimitEntry {
         final AtomicInteger count;
@@ -33,6 +38,35 @@ public class RateLimiter {
         
         boolean isExpired(long windowMs) {
             return System.currentTimeMillis() - windowStart > windowMs;
+        }
+    }
+    
+    private static class FailedLoginEntry {
+        final AtomicInteger failedAttempts;
+        final long firstFailureTime;
+        volatile long lockoutUntil;
+        
+        FailedLoginEntry() {
+            this.failedAttempts = new AtomicInteger(1);
+            this.firstFailureTime = System.currentTimeMillis();
+            this.lockoutUntil = 0;
+        }
+        
+        boolean isLockedOut() {
+            return System.currentTimeMillis() < lockoutUntil;
+        }
+        
+        void recordFailure() {
+            int attempts = failedAttempts.incrementAndGet();
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                lockoutUntil = System.currentTimeMillis() + LOCKOUT_DURATION;
+                logger.warn("Account locked out due to {} failed attempts", attempts);
+            }
+        }
+        
+        void resetOnSuccessfulLogin() {
+            failedAttempts.set(0);
+            lockoutUntil = 0;
         }
     }
     
@@ -82,9 +116,49 @@ public class RateLimiter {
         logger.debug("Rate limiter cleanup completed, active entries: {}", rateLimits.size());
     }
     
-    public static void resetRateLimit(HttpServletRequest request, String endpoint) {
+    public static boolean resetRateLimit(HttpServletRequest request, String endpoint) {
         String key = getClientKey(request, endpoint);
         rateLimits.remove(key);
-        logger.debug("Rate limit reset for key: {}", key);
+        return true;
+    }
+    
+    /**
+     * Check if an account is locked out due to failed login attempts
+     */
+    public static boolean isAccountLockedOut(String email) {
+        if (email == null) return false;
+        
+        FailedLoginEntry entry = failedLogins.get(email.toLowerCase());
+        return entry != null && entry.isLockedOut();
+    }
+    
+    /**
+     * Record a failed login attempt
+     */
+    public static void recordFailedLogin(String email) {
+        if (email == null) return;
+        
+        String key = email.toLowerCase();
+        FailedLoginEntry entry = failedLogins.get(key);
+        if (entry == null) {
+            entry = new FailedLoginEntry();
+            failedLogins.put(key, entry);
+        } else {
+            entry.recordFailure();
+        }
+        
+        logger.warn("Failed login attempt recorded for: {}, attempts: {}", email, entry.failedAttempts.get());
+    }
+    
+    /**
+     * Reset failed login attempts on successful login
+     */
+    public static void resetFailedLogins(String email) {
+        if (email == null) return;
+        
+        FailedLoginEntry entry = failedLogins.remove(email.toLowerCase());
+        if (entry != null) {
+            entry.resetOnSuccessfulLogin();
+        }
     }
 }

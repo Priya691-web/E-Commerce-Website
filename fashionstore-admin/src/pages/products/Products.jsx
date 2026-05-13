@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Pencil, Trash2, Filter } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
@@ -16,18 +16,29 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deletingId, setDeletingId] = useState(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     (async () => {
       try {
         const data = await ProductsApi.list();
-        setProducts(Array.isArray(data) ? data : []);
+        if (mountedRef.current) {
+          setProducts(Array.isArray(data) ? data : []);
+        }
       } catch {
-        addToast('Failed to load products', 'error');
+        if (mountedRef.current) {
+          addToast('Failed to load products', 'error');
+        }
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     })();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [addToast]);
 
   const filtered = useMemo(() => {

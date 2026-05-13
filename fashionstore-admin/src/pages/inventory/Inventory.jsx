@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { AlertTriangle, Package, Save } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
 import { InventoryApi, ProductsApi } from '../../api/client.js';
@@ -10,18 +10,29 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState({});
   const [savingId, setSavingId] = useState(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     (async () => {
       try {
         const data = await ProductsApi.list();
-        setProducts(Array.isArray(data) ? data : []);
+        if (mountedRef.current) {
+          setProducts(Array.isArray(data) ? data : []);
+        }
       } catch {
-        addToast('Failed to load inventory', 'error');
+        if (mountedRef.current) {
+          addToast('Failed to load inventory', 'error');
+        }
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     })();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [addToast]);
 
   const handleStockChange = (id, value) => {

@@ -56,22 +56,44 @@ document.addEventListener('DOMContentLoaded', function() {
      * Helper to send AJAX request to CartController
      */
     function updateCart(action, cartItemId, currentQty) {
+        // Prevent concurrent requests for same cart item
+        if (window.cartUpdateInProgress && window.cartUpdateInProgress.has(cartItemId)) {
+            console.warn('Cart update already in progress for item:', cartItemId);
+            return;
+        }
+
+        // Track ongoing requests
+        if (!window.cartUpdateInProgress) {
+            window.cartUpdateInProgress = new Set();
+        }
+        window.cartUpdateInProgress.add(cartItemId);
+
         const params = new URLSearchParams();
         params.append('action', action);
         params.append('cartItemId', cartItemId);
         params.append('currentQty', currentQty);
+        
+        // Add CSRF token to request body (fallback for missing header)
+        if (window.csrfToken) {
+            params.append('csrf_token', window.csrfToken);
+        }
 
         // Visual feedback: disable buttons or show loading
         setLoadingState(true);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         fetch(`${contextPath}/cart`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-Token': window.csrfToken || ''
             },
-            body: params.toString()
+            body: params.toString(),
+            signal: controller.signal
         })
         .then(response => {
             if (!response.ok) {
@@ -99,11 +121,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Cart update error:', error);
-            showToast('An error occurred. Please try again.', 'error');
+            if (error.name === 'AbortError') {
+                console.warn('Cart update request timed out for item:', cartItemId);
+                showToast('Request timed out. Please try again.', 'error');
+            } else {
+                console.error('Cart update error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            }
         })
         .finally(() => {
+            clearTimeout(timeoutId);
             setLoadingState(false);
+            // Remove from tracking set
+            if (window.cartUpdateInProgress) {
+                window.cartUpdateInProgress.delete(cartItemId);
+            }
         });
     }
 

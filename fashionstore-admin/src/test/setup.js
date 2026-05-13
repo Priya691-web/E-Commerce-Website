@@ -6,11 +6,23 @@ afterEach(() => {
   cleanup();
 });
 
-vi.mock('axios', () => ({
-  default: {
+vi.mock('axios', () => {
+  const axiosInstance = {
+    interceptors: {
+      response: {
+        use: vi.fn(),
+      },
+    },
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
-  },
-}));
+  };
+
+  return {
+    default: {
+      ...axiosInstance,
+      create: vi.fn(() => axiosInstance),
+    },
+  };
+});

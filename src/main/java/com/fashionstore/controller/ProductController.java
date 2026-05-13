@@ -86,9 +86,12 @@ public class ProductController extends HttpServlet {
                 // Remove if already exists and add to front
                 recentSearches.remove(search);
                 recentSearches.add(0, search);
-                // Keep only last 10 searches
+                // Keep only last 10 searches. Wrap in a fresh ArrayList because
+                // ArrayList#subList returns a non-Serializable view backed by the parent
+                // list; storing the view in the session breaks session replication and
+                // creates aliasing bugs on subsequent mutations.
                 if (recentSearches.size() > 10) {
-                    recentSearches = recentSearches.subList(0, 10);
+                    recentSearches = new ArrayList<>(recentSearches.subList(0, 10));
                 }
                 session.setAttribute("recentSearches", recentSearches);
             }

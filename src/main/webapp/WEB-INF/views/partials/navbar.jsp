@@ -1,16 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%
-    Object user = session.getAttribute("user");
-    boolean isAdmin = false;
-    if (user != null) {
-        try {
-            Object result = user.getClass().getMethod("isAdmin").invoke(user);
-            if (result instanceof Boolean) {
-                isAdmin = (Boolean) result;
-            }
-        } catch (Exception ignored) {
-            isAdmin = false;
+    Object userObj = session.getAttribute("user");
+    com.fashionstore.model.User user = (userObj instanceof com.fashionstore.model.User) ? (com.fashionstore.model.User) userObj : null;
+    String userInitials = "U";
+    if (user != null && user.getFullName() != null && !user.getFullName().isBlank()) {
+        String[] parts = user.getFullName().trim().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < Math.min(parts.length, 2); i++) {
+            sb.append(parts[i].substring(0, 1).toUpperCase());
         }
+        userInitials = sb.toString();
     }
 
     int initialCartCount = 0;
@@ -113,19 +112,53 @@
 
                 <div class="account-menu">
                     <button type="button" class="nav-action-btn nav-icon-btn account-trigger" aria-label="Account menu" aria-expanded="false" data-account-trigger>
-                        <span class="account-avatar"><%= user != null ? "A" : "U" %></span>
+                        <span class="account-avatar"><%= userInitials %></span>
                         <span class="nav-action-label">Account</span>
                     </button>
                     <div class="account-dropdown" data-account-dropdown>
                         <% if (user != null) { %>
-                            <a href="<%= request.getContextPath() %>/orders">Order history</a>
-                            <a href="<%= request.getContextPath() %>/wishlist">Saved wishlist</a>
-                            <% if (isAdmin) { %><a href="<%= request.getContextPath() %>/admin/dashboard">Admin dashboard</a><% } %>
-                            <a href="<%= request.getContextPath() %>/logout">Logout</a>
+                            <div class="account-dropdown-header">
+                                <span class="account-dropdown-avatar"><%= userInitials %></span>
+                                <div class="account-dropdown-info">
+                                    <span class="account-dropdown-name"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(user.getFullName()) %></span>
+                                    <span class="account-dropdown-email"><%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(user.getEmail()) %></span>
+                                </div>
+                            </div>
+                            <div class="account-dropdown-divider"></div>
+                            <a href="<%= request.getContextPath() %>/account/profile">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                My Profile
+                            </a>
+                            <a href="<%= request.getContextPath() %>/orders">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                Orders
+                            </a>
+                            <a href="<%= request.getContextPath() %>/wishlist">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                Wishlist
+                            </a>
+                            <a href="<%= request.getContextPath() %>/account/profile/settings">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 5.09 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 5.09 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 5.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 18.91 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                Settings
+                            </a>
+                            <div class="account-dropdown-divider"></div>
+                            <a href="<%= request.getContextPath() %>/logout" class="account-dropdown-logout">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Logout
+                            </a>
                         <% } else { %>
-                            <a href="<%= request.getContextPath() %>/login">Sign in</a>
-                            <a href="<%= request.getContextPath() %>/register">Create account</a>
-                            <a href="<%= request.getContextPath() %>/orders">Track orders</a>
+                            <a href="<%= request.getContextPath() %>/login">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                                Sign in
+                            </a>
+                            <a href="<%= request.getContextPath() %>/register">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                Create account
+                            </a>
+                            <a href="<%= request.getContextPath() %>/orders">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                Track orders
+                            </a>
                         <% } %>
                     </div>
                 </div>

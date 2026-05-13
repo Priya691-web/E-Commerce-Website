@@ -436,8 +436,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function initStripeElements() {
     if (stripe) return; // Already initialized
     
-    // Initialize Stripe with publishable key (should be passed from server)
-    const stripePublishableKey = 'pk_test_your_stripe_publishable_key'; // Replace with actual key from server
+    // Initialize Stripe with publishable key from server-side configuration
+    const stripePublishableKey = '${stripePublishableKey}';
+    if (!stripePublishableKey || stripePublishableKey === '${stripePublishableKey}') {
+        console.error('Stripe publishable key not configured');
+        return;
+    }
     stripe = Stripe(stripePublishableKey);
     
     const elements = stripe.elements({
@@ -531,7 +535,7 @@ async function initiateStripePayment() {
                 card: cardElement,
                 billing_details: {
                     name: formData.get('fullName'),
-                    email: '<%= session.getAttribute("email") %>',
+                    email: '<%= session.getAttribute("email") != null ? session.getAttribute("email") : "" %>',
                     phone: formData.get('phone'),
                     address: {
                         line1: formData.get('address'),

@@ -14,6 +14,11 @@ import java.io.IOException;
 public class CSRFFilter implements Filter {
 
     @Override
+    public void init(jakarta.servlet.FilterConfig filterConfig) throws ServletException {
+        System.out.println("CSRFFilter initialized");
+    }
+
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
@@ -37,4 +42,7 @@ public class CSRFFilter implements Filter {
 
         chain.doFilter(request, response);
     }
+
+    @Override
+    public void destroy() {}
 }

@@ -2,16 +2,14 @@ package com.fashionstore.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.fashionstore.dao.CartDAO;
-import com.fashionstore.dao.CouponDAO;
 import com.fashionstore.dao.SavedItemDAO;
-import com.fashionstore.daoimpl.CartDAOImpl;
-import com.fashionstore.daoimpl.CouponDAOImpl;
 import com.fashionstore.daoimpl.SavedItemDAOImpl;
 import com.fashionstore.model.CartItem;
-import com.fashionstore.model.Coupon;
 import com.fashionstore.model.SavedItem;
 import com.fashionstore.model.User;
+import com.fashionstore.security.CSRFProtection;
+import com.fashionstore.service.CartService;
+import com.fashionstore.serviceimpl.CartServiceImpl;
 import com.fashionstore.util.JsonUtil;
 import com.fashionstore.util.ValidationUtil;
 
@@ -31,14 +29,12 @@ public class CartController extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LoggerFactory.getLogger(CartController.class);
 
-    private CartDAO cartDAO;
-    private CouponDAO couponDAO;
+    private CartService cartService;
     private SavedItemDAO savedItemDAO;
 
     @Override
     public void init() {
-        cartDAO = new CartDAOImpl();
-        couponDAO = new CouponDAOImpl();
+        cartService = new CartServiceImpl();
         savedItemDAO = new SavedItemDAOImpl();
     }
 
@@ -59,18 +55,18 @@ public class CartController extends HttpServlet {
         }
 
         int userId = user.getUserId();
-        List<CartItem> cartItems = cartDAO.getCartItemsByUserId(userId);
+        List<CartItem> cartItems = cartService.getCartItems(userId);
         
         // Sync session
         session.setAttribute("cartItems", cartItems);
 
-        double total = 0;
-        for (CartItem item : cartItems) {
-            total += item.getPrice() * item.getQuantity();
-        }
+        double total = cartService.calculateCartTotal(userId);
 
         request.setAttribute("cartItems", cartItems);
         request.setAttribute("cartTotal", total);
+
+        // Ensure CSRF token is available in request attributes for JSP
+        CSRFProtection.addTokenToRequest(request);
 
         request.getRequestDispatcher("/WEB-INF/views/cart.jsp")
                .forward(request, response);
@@ -116,7 +112,7 @@ public class CartController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/cart"); return;
                 }
                 int newQty = Math.min(currentQty + 1, ValidationUtil.MAX_PRODUCT_QUANTITY_PER_LINE);
-                cartDAO.updateQuantity(cartItemId, userId, newQty);
+                cartService.updateCartItemQuantity(cartItemId, userId, newQty);
                 syncSessionCart(session, userId);
                 
                 if (isAjax) {
@@ -132,14 +128,14 @@ public class CartController extends HttpServlet {
                 }
                 int newQty = currentQty - 1;
                 if (newQty < 1) {
-                    cartDAO.removeCartItem(cartItemId, userId);
+                    cartService.removeCartItem(cartItemId, userId);
                     syncSessionCart(session, userId);
                     if (isAjax) {
                         sendAjaxResponse(response, cartItemId, 0, userId);
                         return;
                     }
                 } else {
-                    cartDAO.updateQuantity(cartItemId, userId, newQty);
+                    cartService.updateCartItemQuantity(cartItemId, userId, newQty);
                     syncSessionCart(session, userId);
                     if (isAjax) {
                         sendAjaxResponse(response, cartItemId, newQty, userId);
@@ -154,7 +150,7 @@ public class CartController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/cart"); return;
                 }
                 int newQty = ValidationUtil.clampInt(requestedQty, 1, ValidationUtil.MAX_PRODUCT_QUANTITY_PER_LINE);
-                cartDAO.updateQuantity(cartItemId, userId, newQty);
+                cartService.updateCartItemQuantity(cartItemId, userId, newQty);
                 syncSessionCart(session, userId);
                 if (isAjax) {
                     sendAjaxResponse(response, cartItemId, newQty, userId);
@@ -167,7 +163,7 @@ public class CartController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/cart"); return;
                 }
 
-                boolean deleted = cartDAO.removeCartItem(cartItemId, userId);
+                boolean deleted = cartService.removeCartItem(cartItemId, userId);
                 if (!deleted) {
                     // Either already removed, or belongs to another user. Treat as 404.
                     logger.info("Cart remove no-op: item #{} not found for user #{}", cartItemId, userId);
@@ -206,7 +202,7 @@ public class CartController extends HttpServlet {
                 item.setSizeLabel(size != null ? size : "M");
                 item.setQuantity(qty);
 
-                cartDAO.addToCart(item);
+                cartService.addToCart(userId, item.getProductId(), item.getSizeLabel(), item.getQuantity());
                 syncSessionCart(session, userId);
                 
                 if (isAjax) {
@@ -222,7 +218,7 @@ public class CartController extends HttpServlet {
             } else if ("applyCoupon".equals(action)) {
                 String couponCode = ValidationUtil.normalizeCouponCode(request.getParameter("couponCode"));
                 // Server-side recalculation: never trust client-supplied total.
-                List<CartItem> liveCart = cartDAO.getCartItemsByUserId(userId);
+                List<CartItem> liveCart = cartService.getCartItems(userId);
                 double cartTotal = 0;
                 for (CartItem ci : liveCart) {
                     cartTotal += ci.getPrice() * ci.getQuantity();
@@ -239,7 +235,7 @@ public class CartController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/cart"); return;
                 }
                 int cartItemId = cartItemBoxed;
-                List<CartItem> currentCartItems = cartDAO.getCartItemsByUserId(userId);
+                List<CartItem> currentCartItems = cartService.getCartItems(userId);
                 CartItem cartItem = currentCartItems.stream()
                     .filter(i -> i.getCartItemId() == cartItemId)
                     .findFirst().orElse(null);
@@ -247,7 +243,7 @@ public class CartController extends HttpServlet {
                 if (cartItem != null) {
                     SavedItem savedItem = new SavedItem(userId, cartItem.getProductId(), cartItem.getSizeLabel());
                     savedItemDAO.saveItem(savedItem);
-                    cartDAO.removeCartItem(cartItemId, userId);
+                    cartService.removeCartItem(cartItemId, userId);
                     syncSessionCart(session, userId);
                 }
                 
@@ -274,12 +270,12 @@ public class CartController extends HttpServlet {
     }
 
     private void syncSessionCart(HttpSession session, int userId) {
-        List<CartItem> cartItems = cartDAO.getCartItemsByUserId(userId);
+        List<CartItem> cartItems = cartService.getCartItems(userId);
         session.setAttribute("cartItems", cartItems);
     }
 
     private void sendAjaxResponse(HttpServletResponse response, int cartItemId, int newQty, int userId) throws IOException {
-        List<CartItem> cartItems = cartDAO.getCartItemsByUserId(userId);
+        List<CartItem> cartItems = cartService.getCartItems(userId);
         double cartTotal = 0;
         double itemTotal = 0;
         int cartCount = 0;
@@ -313,7 +309,7 @@ public class CartController extends HttpServlet {
     }
 
     private void sendFullCartResponse(HttpServletResponse response, int userId) throws IOException {
-        List<CartItem> cartItems = cartDAO.getCartItemsByUserId(userId);
+        List<CartItem> cartItems = cartService.getCartItems(userId);
         double cartTotal = 0;
         int cartCount = 0;
 
@@ -341,23 +337,16 @@ public class CartController extends HttpServlet {
         java.util.Map<String, Object> map = new java.util.HashMap<>();
         
         try {
-            Coupon coupon = couponDAO.getCouponByCode(couponCode);
-            if (coupon == null) {
-                map.put("success", false);
-                map.put("message", "Invalid coupon code");
-            } else if (!coupon.isValid()) {
-                map.put("success", false);
-                map.put("message", "Coupon is expired or inactive");
-            } else if (cartTotal < coupon.getMinimumOrderAmount()) {
-                map.put("success", false);
-                map.put("message", "Minimum order value of ₹" + coupon.getMinimumOrderAmount() + " required");
-            } else {
-                double discount = coupon.calculateDiscount(cartTotal);
-                double total = cartTotal - discount;
+            double totalWithCoupon = cartService.calculateCartTotalWithCoupon(userId, couponCode);
+            if (totalWithCoupon < cartTotal) {
+                double discount = cartTotal - totalWithCoupon;
                 map.put("success", true);
                 map.put("discount", discount);
-                map.put("total", total);
+                map.put("total", totalWithCoupon);
                 map.put("message", "Coupon applied successfully");
+            } else {
+                map.put("success", false);
+                map.put("message", "Invalid coupon code or not applicable");
             }
         } catch (Exception e) {
             logger.error("Error validating coupon", e);

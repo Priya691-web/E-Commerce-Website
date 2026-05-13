@@ -96,11 +96,11 @@ export default function Settings() {
             </div>
             <div>
               <label className="block text-sm font-medium text-ink-700 dark:text-ink-300 mb-1">Flat Rate ($)</label>
-              <input type="number" value={shipping.flatRate} onChange={(e) => setShipping((s) => ({ ...s, flatRate: e.target.value }))} className="input w-full" />
+              <input type="number" min="0" step="0.01" value={shipping.flatRate} onChange={(e) => setShipping((s) => ({ ...s, flatRate: e.target.value }))} className="input w-full" />
             </div>
             <div>
               <label className="block text-sm font-medium text-ink-700 dark:text-ink-300 mb-1">Free Shipping Threshold ($)</label>
-              <input type="number" value={shipping.freeThreshold} onChange={(e) => setShipping((s) => ({ ...s, freeThreshold: e.target.value }))} className="input w-full" />
+              <input type="number" min="0" step="0.01" value={shipping.freeThreshold} onChange={(e) => setShipping((s) => ({ ...s, freeThreshold: e.target.value }))} className="input w-full" />
             </div>
           </div>
         );
@@ -109,7 +109,7 @@ export default function Settings() {
           <div className="space-y-4 max-w-md">
             <div>
               <label className="block text-sm font-medium text-ink-700 dark:text-ink-300 mb-1">Tax Rate (%)</label>
-              <input type="number" value={taxes.rate} onChange={(e) => setTaxes((t) => ({ ...t, rate: e.target.value }))} className="input w-full" />
+              <input type="number" min="0" max="100" step="0.01" value={taxes.rate} onChange={(e) => setTaxes((t) => ({ ...t, rate: e.target.value }))} className="input w-full" />
             </div>
             <div className="flex items-center gap-2">
               <input id="tax-inclusive" type="checkbox" checked={taxes.inclusive} onChange={(e) => setTaxes((t) => ({ ...t, inclusive: e.target.checked }))} className="w-4 h-4 rounded border-ink-300" />

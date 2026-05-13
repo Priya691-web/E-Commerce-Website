@@ -51,34 +51,61 @@ public class AdminDashboardController extends HttpServlet {
         }
 
         try {
-            // Get analytics data
-            double totalSales = orderDAO.getTotalRevenue();
-            int totalUsers = userDAO.getTotalUserCount();
-            int totalOrders = orderDAO.getTotalOrderCount();
-            int lowStockCount = productDAO.getLowStockProductCount(10); // Products with stock < 10
-
-            // Get recent orders
-            List<Order> recentOrders = orderDAO.getRecentOrders(10);
-
-            // Get revenue data for chart (last 30 days)
-            Map<String, Object> revenueData = getRevenueChartData(30);
-
-            request.setAttribute("totalSales", String.format("%.0f", totalSales));
-            request.setAttribute("totalUsers", totalUsers);
-            request.setAttribute("totalOrders", totalOrders);
-            request.setAttribute("lowStockCount", lowStockCount);
-            request.setAttribute("recentOrders", recentOrders);
+            // Validate admin session
+            if (request.getSession(false) == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
+            }
             
-            // Properly serialize to JSON
-            request.setAttribute("revenueDataJson", JsonUtil.toJson(revenueData.get("data")));
-            request.setAttribute("revenueLabelsJson", JsonUtil.toJson(revenueData.get("labels")));
-
-            request.getRequestDispatcher("/WEB-INF/views/admin-dashboard.jsp")
+            // Get dashboard statistics with null checks
+            int totalOrders = orderDAO.getTotalOrderCount();
+            int totalUsers = userDAO.getTotalUserCount();
+            int totalProducts = productDAO.countProducts(null, null, null);
+            
+            // Validate statistics
+            totalOrders = Math.max(0, totalOrders);
+            totalUsers = Math.max(0, totalUsers);
+            totalProducts = Math.max(0, totalProducts);
+            
+            // Get recent orders with error handling
+            List<Order> recentOrders;
+            try {
+                recentOrders = orderDAO.getRecentOrders(10);
+                if (recentOrders == null) {
+                    recentOrders = new ArrayList<>();
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load recent orders: {}", e.getMessage());
+                recentOrders = new ArrayList<>();
+            }
+            
+            // Calculate total revenue with validation
+            double totalRevenue = 0;
+            try {
+                totalRevenue = orderDAO.getTotalRevenue();
+                if (totalRevenue < 0) {
+                    totalRevenue = 0;
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to calculate total revenue: {}", e.getMessage());
+                totalRevenue = 0;
+            }
+            
+            request.setAttribute("totalOrders", totalOrders);
+            request.setAttribute("totalUsers", totalUsers);
+            request.setAttribute("totalProducts", totalProducts);
+            request.setAttribute("recentOrders", recentOrders);
+            request.setAttribute("totalRevenue", totalRevenue);
+            
+            request.getRequestDispatcher("/WEB-INF/views/admin/dashboard.jsp")
                    .forward(request, response);
-
-        } catch (SQLException e) {
-            logger.error("Error in AdminDashboardController.doGet: {}", e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error loading dashboard data");
+                   
+        } catch (Exception e) {
+            logger.error("Unexpected error in AdminDashboardController: {}", e.getMessage(), e);
+            request.setAttribute("errorTitle", "System Error");
+            request.setAttribute("errorMessage", "An unexpected error occurred while loading the dashboard.");
+            request.setAttribute("errorDetails", "Please try again later.");
+            request.getRequestDispatcher("/WEB-INF/views/admin/error.jsp").forward(request, response);
         }
     }
 

@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fashionstore.dao.SavedItemDAO;
-import com.fashionstore.dao.CartDAO;
 import com.fashionstore.model.SavedItem;
 import com.fashionstore.util.DBConnection;
 
@@ -18,12 +17,6 @@ import java.util.List;
 public class SavedItemDAOImpl implements SavedItemDAO {
 
     private static final Logger logger = LoggerFactory.getLogger(SavedItemDAOImpl.class);
-
-    private CartDAO cartDAO;
-
-    public SavedItemDAOImpl() {
-        this.cartDAO = new com.fashionstore.daoimpl.CartDAOImpl();
-    }
 
     @Override
     public boolean saveItem(SavedItem savedItem) {
@@ -71,22 +64,22 @@ public class SavedItemDAOImpl implements SavedItemDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
             
             ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
-            
-            while (rs.next()) {
-                SavedItem item = new SavedItem();
-                item.setSavedItemId(rs.getInt("saved_item_id"));
-                item.setUserId(rs.getInt("user_id"));
-                item.setProductId(rs.getInt("product_id"));
-                item.setSizeLabel(rs.getString("size_label"));
-                item.setSavedAt(rs.getTimestamp("saved_at"));
-                item.setProductName(rs.getString("product_name"));
-                item.setImageUrl(rs.getString("image_url"));
-                item.setPrice(rs.getDouble("price"));
-                savedItems.add(item);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    SavedItem item = new SavedItem();
+                    item.setSavedItemId(rs.getInt("saved_item_id"));
+                    item.setUserId(rs.getInt("user_id"));
+                    item.setProductId(rs.getInt("product_id"));
+                    item.setSizeLabel(rs.getString("size_label"));
+                    item.setSavedAt(rs.getTimestamp("saved_at"));
+                    item.setProductName(rs.getString("product_name"));
+                    item.setImageUrl(rs.getString("image_url"));
+                    item.setPrice(rs.getDouble("price"));
+                    savedItems.add(item);
+                }
             }
         } catch (SQLException e) {
-            logger.error("SavedItemDAOImpl.getSavedItemsByUserId Error: {}", e.getMessage());
+            logger.error("SavedItemDAOImpl.getSavedItemsByUserId Error: {}", e.getMessage(), e);
         }
         return savedItems;
     }
@@ -101,81 +94,110 @@ public class SavedItemDAOImpl implements SavedItemDAO {
             ps.setInt(1, userId);
             ps.setInt(2, productId);
             ps.setString(3, sizeLabel);
-            ResultSet rs = ps.executeQuery();
-            
-            if (rs.next()) {
-                SavedItem item = new SavedItem();
-                item.setSavedItemId(rs.getInt("saved_item_id"));
-                item.setUserId(rs.getInt("user_id"));
-                item.setProductId(rs.getInt("product_id"));
-                item.setSizeLabel(rs.getString("size_label"));
-                item.setSavedAt(rs.getTimestamp("saved_at"));
-                return item;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    SavedItem item = new SavedItem();
+                    item.setSavedItemId(rs.getInt("saved_item_id"));
+                    item.setUserId(rs.getInt("user_id"));
+                    item.setProductId(rs.getInt("product_id"));
+                    item.setSizeLabel(rs.getString("size_label"));
+                    item.setSavedAt(rs.getTimestamp("saved_at"));
+                    return item;
+                }
             }
         } catch (SQLException e) {
-            logger.error("SavedItemDAOImpl.getSavedItem Error: {}", e.getMessage());
+            logger.error("SavedItemDAOImpl.getSavedItem Error: {}", e.getMessage(), e);
         }
         return null;
     }
 
     @Override
     public boolean moveToCart(int savedItemId) {
+        // Single-connection transaction: select-saved → upsert cart row → delete saved row.
+        // Previously this called cartDAO.addToCart() which acquired its own connection,
+        // so the cart insert was outside the transaction and could not be rolled back.
+        String selectSql = "SELECT user_id, product_id, size_label FROM saved_items WHERE saved_item_id = ?";
+        String findCartSql = "SELECT cart_item_id, quantity FROM cart_items WHERE user_id = ? AND product_id = ? AND size_label = ?";
+        String updateCartSql = "UPDATE cart_items SET quantity = quantity + 1 WHERE cart_item_id = ?";
+        String insertCartSql = "INSERT INTO cart_items (user_id, product_id, size_label, quantity) VALUES (?, ?, ?, 1)";
+        String deleteSavedSql = "DELETE FROM saved_items WHERE saved_item_id = ?";
+
         Connection con = null;
         try {
             con = DBConnection.getConnection();
             con.setAutoCommit(false);
-            
-            // Get saved item details
-            String selectSql = "SELECT user_id, product_id, size_label FROM saved_items WHERE saved_item_id = ?";
+
             int userId = 0, productId = 0;
             String sizeLabel = null;
-            
+
             try (PreparedStatement ps = con.prepareStatement(selectSql)) {
                 ps.setInt(1, savedItemId);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    userId = rs.getInt("user_id");
-                    productId = rs.getInt("product_id");
-                    sizeLabel = rs.getString("size_label");
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        userId = rs.getInt("user_id");
+                        productId = rs.getInt("product_id");
+                        sizeLabel = rs.getString("size_label");
+                    }
                 }
             }
-            
+
             if (userId == 0) {
                 con.rollback();
                 return false;
             }
-            
-            // Add to cart using cartDAO
-            com.fashionstore.model.CartItem cartItem = new com.fashionstore.model.CartItem();
-            cartItem.setUserId(userId);
-            cartItem.setProductId(productId);
-            cartItem.setSizeLabel(sizeLabel != null ? sizeLabel : "M");
-            cartItem.setQuantity(1);
-            cartDAO.addToCart(cartItem);
-            
-            // Remove from saved items
-            String deleteSql = "DELETE FROM saved_items WHERE saved_item_id = ?";
-            try (PreparedStatement ps = con.prepareStatement(deleteSql)) {
+
+            String resolvedSize = sizeLabel != null ? sizeLabel : "M";
+
+            // Upsert into cart on the same transactional connection.
+            Integer existingCartItemId = null;
+            try (PreparedStatement ps = con.prepareStatement(findCartSql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, productId);
+                ps.setString(3, resolvedSize);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        existingCartItemId = rs.getInt("cart_item_id");
+                    }
+                }
+            }
+
+            if (existingCartItemId != null) {
+                try (PreparedStatement ps = con.prepareStatement(updateCartSql)) {
+                    ps.setInt(1, existingCartItemId);
+                    ps.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement ps = con.prepareStatement(insertCartSql)) {
+                    ps.setInt(1, userId);
+                    ps.setInt(2, productId);
+                    ps.setString(3, resolvedSize);
+                    ps.executeUpdate();
+                }
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(deleteSavedSql)) {
                 ps.setInt(1, savedItemId);
                 ps.executeUpdate();
             }
-            
+
             con.commit();
             return true;
         } catch (Exception e) {
             if (con != null) {
                 try {
                     con.rollback();
-                } catch (SQLException ignored) {}
+                } catch (SQLException ignored) { /* best-effort */ }
             }
-            logger.error("SavedItemDAOImpl.moveToCart Error: {}", e.getMessage());
+            logger.error("SavedItemDAOImpl.moveToCart Error: {}", e.getMessage(), e);
             return false;
         } finally {
             if (con != null) {
                 try {
                     con.setAutoCommit(true);
+                } catch (SQLException ignored) { /* connection may already be invalid */ }
+                try {
                     con.close();
-                } catch (SQLException ignored) {}
+                } catch (SQLException ignored) { /* best-effort */ }
             }
         }
     }

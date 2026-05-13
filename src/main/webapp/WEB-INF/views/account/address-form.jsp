@@ -34,27 +34,7 @@
         </div>
 
         <div class="account-layout">
-            <!-- Sidebar Navigation -->
-            <aside class="account-sidebar">
-                <nav class="account-nav">
-                    <a href="<%= request.getContextPath() %>/account/profile" class="account-nav-item">
-                        <span class="nav-icon">👤</span>
-                        <span>Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/edit" class="account-nav-item">
-                        <span class="nav-icon">✏️</span>
-                        <span>Edit Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/addresses" class="account-nav-item active">
-                        <span class="nav-icon">📍</span>
-                        <span>Addresses</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/settings" class="account-nav-item">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Settings</span>
-                    </a>
-                </nav>
-            </aside>
+            <jsp:include page="/WEB-INF/views/partials/account-sidebar.jsp" />
 
             <!-- Main Content -->
             <div class="account-content">

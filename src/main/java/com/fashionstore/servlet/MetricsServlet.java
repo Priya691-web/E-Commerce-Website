@@ -8,7 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
-@WebServlet("/metrics")
+@WebServlet("/metrics-internal")
 public class MetricsServlet extends HttpServlet {
 
     @Override

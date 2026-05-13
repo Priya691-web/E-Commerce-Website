@@ -80,13 +80,13 @@
     <% if (!categories.isEmpty()) { %>
     <section class="home-section home-categories" aria-labelledby="home-categories-heading">
         <div class="container">
-            <header class="section-head home-section-head">
+            <header class="section-head home-section-head reveal">
                 <div>
                     <span class="section-label" id="home-categories-heading">Shop by category</span>
                     <h2 class="home-section-title">Curated collections</h2>
                 </div>
             </header>
-            <div class="category-grid">
+            <div class="category-grid stagger-children">
             <% for (Category c : categories) { %>
                 <a class="category-tile category-<%= c.getCategorySlug() %>" href="<%= request.getContextPath() %>/products?category=<%= java.net.URLEncoder.encode(c.getCategorySlug(), "UTF-8") %>">
                     <span class="category-tile__name"><%= c.getCategoryName() %></span>
@@ -104,7 +104,7 @@
     <%-- 3. FEATURED PRODUCTS (single grid: curated products, else trending fallback) --%>
     <section class="home-section home-featured" aria-labelledby="home-featured-heading">
         <div class="container">
-            <div class="section-head">
+            <div class="section-head reveal">
                 <div>
                     <span class="section-label"><%= featuredSourceLabel %></span>
                     <h2 class="home-section-title" id="home-featured-heading">Featured products</h2>
@@ -112,7 +112,7 @@
                 <a class="btn btn-outline" href="<%= request.getContextPath() %>/products">View all</a>
             </div>
 
-            <div class="product-grid home-product-grid">
+            <div class="product-grid home-product-grid stagger-children">
             <% if (!featuredGrid.isEmpty()) { %>
                 <% for (Product p : featuredGrid) { %>
                 <article class="product-card">
@@ -175,7 +175,7 @@
     <%-- 4. BRAND STORY / EDITORIAL (story bands + campaigns + social mosaic) --%>
     <section class="home-section home-brand" aria-labelledby="home-brand-heading">
         <div class="container">
-            <header class="section-head home-section-head home-brand__masthead">
+            <header class="section-head home-section-head home-brand__masthead reveal">
                 <div>
                     <span class="section-label" id="home-brand-heading">Brand story</span>
                     <h2 class="home-section-title">Crafted for modern movement</h2>
@@ -183,7 +183,7 @@
                 </div>
             </header>
 
-            <div class="home-editorial-stack">
+            <div class="home-editorial-stack stagger-children">
                 <div class="editorial-band editorial-band--story-a">
                     <div class="editorial-copy">
                         <span class="section-label editorial-copy__label">The edit</span>
@@ -209,7 +209,7 @@
                 </div>
             </div>
 
-            <div class="home-campaign-grid campaign-grid" role="navigation" aria-label="Seasonal edits">
+            <div class="home-campaign-grid campaign-grid stagger-children" role="navigation" aria-label="Seasonal edits">
                 <a class="campaign-card campaign-dark" href="<%= request.getContextPath() %>/products?category=women">
                     <span class="campaign-card__label">Women's edit</span>
                     <strong class="campaign-card__title">Fluid tailoring and elevated separates</strong>
@@ -224,7 +224,7 @@
                 </a>
             </div>
 
-            <div class="home-social">
+            <div class="home-social reveal">
                 <div class="home-social__intro">
                     <span class="section-label">Seen in the city</span>
                     <h3 class="home-section-title home-section-title--compact">Styled by the FashionStore community</h3>
@@ -244,7 +244,7 @@
     <%-- 5. VALUE PROPOSITIONS --%>
     <section class="home-section home-value" aria-labelledby="home-value-heading">
         <div class="container">
-            <header class="section-head home-section-head">
+            <header class="section-head home-section-head reveal">
                 <div>
                     <span class="section-label" id="home-value-heading">Why shop with us</span>
                     <h2 class="home-section-title">The FashionStore standard</h2>

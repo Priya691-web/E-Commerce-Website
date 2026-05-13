@@ -110,10 +110,16 @@ public class PasswordResetController extends HttpServlet {
             return;
         }
 
+        // Generic success message regardless of whether the account exists,
+        // so attackers can't enumerate registered emails via this endpoint.
+        String genericSuccess = "If an account exists for that email, we just sent a password reset link. The link expires in 1 hour.";
+
         User user = userService.getUserByEmail(email);
 
         if (user == null) {
-            request.setAttribute("error", "No account found with this email address");
+            // Don't disclose enumeration; do log so legitimate ops can audit.
+            logger.info("Password reset requested for unknown email (no account)");
+            request.setAttribute("success", genericSuccess);
             attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
             return;
@@ -143,8 +149,9 @@ public class PasswordResetController extends HttpServlet {
                 // Send email with reset link
                 EmailService.getInstance().sendPasswordResetEmail(user.getEmail(), resetLink, user.getFullName());
 
-                request.setAttribute("success", "Password reset link has been sent to your email. The link will expire in 1 hour.");
-                request.setAttribute("resetLink", resetLink);
+                // Use the generic success message (no resetLink echo) so the response
+                // is identical for known and unknown emails.
+                request.setAttribute("success", genericSuccess);
             } else {
                 request.setAttribute("error", "Failed to generate reset link. Please try again.");
             }

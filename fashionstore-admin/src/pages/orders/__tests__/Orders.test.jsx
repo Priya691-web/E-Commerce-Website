@@ -5,11 +5,11 @@ import Orders from '../Orders.jsx';
 
 const mockAddToast = vi.fn();
 
-vi.mock('../../context/ToastContext.jsx', () => ({
+vi.mock('../../../context/ToastContext.jsx', () => ({
   useToast: () => ({ addToast: mockAddToast }),
 }));
 
-vi.mock('../../api/client.js', () => ({
+vi.mock('../../../api/client.js', () => ({
   OrdersApi: {
     list: vi.fn(),
     approve: vi.fn(),
@@ -20,21 +20,13 @@ vi.mock('../../api/client.js', () => ({
   },
 }));
 
-vi.mock('../../components/DataTable.jsx', () => ({
-  default: ({ columns, rows, empty }) => (
-    <div data-testid="datatable">
-      {rows.length === 0 ? <div>{empty}</div> : rows.map((row) => <div key={row.id}>{row.id}</div>)}
-    </div>
-  ),
-}));
-
 describe('Orders', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders orders page', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'pending', total: 99.99, createdAt: '2024-01-01' },
       { id: 2, customerName: 'Jane Smith', status: 'shipped', total: 149.99, createdAt: '2024-01-02' },
@@ -48,12 +40,12 @@ describe('Orders', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Orders')).toBeInTheDocument();
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
   });
 
-  it('shows loading state initially', () => {
-    const { OrdersApi } = require('../../api/client.js');
+  it('shows loading state initially', async () => {
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockImplementation(() => new Promise(() => {}));
 
     render(
@@ -66,7 +58,7 @@ describe('Orders', () => {
   });
 
   it('filters orders by status tabs', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'pending', total: 99.99, createdAt: '2024-01-01' },
       { id: 2, customerName: 'Jane Smith', status: 'shipped', total: 149.99, createdAt: '2024-01-02' },
@@ -92,7 +84,7 @@ describe('Orders', () => {
   });
 
   it('calls approve action', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'pending', total: 99.99, createdAt: '2024-01-01' },
     ]);
@@ -105,7 +97,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const approveButton = screen.getByTitle('Approve');
@@ -118,7 +110,7 @@ describe('Orders', () => {
   });
 
   it('calls cancel action', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'pending', total: 99.99, createdAt: '2024-01-01' },
     ]);
@@ -131,7 +123,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const cancelButton = screen.getByTitle('Cancel');
@@ -144,7 +136,7 @@ describe('Orders', () => {
   });
 
   it('calls ship action', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'processing', total: 99.99, createdAt: '2024-01-01' },
     ]);
@@ -157,7 +149,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const shipButton = screen.getByTitle('Ship');
@@ -170,7 +162,7 @@ describe('Orders', () => {
   });
 
   it('calls deliver action', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'shipped', total: 99.99, createdAt: '2024-01-01' },
     ]);
@@ -183,7 +175,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const deliverButton = screen.getByTitle('Deliver');
@@ -196,7 +188,7 @@ describe('Orders', () => {
   });
 
   it('calls refund action', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'delivered', total: 99.99, createdAt: '2024-01-01' },
     ]);
@@ -209,7 +201,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const refundButton = screen.getByTitle('Refund');
@@ -222,7 +214,7 @@ describe('Orders', () => {
   });
 
   it('shows error when action fails', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'pending', total: 99.99, createdAt: '2024-01-01' },
     ]);
@@ -235,7 +227,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const approveButton = screen.getByTitle('Approve');
@@ -247,7 +239,7 @@ describe('Orders', () => {
   });
 
   it('opens order detail modal', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { 
         id: 1, 
@@ -269,7 +261,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const viewButton = screen.getByTitle('View');
@@ -277,13 +269,13 @@ describe('Orders', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Order #1')).toBeInTheDocument();
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
       expect(screen.getByText('john@example.com')).toBeInTheDocument();
     });
   });
 
   it('closes order detail modal', async () => {
-    const { OrdersApi } = await import('../../api/client.js');
+    const { OrdersApi } = await import('../../../api/client.js');
     OrdersApi.list.mockResolvedValue([
       { id: 1, customerName: 'John Doe', status: 'pending', total: 99.99, createdAt: '2024-01-01' },
     ]);
@@ -295,7 +287,7 @@ describe('Orders', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('datatable')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     const viewButton = screen.getByTitle('View');

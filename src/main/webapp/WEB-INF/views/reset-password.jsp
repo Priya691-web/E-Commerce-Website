@@ -33,25 +33,41 @@
 
                 <div class="form-group">
                     <label for="password" class="form-label">New Password</label>
-                    <input type="password" id="password" name="password" required 
-                           class="form-control"
-                           placeholder="Enter new password (minimum 8 characters)"
-                           minlength="8"
-                           autocomplete="new-password"
-                           aria-describedby="password-help password-requirements"
-                           aria-required="true">
+                    <div class="password-field">
+                        <input type="password" id="password" name="password" required
+                               class="form-control"
+                               placeholder="Enter new password (minimum 8 characters)"
+                               minlength="8"
+                               autocomplete="new-password"
+                               aria-describedby="password-help password-requirements"
+                               aria-required="true">
+                        <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" onclick="togglePassword(this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                     <span id="password-help" class="form-help">Create a strong password for your account</span>
                 </div>
 
                 <div class="form-group">
                     <label for="confirmPassword" class="form-label">Confirm Password</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" required 
-                           class="form-control"
-                           placeholder="Confirm new password"
-                           minlength="8"
-                           autocomplete="new-password"
-                           aria-describedby="confirm-help"
-                           aria-required="true">
+                    <div class="password-field">
+                        <input type="password" id="confirmPassword" name="confirmPassword" required
+                               class="form-control"
+                               placeholder="Confirm new password"
+                               minlength="8"
+                               autocomplete="new-password"
+                               aria-describedby="confirm-help"
+                               aria-required="true">
+                        <button type="button" class="password-toggle" aria-label="Show confirm password" aria-pressed="false" onclick="togglePassword(this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                     <span id="confirm-help" class="form-help">Re-enter your new password to confirm</span>
                 </div>
 

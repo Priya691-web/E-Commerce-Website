@@ -21,7 +21,7 @@ export default function Topbar({ onMenuClick }) {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 h-16 bg-white/90 dark:bg-ink-800/90 backdrop-blur border-b border-ink-200 dark:border-ink-700 flex items-center gap-4 px-4 sm:px-6">
+    <header className="sticky top-0 z-20 h-16 bg-white/80 dark:bg-ink-800/80 backdrop-blur-xl border-b border-ink-200 dark:border-ink-700 flex items-center gap-4 px-4 sm:px-6">
       <button
         onClick={onMenuClick}
         className="lg:hidden p-2 -ml-2 rounded-lg text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-700"
@@ -30,7 +30,7 @@ export default function Topbar({ onMenuClick }) {
         <Menu size={20} />
       </button>
 
-      <div className="hidden sm:flex items-center gap-2 px-3 h-9 w-full max-w-md rounded-full border border-ink-200 bg-ink-50 dark:bg-ink-900 dark:border-ink-700 text-ink-400">
+      <div className="hidden sm:flex items-center gap-2 px-3 h-10 w-full max-w-md rounded-full border border-ink-200 bg-white dark:bg-ink-900 dark:border-ink-700 text-ink-400 shadow-sm">
         <Search size={16} />
         <input
           type="search"

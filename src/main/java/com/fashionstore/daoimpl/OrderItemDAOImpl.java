@@ -37,6 +37,7 @@ public class OrderItemDAOImpl implements OrderItemDAO {
     }
 
     // 🔥 BATCH LOAD ORDER ITEMS FOR MULTIPLE ORDERS (fixes N+1 query problem)
+    @Override
     public void batchLoadOrderItems(List<com.fashionstore.model.Order> orders) {
         if (orders == null || orders.isEmpty()) {
             return;
@@ -60,24 +61,24 @@ public class OrderItemDAOImpl implements OrderItemDAO {
                 ps.setInt(i + 1, orderIds.get(i));
             }
 
-            ResultSet rs = ps.executeQuery();
+            try (ResultSet rs = ps.executeQuery()) {
+                // Group items by order ID using a Map
+                Map<Integer, List<OrderItem>> itemsByOrderId = new HashMap<>();
+                while (rs.next()) {
+                    OrderItem item = mapOrderItem(rs);
+                    itemsByOrderId
+                        .computeIfAbsent(rs.getInt("order_id"), k -> new ArrayList<>())
+                        .add(item);
+                }
 
-            // Group items by order ID using a Map
-            Map<Integer, List<OrderItem>> itemsByOrderId = new HashMap<>();
-            while (rs.next()) {
-                OrderItem item = mapOrderItem(rs);
-                itemsByOrderId
-                    .computeIfAbsent(rs.getInt("order_id"), k -> new ArrayList<>())
-                    .add(item);
-            }
-
-            // Assign items to orders
-            for (com.fashionstore.model.Order order : orders) {
-                order.setItems(itemsByOrderId.getOrDefault(order.getOrderId(), new ArrayList<>()));
+                // Assign items to orders
+                for (com.fashionstore.model.Order order : orders) {
+                    order.setItems(itemsByOrderId.getOrDefault(order.getOrderId(), new ArrayList<>()));
+                }
             }
 
         } catch (Exception e) {
-            logger.error("OrderItemDAOImpl.batchLoadOrderItems Error: {}", e.getMessage());
+            logger.error("OrderItemDAOImpl.batchLoadOrderItems Error: {}", e.getMessage(), e);
             // Fallback to individual queries if batch fails (preserves functionality)
             for (com.fashionstore.model.Order order : orders) {
                 order.setItems(getItemsByOrderId(order.getOrderId()));
@@ -133,14 +134,14 @@ public class OrderItemDAOImpl implements OrderItemDAO {
 
             ps.setInt(1, orderId);
 
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                list.add(mapOrderItem(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapOrderItem(rs));
+                }
             }
 
         } catch (Exception e) {
-            logger.error("OrderItemDAOImpl.getItemsByOrderId Error: {}", e.getMessage());
+            logger.error("OrderItemDAOImpl.getItemsByOrderId Error: {}", e.getMessage(), e);
         }
 
         return list;

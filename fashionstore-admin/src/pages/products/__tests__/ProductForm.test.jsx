@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter, Router } from 'react-router-dom';
+import { BrowserRouter, useParams } from 'react-router-dom';
 import ProductForm from '../ProductForm.jsx';
 
 const mockNavigate = vi.fn();
@@ -11,15 +11,15 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => ({}),
+    useParams: vi.fn(() => ({})),
   };
 });
 
-vi.mock('../../context/ToastContext.jsx', () => ({
+vi.mock('../../../context/ToastContext.jsx', () => ({
   useToast: () => ({ addToast: mockAddToast }),
 }));
 
-vi.mock('../../api/client.js', () => ({
+vi.mock('../../../api/client.js', () => ({
   ProductsApi: {
     create: vi.fn(),
     update: vi.fn(),
@@ -33,10 +33,12 @@ vi.mock('../../api/client.js', () => ({
 describe('ProductForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Ensure each test starts in "create" mode unless explicitly overridden.
+    vi.mocked(useParams).mockReturnValue({});
   });
 
   it('renders add product form', async () => {
-    const { CategoriesApi } = await import('../../api/client.js');
+    const { CategoriesApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([
       { id: 1, name: 'Clothing' },
       { id: 2, name: 'Accessories' },
@@ -60,7 +62,7 @@ describe('ProductForm', () => {
     const { useParams } = await import('react-router-dom');
     useParams.mockReturnValue({ id: '123' });
 
-    const { CategoriesApi, ProductsApi } = await import('../../api/client.js');
+    const { CategoriesApi, ProductsApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([{ id: 1, name: 'Clothing' }]);
     ProductsApi.get.mockResolvedValue({
       name: 'Test Product',
@@ -88,7 +90,7 @@ describe('ProductForm', () => {
   });
 
   it('updates form fields on change', async () => {
-    const { CategoriesApi } = await import('../../api/client.js');
+    const { CategoriesApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([{ id: 1, name: 'Clothing' }]);
 
     render(
@@ -107,7 +109,7 @@ describe('ProductForm', () => {
   });
 
   it('submits create product form', async () => {
-    const { CategoriesApi, ProductsApi } = await import('../../api/client.js');
+    const { CategoriesApi, ProductsApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([{ id: 1, name: 'Clothing' }]);
     ProductsApi.create.mockResolvedValue({ success: true });
 
@@ -139,7 +141,7 @@ describe('ProductForm', () => {
     const { useParams } = await import('react-router-dom');
     useParams.mockReturnValue({ id: '123' });
 
-    const { CategoriesApi, ProductsApi } = await import('../../api/client.js');
+    const { CategoriesApi, ProductsApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([{ id: 1, name: 'Clothing' }]);
     ProductsApi.get.mockResolvedValue({
       name: 'Test Product',
@@ -172,7 +174,7 @@ describe('ProductForm', () => {
   });
 
   it('shows error on submission failure', async () => {
-    const { CategoriesApi, ProductsApi } = await import('../../api/client.js');
+    const { CategoriesApi, ProductsApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([{ id: 1, name: 'Clothing' }]);
     ProductsApi.create.mockRejectedValue(new Error('Network error'));
 
@@ -199,7 +201,7 @@ describe('ProductForm', () => {
   });
 
   it('navigates back on cancel', async () => {
-    const { CategoriesApi } = await import('../../api/client.js');
+    const { CategoriesApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([{ id: 1, name: 'Clothing' }]);
 
     render(
@@ -219,7 +221,7 @@ describe('ProductForm', () => {
   });
 
   it('disables submit button while saving', async () => {
-    const { CategoriesApi, ProductsApi } = await import('../../api/client.js');
+    const { CategoriesApi, ProductsApi } = await import('../../../api/client.js');
     CategoriesApi.list.mockResolvedValue([{ id: 1, name: 'Clothing' }]);
     ProductsApi.create.mockImplementation(() => new Promise(() => {}));
 

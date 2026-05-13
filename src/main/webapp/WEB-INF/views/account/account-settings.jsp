@@ -27,31 +27,7 @@
         </div>
 
         <div class="account-layout">
-            <!-- Sidebar Navigation -->
-            <aside class="account-sidebar">
-                <nav class="account-nav">
-                    <a href="<%= request.getContextPath() %>/account/profile" class="account-nav-item">
-                        <span class="nav-icon">👤</span>
-                        <span>Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/edit" class="account-nav-item">
-                        <span class="nav-icon">✏️</span>
-                        <span>Edit Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/addresses" class="account-nav-item">
-                        <span class="nav-icon">📍</span>
-                        <span>Addresses</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/settings" class="account-nav-item active">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Settings</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/orders" class="account-nav-item">
-                        <span class="nav-icon">📦</span>
-                        <span>Orders</span>
-                    </a>
-                </nav>
-            </aside>
+            <jsp:include page="/WEB-INF/views/partials/account-sidebar.jsp" />
 
             <!-- Main Content -->
             <div class="account-content">
@@ -145,22 +121,46 @@
 
                         <div class="form-group">
                             <label for="currentPassword">Current Password *</label>
-                            <input type="password" id="currentPassword" name="currentPassword" required>
+                            <div class="password-field">
+                                <input type="password" id="currentPassword" name="currentPassword" required>
+                                <button type="button" class="password-toggle" aria-label="Show current password" aria-pressed="false" onclick="togglePassword(this)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label for="newPassword">New Password *</label>
-                            <input type="password" id="newPassword" name="newPassword" required
-                                   minlength="8"
-                                   maxlength="50">
+                            <div class="password-field">
+                                <input type="password" id="newPassword" name="newPassword" required
+                                       minlength="8"
+                                       maxlength="50">
+                                <button type="button" class="password-toggle" aria-label="Show new password" aria-pressed="false" onclick="togglePassword(this)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
                             <span class="form-hint">Minimum 8 characters</span>
                         </div>
 
                         <div class="form-group">
                             <label for="confirmPassword">Confirm New Password *</label>
-                            <input type="password" id="confirmPassword" name="confirmPassword" required
-                                   minlength="8"
-                                   maxlength="50">
+                            <div class="password-field">
+                                <input type="password" id="confirmPassword" name="confirmPassword" required
+                                       minlength="8"
+                                       maxlength="50">
+                                <button type="button" class="password-toggle" aria-label="Show confirm password" aria-pressed="false" onclick="togglePassword(this)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="form-actions">
@@ -213,6 +213,52 @@
                     </form>
                 </section>
 
+                <!-- Privacy Controls -->
+                <section class="account-section">
+                    <div class="section-header">
+                        <h2>Privacy</h2>
+                    </div>
+
+                    <form action="<%= request.getContextPath() %>/account/profile" method="POST" class="form account-form">
+                        <input type="hidden" name="action" value="updateSettings">
+                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="profileVisible" <%= Boolean.TRUE.equals(request.getAttribute("profileVisible")) ? "checked" : "" %>>
+                                <span class="checkbox-text">
+                                    <span class="checkbox-title">Public Profile</span>
+                                    <span class="checkbox-hint">Allow your profile to be visible to other users</span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="activityTracking" <%= Boolean.TRUE.equals(request.getAttribute("activityTracking")) ? "checked" : "" %>>
+                                <span class="checkbox-text">
+                                    <span class="checkbox-title">Activity Tracking</span>
+                                    <span class="checkbox-hint">Allow us to personalize your experience based on browsing activity</span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="thirdPartySharing" <%= Boolean.TRUE.equals(request.getAttribute("thirdPartySharing")) ? "checked" : "" %>>
+                                <span class="checkbox-text">
+                                    <span class="checkbox-title">Third-Party Data Sharing</span>
+                                    <span class="checkbox-hint">Share anonymized data with trusted partners for analytics</span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Privacy Settings</button>
+                        </div>
+                    </form>
+                </section>
+
                 <!-- Account Actions -->
                 <section class="account-section account-danger-zone">
                     <div class="section-header">
@@ -225,7 +271,7 @@
                                 <h3>Deactivate Account</h3>
                                 <p>Temporarily deactivate your account. You can reactivate it later.</p>
                             </div>
-                            <button class="btn btn-outline btn-danger">Deactivate</button>
+                            <button class="btn btn-outline btn-danger" type="button" onclick="FashionStore.showToast('Contact support to deactivate your account', 'info')">Deactivate</button>
                         </div>
 
                         <div class="danger-action">
@@ -233,7 +279,7 @@
                                 <h3>Delete Account</h3>
                                 <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
                             </div>
-                            <button class="btn btn-danger">Delete Account</button>
+                            <button class="btn btn-danger" type="button" onclick="if(confirm('Are you sure? This cannot be undone.')) FashionStore.showToast('Contact support to permanently delete your account', 'info')">Delete Account</button>
                         </div>
                     </div>
                 </section>

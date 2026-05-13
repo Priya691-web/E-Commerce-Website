@@ -4,7 +4,7 @@
     <!-- Properties -->
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
     <property name="LOG_PATTERN_JSON" value="%d{&quot;yyyy-MM-dd HH:mm:ss.SSS&quot;},&quot;thread&quot;:&quot;%thread&quot;,&quot;level&quot;:&quot;%level&quot;,&quot;logger&quot;:&quot;%logger&quot;,&quot;message&quot;:&quot;%msg&quot;%n"/>
-    <property name="LOG_PATH" value="${LOG_FILE_PATH:-/var/log/fashionstore}"/>
+    <property name="LOG_PATH" value="${LOG_FILE_PATH:-/usr/local/tomcat/logs/fashionstore}"/>
     <property name="LOG_FILE" value="${LOG_PATH}/application.log"/>
     <property name="LOG_FILE_ERROR" value="${LOG_PATH}/error.log"/>
     <property name="LOG_FILE_PERFORMANCE" value="${LOG_PATH}/performance.log"/>

@@ -19,20 +19,18 @@ public class WishlistDAOImpl implements WishlistDAO {
 
     @Override
     public boolean addWishlistItem(int userId, int productId) {
-        if (isProductInWishlist(userId, productId)) {
-            return false;
-        }
-        
-        String sql = "INSERT INTO wishlist_items (user_id, product_id) VALUES (?, ?)";
+        // INSERT IGNORE is race-free and saves the extra SELECT round-trip.
+        // Returns true only when a new row was actually inserted (existing rows -> 0 affected).
+        String sql = "INSERT IGNORE INTO wishlist_items (user_id, product_id) VALUES (?, ?)";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            
+
             ps.setInt(1, userId);
             ps.setInt(2, productId);
             return ps.executeUpdate() > 0;
-            
+
         } catch (Exception e) {
-            logger.error("WishlistDAOImpl.addWishlistItem Error: {}", e.getMessage());
+            logger.error("WishlistDAOImpl.addWishlistItem Error: {}", e.getMessage(), e);
         }
         return false;
     }
@@ -67,22 +65,22 @@ public class WishlistDAOImpl implements WishlistDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
             
             ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
-            
-            while (rs.next()) {
-                WishlistItem item = new WishlistItem();
-                item.setId(rs.getInt("wishlist_item_id"));
-                item.setUserId(rs.getInt("user_id"));
-                item.setProductId(rs.getInt("product_id"));
-                item.setCreatedAt(rs.getTimestamp("created_at"));
-                item.setProductName(rs.getString("product_name"));
-                item.setImageUrl(rs.getString("image_url"));
-                item.setPrice(rs.getDouble("price"));
-                list.add(item);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    WishlistItem item = new WishlistItem();
+                    item.setId(rs.getInt("wishlist_item_id"));
+                    item.setUserId(rs.getInt("user_id"));
+                    item.setProductId(rs.getInt("product_id"));
+                    item.setCreatedAt(rs.getTimestamp("created_at"));
+                    item.setProductName(rs.getString("product_name"));
+                    item.setImageUrl(rs.getString("image_url"));
+                    item.setPrice(rs.getDouble("price"));
+                    list.add(item);
+                }
             }
             
         } catch (Exception e) {
-            logger.error("WishlistDAOImpl.getWishlistByUserId Error: {}", e.getMessage());
+            logger.error("WishlistDAOImpl.getWishlistByUserId Error: {}", e.getMessage(), e);
         }
         return list;
     }
@@ -95,11 +93,12 @@ public class WishlistDAOImpl implements WishlistDAO {
             
             ps.setInt(1, userId);
             ps.setInt(2, productId);
-            ResultSet rs = ps.executeQuery();
-            return rs.next();
-            
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
         } catch (Exception e) {
-            logger.error("WishlistDAOImpl.isProductInWishlist Error: {}", e.getMessage());
+            logger.error("WishlistDAOImpl.isProductInWishlist Error: {}", e.getMessage(), e);
         }
         return false;
     }

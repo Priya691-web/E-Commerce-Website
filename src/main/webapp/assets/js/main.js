@@ -125,13 +125,38 @@ window.FashionStore = {
         },
         
         fetchSuggestions: function(query) {
-            fetch(`${contextPath}/search/suggestions?q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
-                .then(suggestions => this.displaySuggestions(suggestions, query))
-                .catch(err => {
-                    console.error('Error fetching suggestions:', err);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            fetch(`${contextPath}/search/suggestions?q=${encodeURIComponent(query)}`, {
+                signal: controller.signal,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => {
+                clearTimeout(timeoutId);
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+                return res.json();
+            })
+            .then(suggestions => {
+                if (Array.isArray(suggestions)) {
+                    this.displaySuggestions(suggestions, query);
+                } else {
                     this.displayEmptyState(query);
-                });
+                }
+            })
+            .catch(err => {
+                clearTimeout(timeoutId);
+                if (err.name === 'AbortError') {
+                    console.warn('Search suggestions request timed out');
+                } else {
+                    console.error('Error fetching suggestions:', err);
+                }
+                this.displayEmptyState(query);
+            });
         },
         
         displaySuggestions: function(suggestions, query) {
@@ -169,7 +194,13 @@ window.FashionStore = {
             this.suggestionsContainer.style.display = 'block';
             this.selectedIndex = suggestions.length > 0 ? 0 : -1;
             
-            // Add click handlers
+            // Clean up existing listeners to prevent memory leaks
+            this.suggestionsContainer.querySelectorAll('.suggestion-item').forEach(item => {
+                const newItem = item.cloneNode(true);
+                item.parentNode.replaceChild(newItem, item);
+            });
+            
+            // Add click handlers with proper cleanup
             this.suggestionsContainer.querySelectorAll('.suggestion-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     const searchInput = document.querySelector('.nav-search input, .catalog-search input');
@@ -178,7 +209,7 @@ window.FashionStore = {
                         this.saveSearch(item.dataset.value);
                         searchInput.closest('form').submit();
                     }
-                });
+                }, { once: true });
             });
         },
         
@@ -358,8 +389,6 @@ window.FashionStore = {
             if (items[index]) {
                 items[index].scrollIntoView({ block: 'nearest' });
             }
-        }
-    },
     // Dark Mode Management
     darkMode: {
         STORAGE_KEY: 'fashionstore-theme',
@@ -1284,9 +1313,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize dark mode
     FashionStore.darkMode.init();
     
-    // Clear DOM cache on page unload
+    // Initialize form validation
+    FashionStore.formValidation.init();
+    
+    // Clear DOM cache and event listeners on page unload
     window.addEventListener('beforeunload', () => {
         FashionStore.cache.clear();
+        FashionStore.events.clear();
+        FashionStore.search.cleanup();
+        FashionStore.darkMode.cleanup();
+        FashionStore.formValidation.cleanup();
     });
 
     // Dark mode toggle handler
@@ -1375,7 +1411,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Password visibility toggle (used across login, register, reset-password, admin-register, account-settings)
+function togglePassword(button) {
+    const field = button.closest('.password-field');
+    if (!field) return;
+    const input = field.querySelector('input[type="password"], input[type="text"]');
+    if (!input) return;
+
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    input.classList.toggle('password-visible', isHidden);
+
+    // Update ARIA
+    button.setAttribute('aria-pressed', String(isHidden));
+    const label = isHidden ? 'Hide password' : 'Show password';
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
+
+    // Swap icon: eye → eye-off
+    const svg = button.querySelector('svg');
+    if (svg) {
+        if (isHidden) {
+            // eye-off icon
+            svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+        } else {
+            // eye icon
+            svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+        }
+    }
+}
+
 // Backward compatibility
 window.showToast = FashionStore.showToast;
 window.addToCart = FashionStore.addToCart;
 window.toggleWishlist = FashionStore.toggleWishlist;
+window.togglePassword = togglePassword;

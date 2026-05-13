@@ -38,13 +38,37 @@
             <input type="tel" id="phone" name="phone" placeholder="9876543210" autocomplete="tel" required>
 
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Enter a strong password" autocomplete="new-password" required minlength="8">
+            <div class="password-field">
+                <input type="password" id="password" name="password" placeholder="Enter a strong password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false" onclick="togglePassword(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
 
             <label for="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter password" autocomplete="new-password" required minlength="8">
+            <div class="password-field">
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="password-toggle" aria-label="Show confirm password" aria-pressed="false" onclick="togglePassword(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
 
             <label for="adminKey">Admin Secret Key</label>
-            <input type="password" id="adminKey" name="adminKey" placeholder="Enter admin secret key" required>
+            <div class="password-field">
+                <input type="password" id="adminKey" name="adminKey" placeholder="Enter admin secret key" required>
+                <button type="button" class="password-toggle" aria-label="Show admin secret key" aria-pressed="false" onclick="togglePassword(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
             <small class="form-hint">Contact the system owner for the admin secret key.</small>
 
             <button type="submit" class="btn btn-primary">Create Admin Account</button>

@@ -1,0 +1,209 @@
+/**
+ * CART LAYOUT MODULE
+ * Layout structure for cart page
+ */
+
+/* ============================================
+   CART PAGE LAYOUT
+   ============================================ */
+
+.cart-page {
+    width: min(var(--container-xl), 100%);
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4) var(--space-16);
+    background: var(--color-bg);
+}
+
+/* ============================================
+   CART BREADCRUMB
+   ============================================ */
+
+.cart-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-5);
+}
+
+.cart-breadcrumb a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.cart-breadcrumb a:hover {
+    color: var(--color-text-primary);
+}
+
+/* ============================================
+   CART HEADER
+   ============================================ */
+
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cart-title {
+    font-family: var(--font-family-display);
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--space-1);
+    color: var(--color-text-primary);
+}
+
+.cart-count {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.cart-continue-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.cart-continue-link:hover {
+    border-bottom-color: var(--color-text-primary);
+}
+
+.cart-continue-link svg {
+    transition: transform var(--transition-fast);
+}
+
+.cart-continue-link:hover svg {
+    transform: translateX(-2px);
+}
+
+/* ============================================
+   CART MAIN LAYOUT
+   ============================================ */
+
+.cart-main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: var(--space-8);
+    margin-bottom: var(--space-8);
+}
+
+/* ============================================
+   CART EMPTY STATE
+   ============================================ */
+
+.cart-empty {
+    text-align: center;
+    padding: var(--space-16) var(--space-4);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.cart-empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    color: var(--color-text-tertiary);
+}
+
+.cart-empty-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.cart-empty-description {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-6);
+}
+
+/* ============================================
+   RESPONSIVE CART LAYOUT
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .cart-main {
+        grid-template-columns: 1fr;
+        gap: var(--space-6);
+    }
+    
+    .cart-page {
+        padding: var(--space-6) var(--space-4) var(--space-12);
+    }
+}
+
+@media (max-width: 768px) {
+    .cart-page {
+        padding: var(--space-4) var(--space-3) var(--space-8);
+    }
+    
+    .cart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+    
+    .cart-title {
+        font-size: clamp(1.5rem, 4vw, 2rem);
+    }
+    
+    .cart-empty {
+        padding: var(--space-12) var(--space-3);
+    }
+    
+    .cart-empty-icon {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cart-breadcrumb {
+        font-size: 10px;
+        gap: var(--space-1);
+    }
+    
+    .cart-continue-link {
+        font-size: var(--text-xs);
+    }
+}
+
+/* ============================================
+   DARK MODE CART LAYOUT
+   ============================================ */
+
+[data-theme="dark"] .cart-page {
+    background: var(--color-bg-dark);
+}
+
+[data-theme="dark"] .cart-header {
+    border-color: var(--color-border-dark);
+}
+
+[data-theme="dark"] .cart-empty-icon {
+    background: var(--color-bg-tertiary-dark);
+}

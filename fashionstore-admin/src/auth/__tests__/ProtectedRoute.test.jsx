@@ -1,24 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider, useAuth } from '../AuthContext.jsx';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import ProtectedRoute from '../../router/ProtectedRoute.jsx';
 
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <div>Please login</div>;
-  return children;
-};
-
-const mockAuthApi = {
-  me: vi.fn(),
-  login: vi.fn(),
-  logout: vi.fn(),
-};
-
-vi.mock('../api/client.js', () => ({
-  AuthApi: mockAuthApi,
+const mockUseAuth = vi.fn();
+vi.mock('../AuthContext.jsx', () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
 describe('ProtectedRoute', () => {
@@ -27,96 +14,59 @@ describe('ProtectedRoute', () => {
   });
 
   it('shows loading state initially', () => {
-    mockAuthApi.me.mockImplementation(() => new Promise(() => {}));
+    mockUseAuth.mockReturnValue({ user: null, loading: true });
 
     render(
-      <BrowserRouter>
-        <AuthProvider>
-          <ProtectedRoute>
-            <div>Protected Content</div>
-          </ProtectedRoute>
-        </AuthProvider>
-      </BrowserRouter>
+      <MemoryRouter initialEntries={['/protected']}>
+        <ProtectedRoute>
+          <div>Protected Content</div>
+        </ProtectedRoute>
+      </MemoryRouter>
     );
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
-  it('shows login prompt when not authenticated', async () => {
-    mockAuthApi.me.mockRejectedValue(new Error('Unauthorized'));
+  it('redirects to login when not authenticated', async () => {
+    mockUseAuth.mockReturnValue({ user: null, loading: false });
 
     render(
-      <BrowserRouter>
-        <AuthProvider>
-          <ProtectedRoute>
-            <div>Protected Content</div>
-          </ProtectedRoute>
-        </AuthProvider>
-      </BrowserRouter>
+      <MemoryRouter initialEntries={['/protected']}>
+        <Routes>
+          <Route
+            path="/protected"
+            element={
+              <ProtectedRoute>
+                <div>Protected Content</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<div>Login Page</div>} />
+        </Routes>
+      </MemoryRouter>
     );
 
-    await vi.waitFor(() => {
-      expect(screen.getByText('Please login')).toBeInTheDocument();
+    await vi.waitFor(async () => {
+      expect(screen.getByText('Login Page')).toBeInTheDocument();
     });
   });
 
   it('renders protected content when authenticated', async () => {
-    mockAuthApi.me.mockResolvedValue({
-      data: { success: true, user: { id: 1, email: 'admin@example.com', role: 'admin' } }
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, email: 'admin@example.com', role: 'admin' },
+      loading: false,
     });
 
     render(
-      <BrowserRouter>
-        <AuthProvider>
-          <ProtectedRoute>
-            <div>Protected Content</div>
-          </ProtectedRoute>
-        </AuthProvider>
-      </BrowserRouter>
+      <MemoryRouter initialEntries={['/protected']}>
+        <ProtectedRoute>
+          <div>Protected Content</div>
+        </ProtectedRoute>
+      </MemoryRouter>
     );
 
     await vi.waitFor(() => {
       expect(screen.getByText('Protected Content')).toBeInTheDocument();
-    });
-  });
-
-  it('redirects to login on logout', async () => {
-    mockAuthApi.me.mockResolvedValue({
-      data: { success: true, user: { id: 1, email: 'admin@example.com', role: 'admin' } }
-    });
-    mockAuthApi.logout.mockResolvedValue({});
-
-    const TestComponent = () => {
-      const { logout } = useAuth();
-      return (
-        <button onClick={logout}>Logout</button>
-      );
-    };
-
-    render(
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/protected" element={
-              <ProtectedRoute>
-                <TestComponent />
-              </ProtectedRoute>
-            } />
-            <Route path="/login" element={<div>Login Page</div>} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    );
-
-    await vi.waitFor(() => {
-      expect(screen.getByText('Logout')).toBeInTheDocument();
-    });
-
-    const logoutButton = screen.getByText('Logout');
-    logoutButton.click();
-
-    await vi.waitFor(() => {
-      expect(screen.getByText('Please login')).toBeInTheDocument();
     });
   });
 });

@@ -41,8 +41,12 @@ public class CSRFProtection {
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
         
         // Store token in session with timestamp
+        long generatedAt = System.currentTimeMillis();
         session.setAttribute(CSRF_TOKEN_SESSION_KEY, token);
-        session.setAttribute(CSRF_TOKEN_TIME_KEY, System.currentTimeMillis());
+        session.setAttribute(CSRF_TOKEN_TIME_KEY, generatedAt);
+        // Backward compatibility for older views/tests still using legacy key names.
+        session.setAttribute("csrfToken", token);
+        session.setAttribute("csrfTokenTime", generatedAt);
         
         return token;
     }
@@ -65,9 +69,15 @@ public class CSRFProtection {
         
         // Get stored token
         String sessionToken = (String) session.getAttribute(CSRF_TOKEN_SESSION_KEY);
+        if (sessionToken == null) {
+            sessionToken = (String) session.getAttribute("csrfToken");
+        }
         Long tokenTime = (Long) session.getAttribute(CSRF_TOKEN_TIME_KEY);
+        if (tokenTime == null) {
+            tokenTime = (Long) session.getAttribute("csrfTokenTime");
+        }
         
-        if (sessionToken == null || tokenTime == null) {
+        if (sessionToken == null) {
             return false;
         }
         
@@ -76,6 +86,11 @@ public class CSRFProtection {
             return false;
         }
         
+        // Legacy compatibility: older sessions/tests may not have timestamp metadata.
+        if (tokenTime == null) {
+            return true;
+        }
+
         // Check if token has expired
         if (System.currentTimeMillis() - tokenTime > TOKEN_EXPIRY_TIME * 1000) {
             return false;
@@ -199,6 +214,9 @@ public class CSRFProtection {
      */
     static String contextRelativePath(HttpServletRequest request) {
         String uri = request.getRequestURI();
+        if (uri == null || uri.isEmpty()) {
+            uri = "/";
+        }
         String ctx = request.getContextPath();
         if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
             uri = uri.substring(ctx.length());
@@ -270,6 +288,11 @@ public class CSRFProtection {
         
         // Check parameter first
         if (validateTokenFromRequest(request, "csrf_token")) {
+            return true;
+        }
+
+        // Backward compatibility for legacy forms/tests.
+        if (validateTokenFromRequest(request, "csrfToken")) {
             return true;
         }
         

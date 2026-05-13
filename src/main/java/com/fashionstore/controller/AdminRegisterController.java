@@ -113,8 +113,14 @@ public class AdminRegisterController extends HttpServlet {
                 AuditLogger.log("ADMIN_REGISTERED", "New admin registered: " + email, String.valueOf(userId), request);
                 RateLimiter.resetRateLimit(request, "/admin/register");
 
-                // Auto-login the new admin
+                // Auto-login the new admin. If the read-after-write fails (transient
+                // pool error), fall back to the in-memory user we just constructed
+                // instead of NPE'ing on createdUser.getUserId().
                 User createdUser = userService.getUserById(userId);
+                if (createdUser == null) {
+                    user.setUserId(userId);
+                    createdUser = user;
+                }
                 HttpSession session = request.getSession(true);
                 session.setAttribute("userId", createdUser.getUserId());
                 session.setAttribute("user", createdUser);

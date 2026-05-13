@@ -29,6 +29,8 @@ public class RegisterController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // Generate CSRF token for registration form
+        com.fashionstore.security.CSRFProtection.addTokenToRequest(request);
         request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
     }
 
@@ -74,7 +76,7 @@ public class RegisterController extends HttpServlet {
             user.setPassword(password);
             user.setGender(gender);
             user.setAddress(address);
-            user.setRole("CUSTOMER");
+            user.setRole("customer");
 
             int userId = userService.registerUser(user);
 

@@ -1,10 +1,13 @@
 import axios from 'axios';
 
+// In production/Docker, the nginx proxy handles /api routing,
+// so we use a relative base URL. In dev (Vite), the proxy forwards to localhost.
+// VITE_API_BASE env var can override for custom setups.
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/admin';
 
 const api = axios.create({
   baseURL: API_BASE,
-  withCredentials: true, // include JSESSIONID cookie cross-origin in dev (proxy rewrites it)
+  withCredentials: true, // include JSESSIONID cookie
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -18,8 +21,10 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       // Avoid bounce loops on the login screen itself
-      if (!window.location.pathname.endsWith('/login')) {
-        window.location.replace('/login');
+      const pathname = window.location.pathname;
+      if (!pathname.endsWith('/login') && !pathname.startsWith('/login?')) {
+        // Dispatch event for AuthProvider to handle router-aware navigation
+        window.dispatchEvent(new CustomEvent('auth:logout'));
       }
     }
     return Promise.reject(err);

@@ -13,8 +13,8 @@ vi.mock('react-router-dom', async () => {
 });
 
 const mockLogin = vi.fn();
-const mockUser = null;
-vi.mock('../auth/AuthContext.jsx', () => ({
+let mockUser = null;
+vi.mock('../../auth/AuthContext.jsx', () => ({
   useAuth: () => ({
     login: mockLogin,
     user: mockUser,
@@ -24,6 +24,7 @@ vi.mock('../auth/AuthContext.jsx', () => ({
 describe('Login', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUser = null;
   });
 
   it('renders login form', () => {
@@ -95,7 +96,7 @@ describe('Login', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid credentials.')).toBeInTheDocument();
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
     });
   });
 

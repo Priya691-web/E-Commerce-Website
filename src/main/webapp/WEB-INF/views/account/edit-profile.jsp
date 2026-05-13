@@ -33,31 +33,7 @@
         </div>
 
         <div class="account-layout">
-            <!-- Sidebar Navigation -->
-            <aside class="account-sidebar">
-                <nav class="account-nav">
-                    <a href="<%= request.getContextPath() %>/account/profile" class="account-nav-item">
-                        <span class="nav-icon">👤</span>
-                        <span>Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/edit" class="account-nav-item active">
-                        <span class="nav-icon">✏️</span>
-                        <span>Edit Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/addresses" class="account-nav-item">
-                        <span class="nav-icon">📍</span>
-                        <span>Addresses</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/settings" class="account-nav-item">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Settings</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/orders" class="account-nav-item">
-                        <span class="nav-icon">📦</span>
-                        <span>Orders</span>
-                    </a>
-                </nav>
-            </aside>
+            <jsp:include page="/WEB-INF/views/partials/account-sidebar.jsp" />
 
             <!-- Main Content -->
             <div class="account-content">
@@ -80,7 +56,7 @@
 
                     <form action="<%= request.getContextPath() %>/account/profile" method="POST" class="form account-form">
                         <input type="hidden" name="action" value="updateProfile">
-                        <input type="hidden" name="csrf_token" value="${csrfToken}">
+                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
 
                         <div class="form-group <%= fieldErrors != null && fieldErrors.containsKey("fullName") ? "has-error" : "" %>">
                             <label for="fullName">Full Name *</label>

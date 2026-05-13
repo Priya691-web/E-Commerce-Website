@@ -47,9 +47,19 @@ public class OrderController extends HttpServlet {
 
         List<Order> orders;
         try {
-            orders = orderDAO.getOrdersByUserId(userId);
-            // Batch load order items to avoid N+1 queries
-            orderItemDAO.batchLoadOrderItems(orders);
+            if (userId <= 0) {
+                logger.warn("Invalid user ID in OrderController: {}", userId);
+                orders = Collections.emptyList();
+                request.setAttribute("error", "Invalid user session. Please login again.");
+            } else {
+                orders = orderDAO.getOrdersByUserId(userId);
+                if (orders != null) {
+                    // Batch load order items to avoid N+1 queries
+                    orderItemDAO.batchLoadOrderItems(orders);
+                } else {
+                    orders = Collections.emptyList();
+                }
+            }
         } catch (Exception e) {
             logger.error("Failed to load orders for user #{}: {}", userId, e.getMessage(), e);
             orders = Collections.emptyList();

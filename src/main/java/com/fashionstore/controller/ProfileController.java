@@ -1,5 +1,9 @@
 package com.fashionstore.controller;
 
+import com.fashionstore.dao.OrderDAO;
+import com.fashionstore.dao.WishlistDAO;
+import com.fashionstore.daoimpl.OrderDAOImpl;
+import com.fashionstore.daoimpl.WishlistDAOImpl;
 import com.fashionstore.model.User;
 import com.fashionstore.security.CSRFProtection;
 import com.fashionstore.service.AddressService;
@@ -11,6 +15,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -19,12 +25,17 @@ import java.sql.ResultSet;
 
 @WebServlet("/account/profile/*")
 public class ProfileController extends HttpServlet {
+    private static final Logger logger = LoggerFactory.getLogger(ProfileController.class);
     private final UserService userService;
     private final AddressService addressService;
+    private final OrderDAO orderDAO;
+    private final WishlistDAO wishlistDAO;
 
     public ProfileController() {
         this.userService = new UserService();
         this.addressService = new AddressService();
+        this.orderDAO = new OrderDAOImpl();
+        this.wishlistDAO = new WishlistDAOImpl();
     }
 
     @Override
@@ -84,18 +95,35 @@ public class ProfileController extends HttpServlet {
         }
     }
 
-    private void showProfile(HttpServletRequest request, HttpServletResponse response, User user) 
+    private void showProfile(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
+        int userId = user.getUserId();
         // Get user's addresses
-        var addresses = addressService.getAddressesByUserId(user.getUserId());
-        var defaultShipping = addressService.getDefaultAddress(user.getUserId(), "shipping");
-        var defaultBilling = addressService.getDefaultAddress(user.getUserId(), "billing");
+        var addresses = addressService.getAddressesByUserId(userId);
+        var defaultShipping = addressService.getDefaultAddress(userId, "shipping");
+        var defaultBilling = addressService.getDefaultAddress(userId, "billing");
+
+        // Dynamic counts for stats sidebar
+        int orderCount = 0;
+        int wishlistCount = 0;
+        try {
+            orderCount = orderDAO.getOrdersByUserId(userId).size();
+        } catch (Exception ex) {
+            logger.warn("Failed to get order count for user {}: {}", userId, ex.getMessage());
+        }
+        try {
+            wishlistCount = wishlistDAO.getWishlistByUserId(userId).size();
+        } catch (Exception ex) {
+            logger.warn("Failed to get wishlist count for user {}: {}", userId, ex.getMessage());
+        }
 
         request.setAttribute("addresses", addresses);
         request.setAttribute("addressCount", addresses.size());
         request.setAttribute("defaultShipping", defaultShipping);
         request.setAttribute("defaultBilling", defaultBilling);
-        
+        request.setAttribute("orderCount", orderCount);
+        request.setAttribute("wishlistCount", wishlistCount);
+
         request.getRequestDispatcher("/WEB-INF/views/account/profile.jsp").forward(request, response);
     }
 
@@ -170,7 +198,7 @@ public class ProfileController extends HttpServlet {
         }
     }
 
-    private void updateSettings(HttpServletRequest request, HttpServletResponse response, User user) 
+    private void updateSettings(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
         boolean emailNotifications = "on".equals(request.getParameter("emailNotifications"));
         boolean smsNotifications = "on".equals(request.getParameter("smsNotifications"));
@@ -178,13 +206,18 @@ public class ProfileController extends HttpServlet {
         boolean promotionalEmails = "on".equals(request.getParameter("promotionalEmails"));
         boolean newsletterSubscription = "on".equals(request.getParameter("newsletterSubscription"));
 
+        boolean profileVisible = "on".equals(request.getParameter("profileVisible"));
+        boolean activityTracking = "on".equals(request.getParameter("activityTracking"));
+        boolean thirdPartySharing = "on".equals(request.getParameter("thirdPartySharing"));
+
         String language = normalizeToAllowed(request.getParameter("language"), java.util.Set.of("en", "hi", "es"), "en");
         String currency = normalizeToAllowed(request.getParameter("currency"), java.util.Set.of("INR", "USD", "EUR", "GBP"), "INR");
         String theme = normalizeToAllowed(request.getParameter("themePreference"), java.util.Set.of("auto", "light", "dark"), "auto");
 
         String sql = "INSERT INTO user_settings " +
-                "(user_id, email_notifications, sms_notifications, order_updates, promotional_emails, newsletter_subscription, language, currency, theme_preference) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                "(user_id, email_notifications, sms_notifications, order_updates, promotional_emails, newsletter_subscription, " +
+                "language, currency, theme_preference, profile_visible, activity_tracking, third_party_sharing) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE " +
                 "email_notifications = VALUES(email_notifications), " +
                 "sms_notifications = VALUES(sms_notifications), " +
@@ -193,7 +226,10 @@ public class ProfileController extends HttpServlet {
                 "newsletter_subscription = VALUES(newsletter_subscription), " +
                 "language = VALUES(language), " +
                 "currency = VALUES(currency), " +
-                "theme_preference = VALUES(theme_preference)";
+                "theme_preference = VALUES(theme_preference), " +
+                "profile_visible = VALUES(profile_visible), " +
+                "activity_tracking = VALUES(activity_tracking), " +
+                "third_party_sharing = VALUES(third_party_sharing)";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -206,6 +242,9 @@ public class ProfileController extends HttpServlet {
             ps.setString(7, language);
             ps.setString(8, currency);
             ps.setString(9, theme);
+            ps.setBoolean(10, profileVisible);
+            ps.setBoolean(11, activityTracking);
+            ps.setBoolean(12, thirdPartySharing);
             ps.executeUpdate();
             request.setAttribute("success", "Settings updated successfully");
         } catch (Exception ex) {
@@ -266,7 +305,8 @@ public class ProfileController extends HttpServlet {
 
     private void loadUserSettings(HttpServletRequest request, int userId) {
         String sql = "SELECT email_notifications, sms_notifications, order_updates, promotional_emails, " +
-                "newsletter_subscription, language, currency, theme_preference FROM user_settings WHERE user_id = ?";
+                "newsletter_subscription, language, currency, theme_preference, " +
+                "profile_visible, activity_tracking, third_party_sharing FROM user_settings WHERE user_id = ?";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -280,6 +320,9 @@ public class ProfileController extends HttpServlet {
                     request.setAttribute("language", rs.getString("language"));
                     request.setAttribute("currency", rs.getString("currency"));
                     request.setAttribute("themePreference", rs.getString("theme_preference"));
+                    request.setAttribute("profileVisible", rs.getBoolean("profile_visible"));
+                    request.setAttribute("activityTracking", rs.getBoolean("activity_tracking"));
+                    request.setAttribute("thirdPartySharing", rs.getBoolean("third_party_sharing"));
                     return;
                 }
             }
@@ -294,6 +337,9 @@ public class ProfileController extends HttpServlet {
         request.setAttribute("language", "en");
         request.setAttribute("currency", "INR");
         request.setAttribute("themePreference", "auto");
+        request.setAttribute("profileVisible", false);
+        request.setAttribute("activityTracking", true);
+        request.setAttribute("thirdPartySharing", false);
     }
 
     private static String normalizeToAllowed(String value, java.util.Set<String> allowed, String fallback) {

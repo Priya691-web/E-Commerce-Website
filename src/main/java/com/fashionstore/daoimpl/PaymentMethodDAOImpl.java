@@ -24,39 +24,46 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
         String sql = "INSERT INTO payment_methods (user_id, method_type, provider, method_alias, " +
                      "last_four, expiry_month, expiry_year, card_brand, is_default, " +
                      "is_active, gateway_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            
-            // If this is set as default, unset other defaults first
+
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
             if (paymentMethod.isDefault()) {
-                unsetDefaultPaymentMethods(paymentMethod.getUserId());
+                unsetDefaultPaymentMethods(conn, paymentMethod.getUserId());
             }
-            
-            pstmt.setInt(1, paymentMethod.getUserId());
-            pstmt.setString(2, paymentMethod.getMethodType());
-            pstmt.setString(3, paymentMethod.getProvider());
-            pstmt.setString(4, paymentMethod.getMethodAlias());
-            pstmt.setString(5, paymentMethod.getLastFour());
-            pstmt.setObject(6, paymentMethod.getExpiryMonth());
-            pstmt.setObject(7, paymentMethod.getExpiryYear());
-            pstmt.setString(8, paymentMethod.getCardBrand());
-            pstmt.setBoolean(9, paymentMethod.isDefault());
-            pstmt.setBoolean(10, paymentMethod.isActive());
-            pstmt.setString(11, paymentMethod.getGatewayToken());
-            
-            int result = pstmt.executeUpdate();
-            
-            if (result > 0) {
-                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        paymentMethod.setPaymentMethodId(generatedKeys.getInt(1));
+
+            try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                pstmt.setInt(1, paymentMethod.getUserId());
+                pstmt.setString(2, paymentMethod.getMethodType());
+                pstmt.setString(3, paymentMethod.getProvider());
+                pstmt.setString(4, paymentMethod.getMethodAlias());
+                pstmt.setString(5, paymentMethod.getLastFour());
+                pstmt.setObject(6, paymentMethod.getExpiryMonth());
+                pstmt.setObject(7, paymentMethod.getExpiryYear());
+                pstmt.setString(8, paymentMethod.getCardBrand());
+                pstmt.setBoolean(9, paymentMethod.isDefault());
+                pstmt.setBoolean(10, paymentMethod.isActive());
+                pstmt.setString(11, paymentMethod.getGatewayToken());
+
+                int result = pstmt.executeUpdate();
+                if (result > 0) {
+                    try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            paymentMethod.setPaymentMethodId(generatedKeys.getInt(1));
+                        }
                     }
+                    conn.commit();
+                    return true;
                 }
-                return true;
+                conn.rollback();
             }
         } catch (SQLException e) {
-            logger.error("PaymentMethodDAOImpl.addPaymentMethod Error: {}", e.getMessage());
+            rollbackQuietly(conn);
+            logger.error("PaymentMethodDAOImpl.addPaymentMethod Error: {}", e.getMessage(), e);
+        } finally {
+            closeQuietly(conn);
         }
         return false;
     }
@@ -67,31 +74,44 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
                      "last_four = ?, expiry_month = ?, expiry_year = ?, card_brand = ?, " +
                      "is_default = ?, is_active = ?, gateway_token = ?, updated_at = CURRENT_TIMESTAMP " +
                      "WHERE payment_method_id = ? AND user_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            // If this is set as default, unset other defaults first
+
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
             if (paymentMethod.isDefault()) {
-                unsetDefaultPaymentMethods(paymentMethod.getUserId());
+                unsetDefaultPaymentMethods(conn, paymentMethod.getUserId());
             }
-            
-            pstmt.setString(1, paymentMethod.getMethodType());
-            pstmt.setString(2, paymentMethod.getProvider());
-            pstmt.setString(3, paymentMethod.getMethodAlias());
-            pstmt.setString(4, paymentMethod.getLastFour());
-            pstmt.setObject(5, paymentMethod.getExpiryMonth());
-            pstmt.setObject(6, paymentMethod.getExpiryYear());
-            pstmt.setString(7, paymentMethod.getCardBrand());
-            pstmt.setBoolean(8, paymentMethod.isDefault());
-            pstmt.setBoolean(9, paymentMethod.isActive());
-            pstmt.setString(10, paymentMethod.getGatewayToken());
-            pstmt.setInt(11, paymentMethod.getPaymentMethodId());
-            pstmt.setInt(12, paymentMethod.getUserId());
-            
-            return pstmt.executeUpdate() > 0;
+
+            boolean updated;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, paymentMethod.getMethodType());
+                pstmt.setString(2, paymentMethod.getProvider());
+                pstmt.setString(3, paymentMethod.getMethodAlias());
+                pstmt.setString(4, paymentMethod.getLastFour());
+                pstmt.setObject(5, paymentMethod.getExpiryMonth());
+                pstmt.setObject(6, paymentMethod.getExpiryYear());
+                pstmt.setString(7, paymentMethod.getCardBrand());
+                pstmt.setBoolean(8, paymentMethod.isDefault());
+                pstmt.setBoolean(9, paymentMethod.isActive());
+                pstmt.setString(10, paymentMethod.getGatewayToken());
+                pstmt.setInt(11, paymentMethod.getPaymentMethodId());
+                pstmt.setInt(12, paymentMethod.getUserId());
+                updated = pstmt.executeUpdate() > 0;
+            }
+
+            if (updated) {
+                conn.commit();
+            } else {
+                conn.rollback();
+            }
+            return updated;
         } catch (SQLException e) {
-            logger.error("PaymentMethodDAOImpl.updatePaymentMethod Error: {}", e.getMessage());
+            rollbackQuietly(conn);
+            logger.error("PaymentMethodDAOImpl.updatePaymentMethod Error: {}", e.getMessage(), e);
+        } finally {
+            closeQuietly(conn);
         }
         return false;
     }
@@ -179,25 +199,39 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
 
     @Override
     public boolean setDefaultPaymentMethod(int paymentMethodId, int userId) {
-        String sql = "UPDATE payment_methods SET is_default = FALSE WHERE user_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, userId);
-            pstmt.executeUpdate();
-            
-            // Now set the new default
-            String updateSql = "UPDATE payment_methods SET is_default = TRUE, " +
-                              "updated_at = CURRENT_TIMESTAMP WHERE payment_method_id = ? AND user_id = ?";
-            
+        String unsetSql = "UPDATE payment_methods SET is_default = FALSE WHERE user_id = ?";
+        String updateSql = "UPDATE payment_methods SET is_default = TRUE, " +
+                           "updated_at = CURRENT_TIMESTAMP WHERE payment_method_id = ? AND user_id = ?";
+
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(unsetSql)) {
+                pstmt.setInt(1, userId);
+                pstmt.executeUpdate();
+            }
+
+            boolean updated;
             try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
                 updatePstmt.setInt(1, paymentMethodId);
                 updatePstmt.setInt(2, userId);
-                return updatePstmt.executeUpdate() > 0;
+                updated = updatePstmt.executeUpdate() > 0;
             }
+
+            if (updated) {
+                conn.commit();
+            } else {
+                // No row matched the (paymentMethodId, userId) pair – revert the unset.
+                conn.rollback();
+            }
+            return updated;
         } catch (SQLException e) {
-            logger.error("PaymentMethodDAOImpl.setDefaultPaymentMethod Error: {}", e.getMessage());
+            rollbackQuietly(conn);
+            logger.error("PaymentMethodDAOImpl.setDefaultPaymentMethod Error: {}", e.getMessage(), e);
+        } finally {
+            closeQuietly(conn);
         }
         return false;
     }
@@ -306,15 +340,35 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
         return paymentMethod;
     }
 
-    // Helper method to unset default payment methods
-    private void unsetDefaultPaymentMethods(int userId) throws SQLException {
+    // Helper method to unset default payment methods – reuses the caller's connection
+    // so that the unset and the subsequent insert/update participate in the same transaction.
+    private void unsetDefaultPaymentMethods(Connection conn, int userId) throws SQLException {
         String sql = "UPDATE payment_methods SET is_default = FALSE WHERE user_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
             pstmt.executeUpdate();
+        }
+    }
+
+    private void rollbackQuietly(Connection conn) {
+        if (conn == null) return;
+        try {
+            conn.rollback();
+        } catch (SQLException ex) {
+            logger.error("PaymentMethodDAOImpl rollback failed: {}", ex.getMessage());
+        }
+    }
+
+    private void closeQuietly(Connection conn) {
+        if (conn == null) return;
+        try {
+            conn.setAutoCommit(true);
+        } catch (SQLException ignored) { /* connection may already be invalid */ }
+        try {
+            conn.close();
+        } catch (SQLException ex) {
+            logger.error("PaymentMethodDAOImpl close failed: {}", ex.getMessage());
         }
     }
 }

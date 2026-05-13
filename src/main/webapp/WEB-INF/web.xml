@@ -7,6 +7,7 @@
   <display-name>FashionStore</display-name>
 
   <!-- Filter Mappings - Order matters! -->
+  
   <!-- 1. CORS (handle cross-origin requests first) -->
   <filter>
     <filter-name>CORSFilter</filter-name>
@@ -17,7 +18,7 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 2. Security Headers (set headers after CORS) -->
+  <!-- 2. Security Headers (set headers after CORS) - Consolidated security filter -->
   <filter>
     <filter-name>SecurityHeadersFilter</filter-name>
     <filter-class>com.fashionstore.filter.SecurityHeadersFilter</filter-class>
@@ -27,7 +28,27 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 3. Request Logging (log all requests) -->
+  <!-- 3. Security Hardening (rate limiting, IP blocking) -->
+  <filter>
+    <filter-name>SecurityHardeningFilter</filter-name>
+    <filter-class>com.fashionstore.security.SecurityHardeningFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>SecurityHardeningFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- 4. Concurrency Control (idempotency, duplicate prevention) -->
+  <filter>
+    <filter-name>ConcurrencyControlFilter</filter-name>
+    <filter-class>com.fashionstore.security.ConcurrencyControlFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>ConcurrencyControlFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- 5. Request Logging (log all requests) -->
   <filter>
     <filter-name>RequestLoggingFilter</filter-name>
     <filter-class>com.fashionstore.filter.RequestLoggingFilter</filter-class>
@@ -37,7 +58,7 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 4. Authentication (check auth before CSRF) -->
+  <!-- 6. Authentication (check auth before CSRF) -->
   <filter>
     <filter-name>AuthFilter</filter-name>
     <filter-class>com.fashionstore.filter.AuthFilter</filter-class>
@@ -47,7 +68,7 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 5. CSRF (validate after auth) -->
+  <!-- 7. CSRF (validate after auth) -->
   <filter>
     <filter-name>CSRFFilter</filter-name>
     <filter-class>com.fashionstore.filter.CSRFFilter</filter-class>
@@ -75,10 +96,11 @@
 
   <!-- Session Configuration -->
   <session-config>
-    <session-timeout>30</session-timeout>
+    <session-timeout>15</session-timeout>
     <cookie-config>
       <http-only>true</http-only>
-      <!-- Secure flag is set programmatically in SessionCookieConfigListener (prod / env). -->
+      <secure>true</secure>
+      <same-site>Strict</same-site>
     </cookie-config>
     <tracking-mode>COOKIE</tracking-mode>
   </session-config>

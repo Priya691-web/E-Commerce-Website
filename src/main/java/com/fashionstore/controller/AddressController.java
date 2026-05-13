@@ -194,10 +194,28 @@ public class AddressController extends HttpServlet {
         }
     }
 
-    private void editAddress(HttpServletRequest request, HttpServletResponse response, User user) 
+    private void editAddress(HttpServletRequest request, HttpServletResponse response, User user)
             throws IOException, ServletException {
         try {
             int addressId = Integer.parseInt(request.getParameter("addressId"));
+
+            // Ownership check: verify this address belongs to the current user
+            Address existing = addressService.getAddressById(addressId, user.getUserId());
+            if (existing == null) {
+                if (acceptsJson(request)) {
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write(JsonUtil.toJson(Map.of(
+                            "success", false,
+                            "message", "Address not found or access denied"
+                    )));
+                } else {
+                    request.setAttribute("error", "Address not found");
+                    listAddresses(request, response, user);
+                }
+                return;
+            }
+
             Address address = extractAddressFromRequest(request, user.getUserId());
             address.setAddressId(addressId);
 

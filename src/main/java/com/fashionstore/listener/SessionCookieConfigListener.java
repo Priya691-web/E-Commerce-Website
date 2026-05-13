@@ -1,5 +1,6 @@
 package com.fashionstore.listener;
 
+import com.fashionstore.monitoring.RuntimeMonitor;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.SessionCookieConfig;
@@ -35,6 +36,7 @@ public class SessionCookieConfigListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        // no-op
+        // Shutdown runtime monitoring to clean up ScheduledExecutorService
+        RuntimeMonitor.shutdown();
     }
 }

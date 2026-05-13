@@ -3,16 +3,16 @@
  * Editorial luxury: warm neutrals, restrained accent, one scale each for space/type/radius/elevation.
  */
 :root {
-    /* Core palette — warm stone / editorial paper */
-    --color-ink: #101010;
-    --color-bg: #f3f2ef;
+    /* Core palette — luxury editorial neutrals */
+    --color-ink: #0a0a0a;
+    --color-bg: #fafafa;
     --color-surface: #ffffff;
-    --color-surface-alt: #eae8e3;
+    --color-surface-alt: #f5f5f5;
     --color-text-primary: var(--color-ink);
-    --color-text-secondary: #4a4844;
-    --color-text-tertiary: #7a7670;
-    --color-border: #e0ddd6;
-    --color-border-strong: #c8c4bc;
+    --color-text-secondary: #2c2c2c;
+    --color-text-tertiary: #6b6b6b;
+    --color-border: #e8e8e8;
+    --color-border-strong: #d4d4d4;
     --color-primary: var(--color-ink);
     --color-primary-hover: #000000;
     --color-inverse: #ffffff;
@@ -21,34 +21,34 @@
     --color-bg-secondary: var(--color-surface-alt);
 
     /* Footer / deep surfaces */
-    --color-footer-bg: #121211;
-    --color-footer-muted: #b5b3ad;
-    --color-footer-border: #2a2926;
+    --color-footer-bg: #0f0f0f;
+    --color-footer-muted: #a8a8a8;
+    --color-footer-border: #2a2a2a;
 
-    /* Semantic */
-    --color-success: #0b7d54;
-    --color-danger: #a32c2c;
-    --color-warning: #8a5f18;
-    --color-info: #1a457f;
+    /* Semantic — refined luxury palette */
+    --color-success: #006644;
+    --color-danger: #dc2626;
+    --color-warning: #d97706;
+    --color-info: #1e40af;
     --color-error: var(--color-danger);
-    --color-success-light: rgba(11, 125, 84, 0.12);
-    --color-danger-light: rgba(163, 44, 44, 0.1);
+    --color-success-light: rgba(0, 102, 68, 0.08);
+    --color-danger-light: rgba(220, 38, 38, 0.08);
     --color-error-light: var(--color-danger-light);
-    --color-info-light: rgba(26, 69, 127, 0.1);
-    --color-warning-light: rgba(138, 95, 24, 0.12);
-    --color-danger-bg: rgba(163, 44, 44, 0.08);
-    --color-danger-bg-solid: rgba(163, 44, 44, 0.08);
-    --color-danger-border: rgba(163, 44, 44, 0.32);
-    --color-success-hover: #096846;
-    --color-danger-hover: #8b2424;
+    --color-info-light: rgba(30, 64, 175, 0.08);
+    --color-warning-light: rgba(217, 119, 6, 0.08);
+    --color-danger-bg: rgba(220, 38, 38, 0.04);
+    --color-danger-bg-solid: rgba(220, 38, 38, 0.04);
+    --color-danger-border: rgba(220, 38, 38, 0.16);
+    --color-success-hover: #005239;
+    --color-danger-hover: #b91c1c;
 
-    /* Accent — muted warm stone (use sparingly) */
-    --color-accent: #5c5548;
-    --color-accent-hover: #454037;
-    --color-champagne: #6b6356;
-    /* Restrained warm gold — hairlines / focus only */
-    --color-gold-warm: #9a8868;
-    --color-gold-muted: rgba(154, 136, 104, 0.35);
+    /* Accent — luxury bronze */
+    --color-accent: #8b7355;
+    --color-accent-hover: #6b5a44;
+    --color-champagne: #c4b5a0;
+    /* Refined gold — premium accents */
+    --color-gold-warm: #b8860b;
+    --color-gold-muted: rgba(184, 134, 11, 0.25);
 
     /* Typography */
     --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -106,12 +106,12 @@
 
     --badge-md: 18px;
 
-    /* Elevation — soft editorial (avoid harsh drops) */
-    --shadow-xs: 0 1px 2px rgba(16, 16, 14, 0.035);
-    --shadow-sm: 0 3px 14px rgba(16, 16, 14, 0.045);
-    --shadow-md: 0 10px 28px rgba(16, 16, 14, 0.065);
-    --shadow-lg: 0 16px 40px rgba(16, 16, 14, 0.075);
-    --shadow-xl: 0 22px 52px rgba(16, 16, 14, 0.09);
+    /* Elevation — luxury shadows with depth */
+    --shadow-xs: 0 1px 3px rgba(10, 10, 10, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-sm: 0 4px 12px rgba(10, 10, 10, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 8px 24px rgba(10, 10, 10, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 16px 48px rgba(10, 10, 10, 0.16), 0 8px 16px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 24px 64px rgba(10, 10, 10, 0.20), 0 12px 24px rgba(0, 0, 0, 0.10);
 
     /* Layout */
     --container-sm: 680px;
@@ -131,13 +131,14 @@
     --z-dropdown: 1300;
     --z-tooltip: 1400;
 
-    /* Motion — restrained premium */
-    --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
-    --transition-fast: 160ms var(--ease-out);
-    --transition-base: 240ms var(--ease-out);
-    --transition-slow: 400ms var(--ease-out);
-    --transition-hover: 220ms var(--ease-premium);
+    /* Motion — luxury smooth */
+    --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-fast: 200ms var(--ease-out);
+    --transition-base: 300ms var(--ease-out);
+    --transition-slow: 500ms var(--ease-out);
+    --transition-hover: 250ms var(--ease-premium);
+    --transition-premium: 400ms var(--ease-premium);
 
     /* Focus (reset + components) */
     --focus-ring-width: 2px;
@@ -161,9 +162,14 @@
     --color-border-light: #ebe8e2;
     --color-primary-light: var(--color-surface-alt);
 
-    /* “Gold” tokens = neutral editorial (no metallic UI) */
-    --gradient-gold: linear-gradient(180deg, #1c1c1a 0%, #121211 100%);
-    --glow-gold: 0 10px 28px rgba(16, 16, 14, 0.1);
+    /* Premium gradients for luxury experience */
+    --gradient-gold: linear-gradient(135deg, #b8860b 0%, #9a7653 50%, #8b6355 100%);
+    --glow-gold: 0 8px 32px rgba(184, 134, 11, 0.15);
+    --gradient-hero: radial-gradient(circle at 25% 20%, rgba(184, 134, 11, 0.12) 0%, transparent 50%),
+                     radial-gradient(circle at 75% 25%, rgba(255, 255, 255, 0.06) 0%, transparent 40%),
+                     linear-gradient(135deg, #fafafa 0%, #f5f5f5 35%, #e8e8e8 100%);
+    --gradient-card-glass: linear-gradient(145deg, rgba(255, 255, 255, 0.85) 0%, rgba(245, 245, 245, 0.75) 100%);
+    --gradient-luxury-overlay: linear-gradient(180deg, rgba(10, 10, 10, 0.4) 0%, rgba(10, 10, 10, 0.1) 100%);
 
     /* Admin status (unchanged intent, calmer stops) */
     --gradient-emerald: linear-gradient(135deg, #0c7a55 0%, #0b7d54 100%);

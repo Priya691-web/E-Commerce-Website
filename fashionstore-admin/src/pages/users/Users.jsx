@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Search, Shield, Ban, RotateCcw, Trash2 } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
 import { UsersApi } from '../../api/client.js';
@@ -13,18 +13,29 @@ export default function Users() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [actionId, setActionId] = useState(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     (async () => {
       try {
         const data = await UsersApi.list();
-        setUsers(Array.isArray(data) ? data : []);
+        if (mountedRef.current) {
+          setUsers(Array.isArray(data) ? data : []);
+        }
       } catch {
-        addToast('Failed to load users', 'error');
+        if (mountedRef.current) {
+          addToast('Failed to load users', 'error');
+        }
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     })();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [addToast]);
 
   const filtered = useMemo(() => {

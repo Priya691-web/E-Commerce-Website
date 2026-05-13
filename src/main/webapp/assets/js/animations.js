@@ -192,6 +192,32 @@
     document.head.appendChild(style);
     
     // ============================================
+    // CLEANUP
+    // ============================================
+    
+    cleanup: function() {
+        // Disconnect all observers to prevent memory leaks
+        const observers = [
+            'revealObserver',
+            'staggerObserver', 
+            'parallaxObserver'
+        ];
+        
+        observers.forEach(observerName => {
+            if (this[observerName]) {
+                this[observerName].disconnect();
+                this[observerName] = null;
+            }
+        });
+        
+        // Cancel any running animations
+        if (this.parallaxRaf) {
+            cancelAnimationFrame(this.parallaxRaf);
+            this.parallaxRaf = null;
+        }
+    },
+    
+    // ============================================
     // INITIALIZE
     // ============================================
     
@@ -200,6 +226,11 @@
     } else {
         AnimationEngine.init();
     }
+    
+    // Cleanup on page unload to prevent memory leaks
+    window.addEventListener('beforeunload', () => {
+        AnimationEngine.cleanup();
+    });
     
     // Expose for external use
     window.AnimationEngine = AnimationEngine;

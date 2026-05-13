@@ -51,9 +51,9 @@ public class PaymentDAOImpl implements PaymentDAO {
                 }
             }
         } catch (SQLException e) {
-            logger.error("PaymentDAOImpl.createPayment Error: {}", e.getMessage());
+            logger.error("PaymentDAOImpl.createPayment Error: {}", e.getMessage(), e);
         }
-        return -1;
+        return 0;
     }
 
     @Override

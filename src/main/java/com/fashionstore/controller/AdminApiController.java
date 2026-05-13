@@ -41,6 +41,7 @@ public class AdminApiController extends HttpServlet {
     private UserDAO userDAO;
     private CategoryDAO categoryDAO;
     private CouponDAO couponDAO;
+    private Set<String> allowedOrigins;
 
     @Override
     public void init() {
@@ -52,6 +53,22 @@ public class AdminApiController extends HttpServlet {
         userDAO = new UserDAOImpl();
         categoryDAO = new CategoryDAOImpl();
         couponDAO = new CouponDAOImpl();
+        
+        // Initialize allowed origins from environment variable
+        String allowedOriginsEnv = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (allowedOriginsEnv != null && !allowedOriginsEnv.isBlank()) {
+            allowedOrigins = new HashSet<>(Arrays.asList(allowedOriginsEnv.split(",")));
+            logger.info("AdminApiController initialized with allowed origins from env: {}", allowedOrigins);
+        } else {
+            // Fallback to localhost for local development only
+            allowedOrigins = new HashSet<>(Arrays.asList(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+            ));
+            logger.info("AdminApiController initialized with default localhost origins for development");
+        }
     }
 
     // ============================================================
@@ -234,10 +251,13 @@ public class AdminApiController extends HttpServlet {
         // Validate admin secret key
         String expectedKey = System.getenv("FASHIONSTORE_ADMIN_KEY");
         if (expectedKey == null || expectedKey.isBlank()) {
-            expectedKey = "FS_ADMIN_SECRET_2026";
+            logger.error("FASHIONSTORE_ADMIN_KEY environment variable not set. Admin registration disabled.");
+            writeJson(response, 500, Map.of("success", false, "message", "Admin registration not configured"));
+            return;
         }
 
         if (!expectedKey.equals(adminKey)) {
+            logger.warn("Invalid admin registration attempt from IP: {}", request.getRemoteAddr());
             writeJson(response, 403, Map.of("success", false, "message", "Invalid admin secret key"));
             return;
         }
@@ -504,7 +524,10 @@ public class AdminApiController extends HttpServlet {
         if ("PUT".equals(method) && id != null && "stock".equals(sub)) {
             int pid = parseInt(id, 0);
             Map<String, Object> body = readJsonBody(request);
-            int stock = parseInt(String.valueOf(body.get("stock")), 0);
+            // Gson decodes JSON numbers as Double; reading via String.valueOf(...) and
+            // Integer.parseInt("25.0") fails and silently defaults to 0. Use the
+            // Number-aware helper so admin stock updates persist the actual value.
+            int stock = parseIntFromObject(body.get("stock"), 0);
             boolean ok = productDAO.updateStock(pid, stock);
             writeJson(response, ok ? 200 : 400, Map.of("success", ok));
             return;
@@ -679,7 +702,9 @@ public class AdminApiController extends HttpServlet {
         p.setPrice(parseDouble(body.get("price"), 0.0));
         p.setDiscountPercent(parseDouble(body.get("discount"), 0.0));
         p.setImageUrl(strParam(body, "imageUrl"));
-        p.setStockQuantity(parseInt(String.valueOf(body.get("stock")), 0));
+        // Gson decodes JSON numbers as Double; using the Number-aware helper so values
+        // like 25 (decoded as 25.0) are stored as 25 instead of silently falling back to 0.
+        p.setStockQuantity(parseIntFromObject(body.get("stock"), 0));
         p.setBrand(strParam(body, "brand"));
 
         String status = strParam(body, "status");
@@ -725,7 +750,7 @@ public class AdminApiController extends HttpServlet {
         c.setMinimumOrderAmount(parseDouble(body.get("minOrder"), 0.0));
         c.setMaximumDiscountAmount(null);
         Object maxUses = body.get("maxUses");
-        c.setUsageLimit(maxUses != null ? parseInt(String.valueOf(maxUses), null) : null);
+        c.setUsageLimit(maxUses != null ? parseIntFromObject(maxUses, (Integer) null) : null);
         c.setUserUsageLimit(1);
         c.setUsageCount(0);
         c.setActive(true);
@@ -747,8 +772,7 @@ public class AdminApiController extends HttpServlet {
 
     private void applyCors(HttpServletRequest request, HttpServletResponse response) {
         String origin = request.getHeader("Origin");
-        if (origin != null && (origin.startsWith("http://localhost:5173")
-                || origin.startsWith("http://127.0.0.1:5173"))) {
+        if (origin != null && allowedOrigins.contains(origin)) {
             response.setHeader("Access-Control-Allow-Origin", origin);
             response.setHeader("Vary", "Origin");
             response.setHeader("Access-Control-Allow-Credentials", "true");
@@ -815,6 +839,36 @@ public class AdminApiController extends HttpServlet {
         return Boolean.parseBoolean(String.valueOf(v));
     }
 
+    /** Number-aware integer parsing for values pulled out of a Gson-decoded JSON map. */
+    private int parseIntFromObject(Object v, int defaultVal) {
+        if (v == null) return defaultVal;
+        if (v instanceof Number n) return n.intValue();
+        try {
+            return Integer.parseInt(String.valueOf(v).trim());
+        } catch (NumberFormatException e) {
+            try {
+                // Tolerate "25.0" coming through as a String.
+                return (int) Double.parseDouble(String.valueOf(v).trim());
+            } catch (NumberFormatException ex) {
+                return defaultVal;
+            }
+        }
+    }
+
+    private Integer parseIntFromObject(Object v, Integer defaultVal) {
+        if (v == null) return defaultVal;
+        if (v instanceof Number n) return n.intValue();
+        try {
+            return Integer.parseInt(String.valueOf(v).trim());
+        } catch (NumberFormatException e) {
+            try {
+                return (int) Double.parseDouble(String.valueOf(v).trim());
+            } catch (NumberFormatException ex) {
+                return defaultVal;
+            }
+        }
+    }
+
     private boolean isTrustedStateChangingRequest(HttpServletRequest request) {
         String origin = request.getHeader("Origin");
         String referer = request.getHeader("Referer");
@@ -822,14 +876,10 @@ public class AdminApiController extends HttpServlet {
                 + ((request.getServerPort() == 80 || request.getServerPort() == 443) ? "" : ":" + request.getServerPort());
 
         if (origin != null && !origin.isBlank()) {
-            return origin.equals(local)
-                    || origin.startsWith("http://localhost:5173")
-                    || origin.startsWith("http://127.0.0.1:5173");
+            return origin.equals(local) || allowedOrigins.contains(origin);
         }
         if (referer != null && !referer.isBlank()) {
-            return referer.startsWith(local)
-                    || referer.startsWith("http://localhost:5173")
-                    || referer.startsWith("http://127.0.0.1:5173");
+            return referer.startsWith(local) || allowedOrigins.stream().anyMatch(referer::startsWith);
         }
         return false;
     }

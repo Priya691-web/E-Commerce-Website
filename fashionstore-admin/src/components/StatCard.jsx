@@ -13,16 +13,16 @@ export default function StatCard({ icon: Icon, label, value, delta, accent = 'ne
   const deltaPositive = typeof delta === 'number' ? delta >= 0 : null;
 
   return (
-    <div className="group relative p-6 bg-white dark:bg-ink-800 rounded-2xl border border-ink-200 dark:border-ink-700 hover:shadow-xl hover:shadow-ink-900/5 dark:hover:shadow-white/5 transition-all duration-300 hover:-translate-y-1">
+    <div className="group relative p-6 bg-white dark:bg-ink-800 rounded-2xl border border-ink-200 dark:border-ink-700 hover:shadow-2xl hover:shadow-ink-900/10 dark:hover:shadow-white/10 transition-all duration-300 hover:-translate-y-1">
       <div className="flex items-start justify-between gap-4">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${accentClass} group-hover:scale-110 transition-transform duration-300`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${accentClass} group-hover:scale-110 transition-transform duration-300 backdrop-blur-sm`}>
           {Icon ? <Icon size={20} strokeWidth={2.2} /> : null}
         </div>
         {delta != null && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-sm ${
             deltaPositive 
-              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' 
-              : 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+              ? 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200/50' 
+              : 'bg-rose-50/80 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border border-rose-200/50'
           }`}>
             {deltaPositive ? <TrendingUp size={12} strokeWidth={2.5} /> : <TrendingDown size={12} strokeWidth={2.5} />}
             <span>{Math.abs(delta)}%</span>

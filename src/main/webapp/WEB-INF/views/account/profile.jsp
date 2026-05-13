@@ -23,6 +23,16 @@
     Address defaultShipping = (Address) request.getAttribute("defaultShipping");
     Address defaultBilling = (Address) request.getAttribute("defaultBilling");
     int addressCount = (request.getAttribute("addressCount") != null) ? (Integer) request.getAttribute("addressCount") : 0;
+
+    String profileInitials = "U";
+    if (user != null && user.getFullName() != null && !user.getFullName().isBlank()) {
+        String[] parts = user.getFullName().trim().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < Math.min(parts.length, 2); i++) {
+            sb.append(parts[i].substring(0, 1).toUpperCase());
+        }
+        profileInitials = sb.toString();
+    }
 %>
 
 <main class="account-page">
@@ -33,36 +43,7 @@
         </div>
 
         <div class="account-layout">
-            <!-- Sidebar Navigation -->
-            <aside class="account-sidebar">
-                <nav class="account-nav">
-                    <a href="<%= request.getContextPath() %>/account/profile" class="account-nav-item active">
-                        <span class="nav-icon">👤</span>
-                        <span>Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/edit" class="account-nav-item">
-                        <span class="nav-icon">✏️</span>
-                        <span>Edit Profile</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/addresses" class="account-nav-item">
-                        <span class="nav-icon">📍</span>
-                        <span>Addresses</span>
-                        <span class="nav-badge"><%= addressCount %></span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/account/profile/settings" class="account-nav-item">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Settings</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/orders" class="account-nav-item">
-                        <span class="nav-icon">📦</span>
-                        <span>Orders</span>
-                    </a>
-                    <a href="<%= request.getContextPath() %>/wishlist" class="account-nav-item">
-                        <span class="nav-icon">❤️</span>
-                        <span>Wishlist</span>
-                    </a>
-                </nav>
-            </aside>
+            <jsp:include page="/WEB-INF/views/partials/account-sidebar.jsp" />
 
             <!-- Main Content -->
             <div class="account-content">
@@ -77,7 +58,7 @@
                         <div class="profile-card">
                             <div class="profile-avatar">
                                 <div class="avatar-placeholder">
-                                    <span class="avatar-initials"><%= user.getFullName().substring(0, 1).toUpperCase() %></span>
+                                    <span class="avatar-initials"><%= profileInitials %></span>
                                 </div>
                             </div>
                             <div class="profile-details">
@@ -173,14 +154,14 @@
                         <div class="stat-card">
                             <div class="stat-icon">📦</div>
                             <div class="stat-info">
-                                <span class="stat-value">0</span>
+                                <span class="stat-value"><%= request.getAttribute("orderCount") != null ? request.getAttribute("orderCount") : 0 %></span>
                                 <span class="stat-label">Total Orders</span>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon">❤️</div>
                             <div class="stat-info">
-                                <span class="stat-value">0</span>
+                                <span class="stat-value"><%= request.getAttribute("wishlistCount") != null ? request.getAttribute("wishlistCount") : 0 %></span>
                                 <span class="stat-label">Wishlist Items</span>
                             </div>
                         </div>

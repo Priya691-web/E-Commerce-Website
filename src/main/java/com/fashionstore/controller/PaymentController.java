@@ -3,14 +3,16 @@ package com.fashionstore.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fashionstore.dao.CartDAO;
+import com.fashionstore.dao.OrderDAO;
 import com.fashionstore.daoimpl.CartDAOImpl;
+import com.fashionstore.daoimpl.OrderDAOImpl;
 import com.fashionstore.model.CartItem;
 import com.fashionstore.model.Order;
 import com.fashionstore.model.Payment;
+import com.fashionstore.model.User;
 import com.fashionstore.service.PaymentService;
 import com.fashionstore.service.StripePaymentService;
 import com.fashionstore.util.AuditLogger;
-import com.fashionstore.util.DBConnection;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import jakarta.servlet.ServletException;
@@ -23,10 +25,6 @@ import jakarta.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,12 +40,14 @@ public class PaymentController extends HttpServlet {
     private PaymentService paymentService;
     private StripePaymentService stripePaymentService;
     private CartDAO cartDAO;
+    private OrderDAO orderDAO;
     
     @Override
     public void init() throws ServletException {
         paymentService = new PaymentService();
         stripePaymentService = new StripePaymentService();
         cartDAO = new CartDAOImpl();
+        orderDAO = new OrderDAOImpl();
     }
     
     @Override
@@ -89,12 +89,16 @@ public class PaymentController extends HttpServlet {
      */
     private void initiatePayment(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession(false);
-        if (session == null) {
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        if (user == null) {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
-        
-        int userId = (int) session.getAttribute("userId");
+
+        // Read the userId from the User attribute (every other controller uses this pattern).
+        // The previous "(int) session.getAttribute(\"userId\")" cast NPE'd on auto-unbox
+        // when the legacy attribute was missing.
+        int userId = user.getUserId();
         String paymentMethod = req.getParameter("paymentMethod");
         
         if (paymentMethod == null || paymentMethod.isEmpty()) {
@@ -103,17 +107,38 @@ public class PaymentController extends HttpServlet {
         }
         
         try {
+            // Validate user ID
+            if (userId <= 0) {
+                logger.error("Invalid user ID in payment initiation: {}", userId);
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid user session");
+                return;
+            }
+            
             // Get cart items
             List<CartItem> cartItems = cartDAO.getCartItemsByUserId(userId);
-            if (cartItems.isEmpty()) {
+            if (cartItems == null || cartItems.isEmpty()) {
+                logger.warn("Empty cart for user {} during payment initiation", userId);
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Cart is empty");
                 return;
             }
             
-            // Calculate total
-            double total = cartItems.stream()
-                .mapToDouble(item -> item.getPrice() * item.getQuantity())
-                .sum();
+            // Validate cart items and calculate total
+            double total = 0;
+            for (CartItem item : cartItems) {
+                if (item == null || item.getPrice() <= 0 || item.getQuantity() <= 0) {
+                    logger.error("Invalid cart item found for user {}: {}", userId, item);
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid cart items");
+                    return;
+                }
+                total += item.getPrice() * item.getQuantity();
+            }
+            
+            // Validate total amount
+            if (total <= 0 || total > 1000000) { // Reasonable upper limit
+                logger.error("Invalid total amount for user {}: {}", userId, total);
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid total amount");
+                return;
+            }
             
             // Create order (pending payment)
             int orderId = createOrder(userId, total, paymentMethod, req);
@@ -142,9 +167,10 @@ public class PaymentController extends HttpServlet {
                         return;
                     }
                     
-                    // Get user email from session
-                    String email = (String) session.getAttribute("email");
-                    String name = (String) session.getAttribute("fullName");
+                    // Get user email/name from the authenticated User (session attributes
+                    // "email" / "fullName" are not set by LoginController, only "user").
+                    String email = user.getEmail();
+                    String name = user.getFullName();
                     
                     // Create metadata for the payment
                     Map<String, String> metadata = new HashMap<>();
@@ -189,8 +215,13 @@ public class PaymentController extends HttpServlet {
      */
     private void verifyPayment(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String paymentMethod = req.getParameter("paymentMethod");
-        int orderId = Integer.parseInt(req.getParameter("orderId"));
-        
+        Integer orderIdBoxed = parseIntOrNull(req.getParameter("orderId"));
+        if (orderIdBoxed == null || orderIdBoxed <= 0) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid order id");
+            return;
+        }
+        int orderId = orderIdBoxed;
+
         try {
             if ("RAZORPAY".equals(paymentMethod)) {
                 String razorpayOrderId = req.getParameter("razorpayOrderId");
@@ -235,43 +266,55 @@ public class PaymentController extends HttpServlet {
      * Handle payment success page
      */
     private void handlePaymentSuccess(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        int orderId = Integer.parseInt(req.getParameter("orderId"));
-        
-        try {
-            // Get order details
-            Order order = getOrderById(orderId);
-            if (order == null) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Order not found");
-                return;
-            }
-            
-            req.setAttribute("order", order);
-            req.getRequestDispatcher("/WEB-INF/views/payment-success.jsp").forward(req, resp);
-            
-        } catch (Exception e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error loading payment success page");
-        }
+        renderOrderResultPage(req, resp, "/WEB-INF/views/payment-success.jsp", "Error loading payment success page");
     }
-    
+
     /**
      * Handle payment failure page
      */
     private void handlePaymentFailure(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        int orderId = Integer.parseInt(req.getParameter("orderId"));
-        
+        renderOrderResultPage(req, resp, "/WEB-INF/views/payment-failure.jsp", "Error loading payment failure page");
+    }
+
+    /**
+     * Shared loader for the success/failure pages.
+     * Validates orderId, looks up the order via the canonical OrderDAO, and verifies the order
+     * belongs to the currently authenticated user before rendering it.
+     */
+    private void renderOrderResultPage(HttpServletRequest req, HttpServletResponse resp,
+                                       String view, String genericError)
+            throws ServletException, IOException {
+        Integer orderIdBoxed = parseIntOrNull(req.getParameter("orderId"));
+        if (orderIdBoxed == null || orderIdBoxed <= 0) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid order id");
+            return;
+        }
+
+        HttpSession session = req.getSession(false);
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        if (user == null) {
+            resp.sendRedirect(req.getContextPath() + "/login");
+            return;
+        }
+
         try {
-            // Get order details
-            Order order = getOrderById(orderId);
+            Order order = orderDAO.getOrderById(orderIdBoxed);
             if (order == null) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Order not found");
                 return;
             }
-            
+            // Ownership check: a payment result page must only be shown to the order's owner
+            // (admins can view the order from /admin/orders).
+            if (order.getUserId() != user.getUserId() && !user.isAdmin()) {
+                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+
             req.setAttribute("order", order);
-            req.getRequestDispatcher("/WEB-INF/views/payment-failure.jsp").forward(req, resp);
-            
+            req.getRequestDispatcher(view).forward(req, resp);
         } catch (Exception e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error loading payment failure page");
+            logger.error("Error rendering payment result page for order #{}: {}", orderIdBoxed, e.getMessage(), e);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, genericError);
         }
     }
     
@@ -367,75 +410,57 @@ public class PaymentController extends HttpServlet {
     }
     
     /**
-     * Create order with transactional safety
+     * Create order using the canonical OrderDAO so the row honours every NOT NULL column
+     * declared in the schema (subtotal, full_name, address, city, ...). The previous hand-rolled
+     * INSERT only populated 4 columns and broke the moment the DB enforced the schema.
      */
     private int createOrder(int userId, double total, String paymentMethod, HttpServletRequest req) {
-        String sql = "INSERT INTO orders (user_id, total_amount, payment_method, status) VALUES (?, ?, ?, 'PENDING')";
-        
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-            
-            ps.setInt(1, userId);
-            ps.setDouble(2, total);
-            ps.setString(3, paymentMethod);
-            
-            int result = ps.executeUpdate();
-            
-            if (result > 0) {
-                try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        int orderId = rs.getInt(1);
-                        AuditLogger.log("ORDER_CREATED", "Order created: " + orderId + " for user: " + userId, 
-                                       String.valueOf(userId), req);
-                        return orderId;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            logger.error("Error in PaymentController.createOrder: {}", e.getMessage(), e);
+        Order order = new Order();
+        order.setUserId(userId);
+        order.setTotalAmount(total);
+        order.setPaymentMethod(paymentMethod);
+        order.setStatus("Pending");
+        // Shipping fields fall through to OrderDAO defaults (empty strings); callers that
+        // route through CheckoutController already populate the proper Order shape.
+        order.setFullName(req.getParameter("fullName"));
+        order.setAddress(req.getParameter("address"));
+        order.setCity(req.getParameter("city"));
+        order.setState(req.getParameter("state"));
+        order.setZip(req.getParameter("zip"));
+        order.setPhone(req.getParameter("phone"));
+
+        int orderId = orderDAO.createOrder(order);
+        if (orderId > 0) {
+            AuditLogger.log("ORDER_CREATED", "Order created: " + orderId + " for user: " + userId,
+                    String.valueOf(userId), req);
+            return orderId;
         }
+        logger.error("PaymentController.createOrder failed for user #{}", userId);
         return -1;
     }
-    
-    /**
-     * Get order by ID
-     */
-    private Order getOrderById(int orderId) {
-        String sql = "SELECT * FROM orders WHERE order_id = ?";
-        
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            
-            ps.setInt(1, orderId);
-            
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Order order = new Order();
-                    order.setOrderId(rs.getInt("order_id"));
-                    order.setUserId(rs.getInt("user_id"));
-                    order.setTotalAmount(rs.getDouble("total_amount"));
-                    order.setPaymentMethod(rs.getString("payment_method"));
-                    order.setStatus(rs.getString("status"));
-                    order.setOrderDate(rs.getDate("order_date"));
-                    return order;
-                }
-            }
-        } catch (SQLException e) {
-            logger.error("Error in PaymentController.getOrderById: {}", e.getMessage(), e);
-        }
-        return null;
-    }
-    
+
     /**
      * Extract payment ID from webhook payload (simplified)
      */
     private String extractPaymentIdFromWebhook(String payload) {
-        // In production, parse JSON and extract relevant fields
+        // In production, parse JSON and extract relevant fields.
+        if (payload == null) return null;
         if (payload.contains("razorpay_payment_id")) {
             int start = payload.indexOf("razorpay_payment_id") + 21;
+            if (start <= 21 || start >= payload.length()) return null;
             int end = payload.indexOf("\"", start);
+            if (end < 0) return null; // malformed payload
             return payload.substring(start, end);
         }
         return null;
+    }
+
+    private static Integer parseIntOrNull(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

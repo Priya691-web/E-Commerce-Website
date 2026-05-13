@@ -71,9 +71,11 @@ public class ProductDetailsController extends HttpServlet {
             // Remove if already exists and add to front
             recentlyViewed.remove(Integer.valueOf(productId));
             recentlyViewed.add(0, productId);
-            // Keep only last 20 viewed products
+            // Keep only last 20 viewed products. Wrap in a fresh ArrayList because
+            // ArrayList#subList returns a non-Serializable view that breaks session
+            // replication and aliases the parent list.
             if (recentlyViewed.size() > 20) {
-                recentlyViewed = recentlyViewed.subList(0, 20);
+                recentlyViewed = new java.util.ArrayList<>(recentlyViewed.subList(0, 20));
             }
             session.setAttribute("recentlyViewed", recentlyViewed);
 
@@ -94,7 +96,11 @@ public class ProductDetailsController extends HttpServlet {
 
         } catch (Exception e) {
             logger.error("Error in ProductDetailsController.doGet: {}", e.getMessage(), e);
-            response.sendRedirect(request.getContextPath() + "/products");
+            // Set error attributes and forward to error page instead of redirect
+            request.setAttribute("errorTitle", "Product Not Available");
+            request.setAttribute("errorMessage", "We're unable to load this product right now. Please try again later.");
+            request.setAttribute("errorDetails", e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/views/error.jsp").forward(request, response);
         }
     }
 }
