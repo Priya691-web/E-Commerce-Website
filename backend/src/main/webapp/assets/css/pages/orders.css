@@ -1,0 +1,245 @@
+/* ============================================
+   ORDERS PAGE - STABLE LIGHTWEIGHT
+   ============================================ */
+
+/* ============================================
+   ORDERS HEADER
+   ============================================ */
+
+.fs-orders-header {
+    margin-bottom: var(--space-8);
+    text-align: center;
+}
+
+.fs-orders-header__tag {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+}
+
+/* ============================================
+   ORDER CARD
+   ============================================ */
+
+.fs-order-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+}
+
+.fs-order-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.fs-order-card__info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.fs-order-card__info h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    margin: 0 0 var(--space-1);
+}
+
+.fs-order-card__status {
+    flex-shrink: 0;
+}
+
+.fs-order-card__summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.fs-order-card__total,
+.fs-order-card__count {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.fs-order-card__total span:first-child,
+.fs-order-card__count span:first-child {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.fs-order-card__total span:last-child,
+.fs-order-card__count span:last-child {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================
+   ORDER TIMELINE
+   ============================================ */
+
+.fs-order-card__timeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    align-items: center;
+}
+
+.fs-timeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.fs-timeline-step__marker {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.fs-timeline-step--done .fs-timeline-step__marker {
+    background: var(--color-text-primary);
+    border-color: var(--color-text-primary);
+}
+
+.fs-timeline-step__label {
+    font-size: var(--text-xs);
+}
+
+.fs-timeline-step--done .fs-timeline-step__label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.fs-timeline-connector {
+    height: 2px;
+    background: var(--color-border);
+    width: 100%;
+}
+
+.fs-timeline-connector--done {
+    background: var(--color-text-primary);
+}
+
+/* ============================================
+   ORDER ITEMS
+   ============================================ */
+
+.fs-order-card__items {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.fs-order-card__items h4 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    margin: 0 0 var(--space-3);
+}
+
+.fs-order-card__items-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.fs-order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-md);
+}
+
+.fs-order-item-row__details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* ============================================
+   ORDER ACTIONS
+   ============================================ */
+
+.fs-order-card__actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+
+.fs-badge {
+    font-size: var(--text-xs);
+    border-radius: var(--radius-pill);
+    padding: var(--space-1) var(--space-3);
+    text-transform: uppercase;
+    font-weight: var(--font-weight-semibold);
+}
+
+.fs-badge--pending {
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+}
+
+.fs-badge--shipped {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+.fs-badge--delivered {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.fs-badge--cancelled {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.fs-badge--packed {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: var(--breakpoint-md)) {
+    .fs-order-card__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fs-order-card__timeline {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .fs-order-card__summary {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

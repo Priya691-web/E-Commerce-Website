@@ -1,0 +1,731 @@
+/* ============================================
+   FORMS - STOREFRONT
+   ============================================ */
+
+/* ============================================
+   FORM GROUP
+   ============================================ */
+
+.fs-form-group {
+    margin-bottom: var(--space-4);
+}
+
+.fs-form-group label,
+.fs-form-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.fs-form-label.required::after {
+    content: ' *';
+    color: var(--color-danger);
+}
+
+.fs-form-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.fs-form-actions--full-width {
+    grid-column: 1 / -1;
+}
+
+.fs-form-hint {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+}
+
+.fs-form-error {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+}
+
+/* ============================================
+   FORM INPUT
+   ============================================ */
+
+.fs-form-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    transition: all var(--transition-base);
+}
+
+.fs-form-input::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.fs-form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color),
+                0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset)) var(--color-surface);
+}
+
+.fs-form-input:hover:not(:focus) {
+    border-color: var(--color-border-strong);
+}
+
+/* Validation states */
+.fs-form-input--error {
+    border-color: var(--color-danger);
+    animation: fs-shake 0.4s var(--ease-out);
+}
+
+.fs-form-input--error:focus {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.fs-form-input--success {
+    border-color: var(--color-success);
+}
+
+.fs-form-input--success:focus {
+    box-shadow: 0 0 0 3px rgba(0, 102, 68, 0.1);
+}
+
+@keyframes fs-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* Error message animation */
+.fs-form-error {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+    opacity: 0;
+    transform: translateY(-4px);
+    animation: fs-slideDown 0.2s var(--ease-premium) forwards;
+}
+
+@keyframes fs-slideDown {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fs-form-error svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Success indicator */
+.fs-form-success-indicator {
+    position: absolute;
+    right: var(--space-4);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: var(--color-success);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(-50%) scale(0);
+    transition: all var(--transition-base);
+}
+
+.fs-form-success-indicator--visible {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+}
+
+.fs-form-success-indicator svg {
+    width: 12px;
+    height: 12px;
+    color: white;
+}
+
+/* Character counter */
+.fs-form-char-counter {
+    text-align: right;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-1);
+    transition: color var(--transition-fast);
+}
+
+.fs-form-char-counter--warning {
+    color: var(--color-warning);
+}
+
+.fs-form-char-counter--error {
+    color: var(--color-danger);
+}
+
+/* Floating label effect */
+.fs-form-floating {
+    position: relative;
+}
+
+.fs-form-floating .fs-form-input {
+    padding-top: var(--space-5);
+}
+
+.fs-form-floating .fs-form-label {
+    position: absolute;
+    left: var(--space-4);
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: all var(--transition-base);
+    background: var(--color-surface);
+    padding: 0 var(--space-1);
+}
+
+.fs-form-floating .fs-form-input:focus ~ .fs-form-label,
+.fs-form-floating .fs-form-input:not(:placeholder-shown) ~ .fs-form-label {
+    top: 0;
+    transform: translateY(-50%) scale(0.85);
+    color: var(--color-text-tertiary);
+}
+
+/* ============================================
+   INPUT BASE - All Form Elements
+   ============================================ */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="url"],
+textarea,
+select {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-family-sans);
+    font-size: var(--text-base);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    transition: all var(--transition-base);
+    line-height: 1.5;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+input:hover:not(:focus),
+textarea:hover:not(:focus),
+select:hover:not(:focus) {
+    border-color: var(--color-border-strong);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color),
+                0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset)) var(--color-surface);
+}
+
+/* Disabled state */
+input:disabled,
+textarea:disabled,
+select:disabled {
+    background: var(--color-surface-alt);
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Textarea specific */
+textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Select dropdown */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231a1a1a' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-3) center;
+    padding-right: var(--space-10);
+    cursor: pointer;
+}
+
+/* ============================================
+   LEGACY INPUT SUPPORT
+   ============================================ */
+
+.fs-form-input,
+.fs-form-select,
+.fs-form-textarea {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    font-family: var(--font-family-sans);
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.fs-form-input::placeholder,
+.fs-form-textarea::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.fs-form-input:focus,
+.fs-form-select:focus,
+.fs-form-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(16, 16, 14, 0.06);
+}
+
+.fs-form-input:disabled,
+.fs-form-select:disabled,
+.fs-form-textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--color-surface-alt);
+}
+
+/* ============================================
+   INPUT SIZES
+   ============================================ */
+
+.fs-form-input--sm,
+.fs-form-select--sm,
+.fs-form-textarea--sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+}
+
+.fs-form-input--lg,
+.fs-form-select--lg,
+.fs-form-textarea--lg {
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--text-lg);
+}
+
+/* ============================================
+   INPUT STATES
+   ============================================ */
+
+.fs-form-input--error,
+.fs-form-select--error,
+.fs-form-textarea--error {
+    border-color: var(--color-danger);
+}
+
+.fs-form-input--error:focus,
+.fs-form-select--error:focus,
+.fs-form-textarea--error:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.fs-form-input--success,
+.fs-form-select--success,
+.fs-form-textarea--success {
+    border-color: var(--color-success);
+}
+
+.fs-form-input--success:focus,
+.fs-form-select--success:focus,
+.fs-form-textarea--success:focus {
+    box-shadow: 0 0 0 3px var(--color-success-focus);
+}
+
+/* ============================================
+   TEXTAREA
+   ============================================ */
+
+.fs-form-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ============================================
+   SELECT
+   ============================================ */
+
+.fs-form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-3) center;
+    background-size: var(--icon-md);
+    padding-right: var(--space-10);
+}
+
+/* ============================================
+   CHECKBOX & RADIO
+   ============================================ */
+
+.fs-form-checkbox,
+.fs-form-radio {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+}
+
+.fs-form-checkbox input,
+.fs-form-radio input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--color-primary);
+}
+
+.fs-form-checkbox label,
+.fs-form-radio label {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* ============================================
+   FILE INPUT
+   ============================================ */
+
+.fs-form-file {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.fs-form-file input[type="file"] {
+    position: absolute;
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.fs-form-file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-alt);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.fs-form-file-label:hover {
+    background: var(--color-surface);
+    border-color: var(--color-primary);
+}
+
+/* ============================================
+   SEARCH INPUT
+   ============================================ */
+
+.fs-form-search {
+    position: relative;
+}
+
+.fs-form-search input {
+    padding-left: var(--space-10);
+    padding-right: var(--space-4);
+}
+
+.fs-form-search-icon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-tertiary);
+    pointer-events: none;
+}
+
+.fs-form-search-icon svg {
+    width: var(--icon-md);
+    height: var(--icon-md);
+}
+
+/* ============================================
+   INPUT GROUP
+   ============================================ */
+
+.fs-input-group {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.fs-input-group .fs-form-input {
+    border: none;
+    border-radius: 0;
+}
+
+.fs-input-group .fs-form-input:focus {
+    box-shadow: none;
+}
+
+.fs-input-group-addon {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-3);
+    background: var(--color-surface-alt);
+    border-left: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.fs-input-group-addon:first-child {
+    border-left: none;
+    border-right: 1px solid var(--color-border);
+}
+
+/* ============================================
+   FLOATING LABEL
+   ============================================ */
+
+.fs-form-floating {
+    position: relative;
+}
+
+.fs-form-floating input,
+.fs-form-floating textarea {
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-2);
+}
+
+.fs-form-floating label {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    pointer-events: none;
+    transition: all var(--transition-fast);
+}
+
+.fs-form-floating input:focus + label,
+.fs-form-floating input:not(:placeholder-shown) + label,
+.fs-form-floating textarea:focus + label,
+.fs-form-floating textarea:not(:placeholder-shown) + label {
+    top: var(--space-1);
+    left: var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--color-primary);
+}
+
+/* ============================================
+   VALIDATION STATES
+   ============================================ */
+
+.fs-form-group--has-error .fs-form-input,
+.fs-form-group--has-error .fs-form-select,
+.fs-form-group--has-error .fs-form-textarea {
+    border-color: var(--color-danger);
+}
+
+.fs-form-group--has-success .fs-form-input,
+.fs-form-group--has-success .fs-form-select,
+.fs-form-group--has-success .fs-form-textarea {
+    border-color: var(--color-success);
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+[data-theme="dark"] .fs-form-input,
+[data-theme="dark"] .fs-form-select,
+[data-theme="dark"] .fs-form-textarea {
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .fs-form-input:focus,
+[data-theme="dark"] .fs-form-select:focus,
+[data-theme="dark"] .fs-form-textarea:focus {
+    box-shadow: 0 0 0 3px var(--glass-border-light);
+}
+
+[data-theme="dark"] .fs-form-input:disabled,
+[data-theme="dark"] .fs-form-select:disabled,
+[data-theme="dark"] .fs-form-textarea:disabled {
+    background: var(--color-bg);
+}
+
+[data-theme="dark"] .fs-form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23A0A0A0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+[data-theme="dark"] .fs-form-file-label {
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+}
+
+[data-theme="dark"] .fs-form-file-label:hover {
+    background: var(--color-surface);
+}
+
+[data-theme="dark"] .fs-form-search-icon {
+    color: var(--color-text-tertiary);
+}
+
+[data-theme="dark"] .fs-input-group {
+    border-color: var(--color-border);
+}
+
+[data-theme="dark"] .fs-input-group-addon {
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .fs-form-floating label {
+    color: var(--color-text-tertiary);
+}
+
+[data-theme="dark"] .fs-form-floating input:focus + label,
+[data-theme="dark"] .fs-form-floating input:not(:placeholder-shown) + label,
+[data-theme="dark"] .fs-form-floating textarea:focus + label,
+[data-theme="dark"] .fs-form-floating textarea:not(:placeholder-shown) + label {
+    color: var(--color-primary);
+}
+
+/* ============================================
+   PASSWORD FIELD WITH SHOW/HIDE TOGGLE
+   ============================================ */
+
+.fs-password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.fs-password-field .fs-form-input,
+.fs-password-field input[type="password"],
+.fs-password-field input[type="text"] {
+    width: 100%;
+    padding-right: var(--space-10);
+    caret-color: var(--color-text-primary);
+}
+
+.fs-password-toggle {
+    position: absolute;
+    right: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.fs-password-toggle:hover {
+    color: var(--color-text-primary);
+    background: var(--color-surface-alt);
+}
+
+.fs-password-toggle:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+}
+
+.fs-password-toggle svg {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+    transition: transform 0.2s var(--ease-out);
+}
+
+.fs-password-toggle:active svg {
+    transform: scale(0.9);
+}
+
+/* Explicit password input visibility safeguards */
+input[type="password"],
+input[type="text"].fs-password-visible {
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    caret-color: var(--color-text-primary);
+}
+
+input[type="password"]::placeholder,
+input[type="text"].fs-password-visible::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+/* Ensure password dots / visible text are never transparent */
+input[type="password"]:not(:placeholder-shown) {
+    color: var(--color-text-primary);
+}
+
+/* Autofill safeguard for password fields */
+input[type="password"]:-webkit-autofill,
+input[type="password"]:-webkit-autofill:hover,
+input[type="password"]:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-text-primary) !important;
+    -webkit-box-shadow: 0 0 0px 1000px var(--color-surface) inset !important;
+    box-shadow: 0 0 0px 1000px var(--color-surface) inset !important;
+    caret-color: var(--color-text-primary);
+}
+
+[data-theme="dark"] input[type="password"]:-webkit-autofill,
+[data-theme="dark"] input[type="password"]:-webkit-autofill:hover,
+[data-theme="dark"] input[type="password"]:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-text-primary) !important;
+    -webkit-box-shadow: 0 0 0px 1000px var(--color-surface-alt) inset !important;
+    box-shadow: 0 0 0px 1000px var(--color-surface-alt) inset !important;
+    caret-color: var(--color-text-primary);
+}
+
+/* Mobile: larger tap target for toggle */
+@media (max-width: var(--breakpoint-mobile)) {
+    .fs-password-toggle {
+        width: 40px;
+        height: 40px;
+        right: var(--space-2);
+    }
+
+    .fs-password-field .fs-form-input,
+    .fs-password-field input[type="password"],
+    .fs-password-field input[type="text"] {
+        padding-right: var(--space-11);
+    }
+}

@@ -1,0 +1,552 @@
+/**
+ * ============================================
+ * FASHIONSTORE - UNIFIED PREMIUM DESIGN SYSTEM
+ * Single source of truth for all design tokens
+ * ============================================
+ * 
+ * Design Philosophy:
+ * - Apple luxury minimalism
+ * - Zara editorial ecommerce
+ * - COS premium fashion
+ * - Saint Laurent dark luxury
+ * - Modern cinematic ecommerce UI
+ * 
+ * Key Principles:
+ * - One unified system
+ * - Mobile-first approach
+ * - Premium typography
+ * - Cinematic depth
+ * - Editorial elegance
+ * ============================================
+ */
+
+:root {
+    /* ============================================
+       COLOR SYSTEM - LIGHT THEME
+       Luxury editorial neutrals with refined accents
+       ============================================ */
+    
+    /* Core palette - warm neutrals */
+    --color-bg: #fafafa;                    /* Background - warm white */
+    --color-surface: #ffffff;               /* Primary surface - pure white */
+    --color-surface-alt: #f5f5f5;           /* Secondary surface - warm gray */
+    --color-surface-elevated: #fafafa;       /* Elevated surface */
+    
+    /* Typography hierarchy */
+    --color-text-primary: #0a0a0a;          /* Primary text - near black */
+    --color-text-secondary: #2c2c2c;         /* Secondary text - dark gray */
+    --color-text-tertiary: #6b6b6b;          /* Tertiary text - medium gray */
+    --color-text-muted: #9a9a9a;             /* Muted text - light gray */
+    
+    /* Interactive elements */
+    --color-primary: #0a0a0a;               /* Primary - near black */
+    --color-primary-hover: #000000;         /* Primary hover - pure black */
+    --color-primary-light: rgba(10, 10, 10, 0.06); /* Primary light */
+    
+    /* Borders and dividers */
+    --color-border: #e5e5e5;                /* Border - light gray */
+    --color-border-strong: #d4d4d4;         /* Strong border */
+    --color-border-subtle: #ebebeb;         /* Subtle border */
+    
+    /* Inverse colors */
+    --color-inverse: #ffffff;               /* Inverse background */
+    --color-text-inverse: #ffffff;          /* Inverse text */
+    
+    /* Semantic colors - refined palette */
+    --color-success: #10b981;               /* Success - emerald */
+    --color-success-hover: #059669;         /* Success hover */
+    --color-success-light: rgba(16, 185, 129, 0.1);
+    
+    --color-danger: #ef4444;                 /* Danger - red */
+    --color-danger-hover: #dc2626;          /* Danger hover */
+    --color-danger-light: rgba(239, 68, 68, 0.1);
+    
+    --color-warning: #f59e0b;               /* Warning - amber */
+    --color-warning-hover: #d97706;         /* Warning hover */
+    --color-warning-light: rgba(245, 158, 11, 0.1);
+    
+    --color-info: #3b82f6;                  /* Info - blue */
+    --color-info-hover: #2563eb;             /* Info hover */
+    --color-info-light: rgba(59, 130, 246, 0.1);
+    
+    /* Accent colors - luxury palette */
+    --color-accent: #6366f1;                /* Accent - indigo */
+    --color-accent-hover: #4f46e5;          /* Accent hover */
+    --color-accent-light: rgba(99, 102, 241, 0.1);
+    
+    --color-gold: #8b5cf6;                  /* Gold - violet */
+    --color-gold-light: rgba(139, 92, 246, 0.1);
+    
+    /* Footer colors */
+    --color-footer-bg: #0f0f0f;             /* Footer background */
+    --color-footer-text: #a8a8a8;           /* Footer text */
+    --color-footer-border: #2a2a2a;         /* Footer border */
+    
+    /* ============================================
+       TYPOGRAPHY SYSTEM
+       Premium fonts with editorial elegance
+       ============================================ */
+    
+    /* Font families */
+    --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-family-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --font-family-mono: "SF Mono", Monaco, "Cascadia Code", monospace;
+    
+    /* Font weights */
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-heavy: 800;
+    
+    /* Letter spacing */
+    --letter-spacing-tight: -0.02em;
+    --letter-spacing-normal: 0;
+    --letter-spacing-wide: 0.02em;
+    --letter-spacing-wider: 0.08em;
+    --letter-spacing-widest: 0.15em;
+    
+    /* Line height */
+    --leading-tight: 1.2;
+    --leading-snug: 1.35;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.62;
+    --leading-loose: 1.8;
+    
+    /* Font sizes - responsive scale */
+    --text-xs: 0.75rem;                     /* 12px */
+    --text-sm: 0.875rem;                    /* 14px */
+    --text-base: 1rem;                      /* 16px */
+    --text-lg: 1.125rem;                    /* 18px */
+    --text-xl: 1.25rem;                     /* 20px */
+    --text-2xl: clamp(1.35rem, 2.2vw, 1.9rem);  /* 21.6px - 30.4px */
+    --text-3xl: clamp(1.75rem, 3.2vw, 2.65rem); /* 28px - 42.4px */
+    --text-4xl: clamp(2rem, 4.2vw, 3.25rem);   /* 32px - 52px */
+    --text-5xl: clamp(2.5rem, 5vw, 4rem);      /* 40px - 64px */
+    --text-6xl: clamp(3rem, 6vw, 5rem);         /* 48px - 80px */
+    
+    /* Display typography */
+    --display-xs: clamp(1.75rem, 3.2vw, 2.65rem);
+    --display-sm: clamp(2rem, 4.2vw, 3.25rem);
+    --display-md: clamp(2.5rem, 5vw, 4rem);
+    --display-lg: clamp(3rem, 6vw, 5rem);
+    --display-xl: clamp(3.5rem, 7vw, 6rem);
+    --display-2xl: clamp(4rem, 8vw, 7rem);
+    
+    /* ============================================
+       SPACING SYSTEM
+       Premium 4px rhythm scale
+       ============================================ */
+    
+    /* Numeric scale (fine-grained control) */
+    --space-0: 0;
+    --space-px: 1px;
+    --space-0_5: 2px;
+    --space-1: 4px;
+    --space-1_5: 6px;
+    --space-2: 8px;
+    --space-2_5: 10px;
+    --space-3: 12px;
+    --space-3_5: 14px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+    --space-9: 36px;
+    --space-10: 40px;
+    --space-11: 44px;
+    --space-12: 48px;
+    --space-14: 56px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
+    --space-28: 112px;
+    --space-32: 128px;
+    --space-36: 144px;
+    --space-40: 160px;
+    --space-44: 176px;
+    --space-48: 192px;
+    --space-52: 208px;
+    --space-56: 224px;
+    --space-60: 240px;
+    --space-64: 256px;
+    --space-72: 288px;
+    --space-80: 320px;
+    --space-96: 384px;
+    
+    /* Semantic scale (enterprise-grade consistency) */
+    --space-xs: var(--space-2);      /* 8px - tight spacing */
+    --space-sm: var(--space-4);      /* 16px - small spacing */
+    --space-md: var(--space-6);      /* 24px - medium spacing */
+    --space-lg: var(--space-8);      /* 32px - large spacing */
+    --space-xl: var(--space-12);     /* 48px - extra large spacing */
+    --space-2xl: var(--space-16);    /* 64px - 2x large spacing */
+    --space-3xl: var(--space-24);    /* 96px - 3x large spacing */
+    
+    /* Section spacing (consistent vertical rhythm) */
+    --section-spacing-sm: var(--space-lg);   /* 32px - small sections */
+    --section-spacing-md: var(--space-xl);   /* 48px - medium sections */
+    --section-spacing-lg: var(--space-2xl);  /* 64px - large sections */
+    --section-spacing-xl: var(--space-3xl);  /* 96px - hero sections */
+    
+    /* Card padding (consistent card sizing) */
+    --card-padding-sm: var(--space-sm);  /* 16px - small cards */
+    --card-padding-md: var(--space-md);  /* 24px - medium cards */
+    --card-padding-lg: var(--space-lg);  /* 32px - large cards */
+    --card-padding-xl: var(--space-xl);  /* 48px - hero cards */
+    
+    /* Grid gaps (consistent grid spacing) */
+    --grid-gap-sm: var(--space-sm);  /* 16px - tight grids */
+    --grid-gap-md: var(--space-md);  /* 24px - medium grids */
+    --grid-gap-lg: var(--space-lg);  /* 32px - loose grids */
+    --grid-gap-xl: var(--space-xl);  /* 48px - editorial grids */
+    
+    /* Form spacing (consistent form layout) */
+    --form-gap-sm: var(--space-sm);  /* 16px - compact forms */
+    --form-gap-md: var(--space-md);  /* 24px - standard forms */
+    --form-gap-lg: var(--space-lg);  /* 32px - premium forms */
+    
+    /* ============================================
+       RADIUS SYSTEM
+       Premium border radius scale
+       ============================================ */
+    
+    --radius-none: 0;
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-3xl: 32px;
+    --radius-full: 9999px;
+    
+    /* ============================================
+       SHADOW SYSTEM
+       Cinematic elevation with premium depth
+       ============================================ */
+    
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.15);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    
+    /* ============================================
+       LAYOUT SYSTEM
+       Standardized container widths
+       ============================================ */
+    
+    /* Responsive container system */
+    --container-xs: 100%;                   /* Extra small - full width */
+    --container-sm: 640px;                  /* Small - mobile landscape */
+    --container-md: 768px;                  /* Medium - tablet portrait */
+    --container-lg: 1024px;                 /* Large - tablet landscape */
+    --container-xl: 1280px;                 /* Extra large - desktop */
+    --container-2xl: 1536px;                /* 2XL - large desktop */
+    
+    /* Container padding (gutters) */
+    --container-padding-xs: 1rem;           /* 16px */
+    --container-padding-sm: 1.5rem;         /* 24px */
+    --container-padding-md: 2rem;           /* 32px */
+    --container-padding-lg: 2.5rem;         /* 40px */
+    --container-padding-xl: 3rem;           /* 48px */
+    
+    /* ============================================
+       BREAKPOINT SYSTEM
+       Standardized responsive breakpoints (mobile-first)
+       ============================================ */
+    
+    /* Mobile-first breakpoint system */
+    --breakpoint-xs: 0;                     /* Extra small - default mobile */
+    --breakpoint-sm: 640px;                 /* Small mobile landscape */
+    --breakpoint-md: 768px;                 /* Tablet portrait */
+    --breakpoint-lg: 1024px;                /* Tablet landscape / small desktop */
+    --breakpoint-xl: 1280px;                /* Desktop */
+    --breakpoint-2xl: 1536px;               /* Large desktop */
+    
+/* ============================================
+   CSS VARIABLE FALLBACKS
+   For browsers that don't support CSS variables
+   ============================================ */
+
+@supports not (--custom: property) {
+    :root {
+        /* Fallback values for browsers without CSS variable support */
+        --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --font-family-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+        --color-bg: #f5f5f5;
+        --color-surface: #ffffff;
+        --color-text-primary: #1a1a1a;
+        --color-border: #e0e0e0;
+        --space-4: 16px;
+        --space-8: 32px;
+        --space-12: 48px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --transition-base: 0.3s ease;
+        --breakpoint-tablet: 768px;
+        --breakpoint-mobile: 480px;
+    }
+}
+
+/* ============================================
+   STICKY POSITIONING FALLBACK
+   For browsers that don't support position: sticky
+   ============================================ */
+
+@supports not (position: sticky) {
+    .product-card__wishlist,
+    .product-actions,
+    .admin-sidebar,
+    .fs-catalog-nav {
+        position: relative;
+    }
+}
+
+/* ============================================
+   CLAMP() FALLBACK
+   For browsers that don't support clamp()
+   ============================================ */
+
+@supports not (width: clamp(1px, 1vw, 1px)) {
+    .hero-section,
+    .glass-card,
+    .premium-card {
+        padding: var(--space-10);
+        margin-bottom: var(--space-12);
+    }
+}
+    
+    /* ============================================
+       ICON SYSTEM
+       Icon sizing scale
+       ============================================ */
+    
+    --icon-xs: 12px;
+    --icon-sm: 16px;
+    --icon-md: 20px;
+    --icon-lg: 24px;
+    --icon-xl: 32px;
+    --icon-2xl: 40px;
+    
+    /* ============================================
+       Z-INDEX SYSTEM
+       Stacking context hierarchy
+       ============================================ */
+    
+    --z-dropdown: 1000;
+    --z-sticky: 1100;
+    --z-fixed: 1200;
+    --z-modal-backdrop: 1300;
+    --z-modal: 1400;
+    --z-popover: 1500;
+    --z-tooltip: 1600;
+    
+    /* ============================================
+       MOTION SYSTEM
+       Premium easing and timing
+       ============================================ */
+    
+    /* Easing functions */
+    --ease-linear: linear;
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* Duration - Optimized for performance */
+    --duration-instant: 100ms;
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 400ms;
+    
+    /* Transitions - Optimized */
+    --transition-fast: var(--duration-fast) var(--ease-out);
+    --transition-base: var(--duration-normal) var(--ease-out);
+    --transition-slow: var(--duration-slow) var(--ease-out);
+    
+    /* ============================================
+       GLASS MORPHISM
+       Premium blur and transparency - Optimized
+       ============================================ */
+    
+    --glass-blur: 12px;
+    --glass-blur-strong: 16px;
+    
+    --glass-bg-subtle: rgba(255, 255, 255, 0.5);
+    --glass-bg-medium: rgba(255, 255, 255, 0.7);
+    --glass-bg-strong: rgba(255, 255, 255, 0.9);
+    
+    --glass-border-subtle: rgba(255, 255, 255, 0.3);
+    --glass-border-medium: rgba(255, 255, 255, 0.5);
+    --glass-border-strong: rgba(255, 255, 255, 0.7);
+    
+    /* ============================================
+       GRADIENT SYSTEM
+       Cinematic gradients for premium feel
+       ============================================ */
+    
+    --gradient-hero: 
+        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(217, 70, 239, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    
+    --gradient-premium: 
+        linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+    
+    --gradient-subtle: 
+        linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.05) 100%);
+    
+    --gradient-overlay: 
+        linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.1) 100%);
+    
+    --gradient-shimmer: 
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    
+    /* ============================================
+       FOCUS SYSTEM
+       Accessibility focus states
+       ============================================ */
+    
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --focus-ring-color: var(--color-primary);
+    --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+    --focus-ring-inset: inset 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+    
+    /* ============================================
+       NAVBAR SPECIFIC
+       Navigation-specific tokens
+       ============================================ */
+    
+    --nav-height: 72px;
+    --nav-height-mobile: 64px;
+    --nav-surface: rgba(250, 250, 250, 0.92);
+    --nav-border: rgba(0, 0, 0, 0.05);
+    --nav-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --nav-shadow-scrolled: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+    /* ============================================
+       LAYOUT SPECIFIC
+       Layout-specific tokens
+       ============================================ */
+    
+    --sidebar-width: 280px;
+    --sidebar-width-mobile: 260px;
+    --space-60: 240px;
+    --space-11: 44px;
+
+    /* ============================================
+       CONTAINER SYSTEM
+       Layout containment for responsive design
+       ============================================ */
+    
+    /* Container widths are defined in main :root above - no duplicates needed */
+}
+
+/* ============================================
+   DARK THEME - LUXURY CINEMATIC PALETTE
+   Deep black surfaces with layered depth
+   ============================================ */
+
+[data-theme="dark"] {
+    /* Core surfaces - layered depth hierarchy */
+    --color-bg: #050507;                    /* Ultra-deep black */
+    --color-surface: #0f0f12;               /* Primary surface - rich black */
+    --color-surface-alt: #1a1a1f;           /* Secondary surface - elevated */
+    --color-surface-elevated: #242429;      /* Elevated surface */
+    
+    /* Typography hierarchy - premium contrast */
+    --color-text-primary: #f8f8fa;          /* Primary - clean white */
+    --color-text-secondary: #b0b0b8;        /* Secondary - muted white */
+    --color-text-tertiary: #7a7a82;         /* Tertiary - subtle gray */
+    --color-text-muted: #5a5a62;            /* Muted - darker gray */
+    
+    /* Interactive elements */
+    --color-primary: #e8e8ec;               /* Primary - off-white */
+    --color-primary-hover: #ffffff;         /* Primary hover - pure white */
+    --color-primary-light: rgba(232, 232, 236, 0.1);
+    
+    /* Borders and dividers */
+    --color-border: #2a2a30;                /* Border - subtle */
+    --color-border-strong: #3a3a42;         /* Strong border */
+    --color-border-subtle: #222228;         /* Subtle border */
+    
+    /* Inverse colors */
+    --color-inverse: #050507;               /* Inverse background */
+    --color-text-inverse: #ffffff;          /* Inverse text */
+    
+    /* Semantic colors - dark theme adjustments */
+    --color-success: #10b981;
+    --color-success-hover: #059669;
+    --color-success-light: rgba(16, 185, 129, 0.15);
+    
+    --color-danger: #ef4444;
+    --color-danger-hover: #dc2626;
+    --color-danger-light: rgba(239, 68, 68, 0.15);
+    
+    --color-warning: #f59e0b;
+    --color-warning-hover: #d97706;
+    --color-warning-light: rgba(245, 158, 11, 0.15);
+    
+    --color-info: #3b82f6;
+    --color-info-hover: #2563eb;
+    --color-info-light: rgba(59, 130, 246, 0.15);
+    
+    /* Accent colors - dark theme adjustments */
+    --color-accent: #818cf8;
+    --color-accent-hover: #6366f1;
+    --color-accent-light: rgba(129, 140, 248, 0.15);
+    
+    --color-gold: #a78bfa;
+    --color-gold-light: rgba(167, 139, 250, 0.15);
+    
+    /* Footer colors */
+    --color-footer-bg: #050507;
+    --color-footer-text: #7a7a82;
+    --color-footer-border: #1a1a1f;
+    
+    /* Glass morphism - dark theme */
+    --glass-bg-subtle: rgba(255, 255, 255, 0.03);
+    --glass-bg-medium: rgba(255, 255, 255, 0.06);
+    --glass-bg-strong: rgba(255, 255, 255, 0.1);
+    
+    --glass-border-subtle: rgba(255, 255, 255, 0.08);
+    --glass-border-medium: rgba(255, 255, 255, 0.12);
+    --glass-border-strong: rgba(255, 255, 255, 0.18);
+    
+    /* Gradients - dark theme */
+    --gradient-hero: 
+        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(217, 70, 239, 0.15) 0%, transparent 50%),
+        linear-gradient(135deg, #050507 0%, #0f0f12 100%);
+    
+    --gradient-subtle: 
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.03) 100%);
+    
+    --gradient-overlay: 
+        linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.2) 100%);
+    
+    /* Navbar - dark theme */
+    --nav-surface: rgba(15, 15, 18, 0.92);
+    --nav-border: rgba(255, 255, 255, 0.08);
+    --nav-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --nav-shadow-scrolled: 0 8px 24px rgba(0, 0, 0, 0.4);
+    
+    /* Shadows - dark theme */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.3);
+    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.6);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}

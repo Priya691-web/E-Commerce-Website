@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # Development backend
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: fashionstore-backend-dev
+    restart: unless-stopped
+    environment:
+      - FASHIONSTORE_PROFILE=development
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=fashionstore
+      - DB_USER=fashionstore
+      - DB_PASSWORD=fashionstore_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CSRF_ENABLED=false
+      - RATE_LIMIT_ENABLED=false
+      - QA_MODE=true
+      - LOG_LEVEL=DEBUG
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - fashionstore-network
+
+  # Development MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: fashionstore-mysql-dev
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=fashionstore
+      - MYSQL_USER=fashionstore
+      - MYSQL_PASSWORD=fashionstore_dev
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - fashionstore-network
+
+  # Development Redis
+  redis:
+    image: redis:7-alpine
+    container_name: fashionstore-redis-dev
+    restart: unless-stopped
+    command: redis-server
+    volumes:
+      - redis-data:/data
+    networks:
+      - fashionstore-network
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  fashionstore-network:
+    driver: bridge

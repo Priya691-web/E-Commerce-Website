@@ -1,0 +1,259 @@
+/**
+ * Performance Optimizations
+ * Fixes CLS, LCP, and improves Lighthouse scores
+ */
+
+/* Fix CLS - Reserve space for dynamic content */
+.reserve-space {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+.reserve-space--hero {
+  min-height: 600px;
+  aspect-ratio: 16/9;
+}
+
+.reserve-space--card {
+  min-height: 300px;
+  aspect-ratio: 4/3;
+}
+
+.reserve-space--thumbnail {
+  min-height: 200px;
+  aspect-ratio: 1/1;
+}
+
+/* Improve LCP - Preload critical images */
+img[loading="eager"] {
+  fetch-priority: high;
+}
+
+img[loading="lazy"] {
+  fetch-priority: auto;
+}
+
+/* Reduce layout thrashing - Use transform instead of top/left */
+.transform-optimize {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Fix hydration delays - Critical CSS inline */
+.critical-above-fold {
+  display: block;
+}
+
+/* Improve font loading - Prevent FOUT/FOIT */
+@font-face {
+  font-display: swap;
+}
+
+/* Reduce paint time - Contain paint */
+.contain-paint {
+  contain: paint;
+}
+
+/* Optimize animations - Use GPU acceleration */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Reduce reflows - Use fixed dimensions */
+.fixed-dimensions {
+  width: 100%;
+  height: 100%;
+}
+
+/* Improve scrolling performance */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimize images - Use modern formats */
+img {
+  content-visibility: auto;
+}
+
+/* Reduce CLS - Skeleton loading states */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Improve LCP - Hero image optimization */
+.hero-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  min-height: 400px;
+  aspect-ratio: 16/9;
+}
+
+/* Optimize table rendering */
+table {
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* Reduce repaints - Use opacity instead of display */
+.fade-in {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+}
+
+/* Optimize card layout */
+.card {
+  contain: layout style paint;
+}
+
+/* Reduce layout shift in grids */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Improve list rendering */
+.list-item {
+  contain: layout style;
+  min-height: 60px;
+}
+
+/* Optimize modal rendering */
+.modal-backdrop {
+  contain: strict;
+}
+
+/* Optimize video loading */
+video {
+  loading: lazy;
+  preload: metadata;
+}
+
+/* Optimize sidebar rendering */
+.sidebar {
+  contain: layout style;
+  width: 250px;
+  min-width: 250px;
+}
+
+/* Optimize carousel rendering */
+.carousel {
+  contain: layout style;
+  overflow: hidden;
+  position: relative;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+
+.carousel-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+}
+
+/* Optimize accordion rendering */
+.accordion-item {
+  contain: layout style;
+}
+
+.accordion-header {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+
+/* Optimize timeline rendering */
+.timeline {
+  contain: layout style;
+}
+
+.timeline-item {
+  contain: layout style;
+  min-height: 80px;
+  padding: 1rem;
+  position: relative;
+}
+
+/* Optimize file upload rendering */
+.file-upload {
+  contain: layout style;
+  min-height: 200px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* Reduce CLS in code blocks */
+.code-block {
+  contain: layout style;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 1rem;
+  background-color: #1f2937;
+  color: #f9fafb;
+  border-radius: 4px;
+}
+
+/* Optimize alert rendering */
+.alert {
+  contain: layout style paint;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.alert--success {
+  background-color: #d1fae5;
+  border-left: 4px solid #10b981;
+  color: #065f46;
+}
+
+.alert--error {
+  background-color: #fee2e2;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+}
+
+.alert--warning {
+  background-color: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  color: #92400e;
+}
+
+.alert--info {
+  background-color: #dbeafe;
+  border-left: 4px solid #3b82f6;
+  color: #1e40af;
+}
+

@@ -1,0 +1,271 @@
+/**
+ * Skeleton Loader Styles
+ * Reusable skeleton loading states for improved perceived performance
+ * Enhanced with fade-in animations and smooth shimmer effects
+ */
+
+/* ============================================
+   BASE SKELETON
+   ============================================ */
+
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-surface-alt, #f2f2f2);
+    animation: fadeIn 0.3s ease-in;
+}
+
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 100%
+    );
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Fade-in animation for skeleton grids */
+.skeleton-product-grid {
+    animation: fadeIn 0.4s ease-in;
+}
+
+/* ============================================
+   SKELETON VARIANTS
+   ============================================ */
+
+/* Text skeleton */
+.skeleton-text {
+    height: 1em;
+    margin-bottom: 0.5em;
+    border-radius: var(--radius-xs);
+}
+
+.skeleton-text-sm {
+    height: 0.75em;
+    margin-bottom: 0.5em;
+    border-radius: var(--radius-xs);
+}
+
+.skeleton-text-lg {
+    height: 1.5em;
+    margin-bottom: 0.5em;
+    border-radius: var(--radius-xs);
+}
+
+/* Avatar skeleton */
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-avatar-lg {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.skeleton-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+/* Image skeleton */
+.skeleton-image {
+    width: 100%;
+    height: 200px;
+    border-radius: var(--radius-md);
+}
+
+.skeleton-image-sm {
+    width: 100%;
+    height: 150px;
+    border-radius: var(--radius-md);
+}
+
+.skeleton-image-lg {
+    width: 100%;
+    height: 300px;
+    border-radius: var(--radius-lg);
+}
+
+/* Button skeleton */
+.skeleton-button {
+    height: 44px;
+    width: 120px;
+    border-radius: var(--radius-md);
+}
+
+.skeleton-button-lg {
+    height: 48px;
+    width: 160px;
+    border-radius: var(--radius-md);
+}
+
+/* Card skeleton */
+.skeleton-card {
+    height: 300px;
+    border-radius: var(--radius-lg);
+}
+
+.skeleton-card-sm {
+    height: 200px;
+    border-radius: var(--radius-md);
+}
+
+/* Input skeleton */
+.skeleton-input {
+    height: 44px;
+    border-radius: var(--radius-md);
+}
+
+/* ============================================
+   SKELETON COMPONENTS
+   ============================================ */
+
+/* Product card skeleton */
+.skeleton-product-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.skeleton-product-card .skeleton-image {
+    height: 280px;
+}
+
+.skeleton-product-card .skeleton-title {
+    height: 1.25em;
+    width: 80%;
+}
+
+.skeleton-product-card .skeleton-price {
+    height: 1.5em;
+    width: 40%;
+}
+
+.skeleton-product-card .skeleton-brand {
+    height: 0.875em;
+    width: 60%;
+}
+
+/* Hero skeleton */
+.skeleton-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+    min-height: 400px;
+}
+
+.skeleton-hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.skeleton-hero-media {
+    height: 400px;
+    border-radius: var(--radius-2xl);
+}
+
+/* Category grid skeleton */
+.skeleton-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-6);
+}
+
+.skeleton-category-item {
+    height: 200px;
+    border-radius: var(--radius-lg);
+}
+
+/* Product grid skeleton */
+.skeleton-product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-6);
+}
+
+/* Admin table skeleton */
+.skeleton-table-row {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.skeleton-table-cell {
+    height: 20px;
+    flex: 1;
+}
+
+/* ============================================
+   RESPONSIVE SKELETONS
+   ============================================ */
+
+@media (max-width: var(--breakpoint-tablet)) {
+    .skeleton-hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    
+    .skeleton-hero-media {
+        height: 300px;
+    }
+    
+    .skeleton-category-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .skeleton-product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: var(--breakpoint-mobile)) {
+    .skeleton-category-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+    
+    .skeleton-product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.skeleton[aria-hidden="true"] {
+    visibility: visible;
+}
+
+/* Hide skeleton when content is loaded */
+.skeleton.loaded {
+    display: none;
+}

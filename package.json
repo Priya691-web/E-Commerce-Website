@@ -1,0 +1,33 @@
+{
+  "name": "fashionstore",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FashionStore - Premium E-commerce Platform",
+  "scripts": {
+    "test": "npm run test:unit",
+    "test:unit": "npm run test:unit:frontend && npm run test:unit:backend",
+    "test:unit:frontend": "cd frontend/admin && npm run test:unit",
+    "test:unit:backend": "cd backend && mvn test",
+    "test:integration": "npm run test:integration:frontend",
+    "test:integration:frontend": "cd frontend/admin && npm run test:integration",
+    "test:e2e": "playwright test",
+    "test:responsive": "playwright test tests/responsive",
+    "test:accessibility": "lhci autorun",
+    "test:api": "playwright test tests/api-contract",
+    "test:regression": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:report": "npm run test:coverage && npm run test:e2e -- --reporter=html",
+    "test:coverage": "cd frontend/admin && npm run test:coverage",
+    "test:ci": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:responsive && npm run test:accessibility && npm run test:api"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@vitejs/plugin-react": "^4.3.3",
+    "cypress": "^13.15.0",
+    "lighthouse": "^12.2.1",
+    "vitest": "^2.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

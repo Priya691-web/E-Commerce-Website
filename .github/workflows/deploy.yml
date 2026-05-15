@@ -1,0 +1,100 @@
+name: Production CI/CD & Rollback Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform (deploy or rollback)'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - rollback
+      target_version:
+        description: 'Version tag to deploy/rollback to (e.g., v1.0.1 or commit-sha)'
+        required: false
+        type: string
+
+jobs:
+  build-and-publish:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action != 'rollback'
+    
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}/backend
+        tags: |
+          type=semver,pattern={{version}}
+          type=sha,format=long
+          type=raw,value=latest
+
+    - name: Build and push production image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: Dockerfile.production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy-to-staging:
+    name: Deploy & Validate Release
+    runs-on: ubuntu-latest
+    needs: [build-and-publish]
+    if: always() && (needs.build-and-publish.result == 'success' || github.event.inputs.action == 'rollback')
+    
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Determine Deployment Version
+      id: version-config
+      run: |
+        if [ "${{ github.event.inputs.action }}" = "rollback" ]; then
+          echo "DEPLOY_TAG=${{ github.event.inputs.target_version }}" >> $GITHUB_ENV
+          echo "Deploying ROLLBACK version: ${{ github.event.inputs.target_version }}"
+        else
+          echo "DEPLOY_TAG=sha-${{ github.sha }}" >> $GITHUB_ENV
+          echo "Deploying NEW release: sha-${{ github.sha }}"
+        fi
+
+    - name: Copy Stack Configuration to Staging
+      run: |
+        echo "Preparing docker-compose environment..."
+        # In a real environment, you would use ssh-action to run these on the target VPS:
+        # scp -r ./docker-compose.prod.yml ./nginx user@staging-vps:/opt/fashionstore/
+
+    - name: Start Services & Health Check
+      run: |
+        echo "Running: docker compose -f docker-compose.prod.yml up -d"
+        echo "Waiting for services to report healthy..."
+        # Replicated validation loop:
+        # for i in {1..30}; do
+        #   if curl -s http://localhost/health | grep "healthy"; then
+        #     echo "Staging deployed successfully!"
+        #     exit 0
+        #   fi
+        #   sleep 5
+        # done
+        echo "Simulated automated rollback trigger if health check fails..."

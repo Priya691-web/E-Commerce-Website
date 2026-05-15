@@ -1,0 +1,117 @@
+/**
+ * FashionStore Premium Core — luxury experience enhancements
+ * Refined surface interactions and glassmorphism with optimized animations.
+ */
+
+/* Entrance Animations - Optimized for performance */
+@keyframes premium-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes premium-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.premium-reveal {
+    opacity: 0;
+    animation: premium-slide-up 0.6s var(--ease-premium) forwards;
+}
+
+.premium-fade {
+    opacity: 0;
+    animation: premium-fade-in 0.6s var(--ease-out) forwards;
+}
+
+/* Glass Surfaces */
+.glass-panel {
+    background: var(--glass-ivory);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-light);
+    box-shadow: var(--shadow-md);
+}
+
+.glass-panel-strong {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(var(--glass-blur-strong));
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+    border: 1px solid var(--glass-border-light);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Typography Enhancements */
+.editorial-title {
+    font-family: var(--font-family-display);
+    font-style: italic;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: -0.01em;
+}
+
+.accent-tag {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-wider);
+    text-transform: uppercase;
+    color: var(--color-text-primary);
+    display: inline-block;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--color-text-primary);
+    margin-bottom: var(--space-4);
+}
+
+/* Button Refinement */
+.btn-premium {
+    position: relative;
+    padding: var(--space-3) var(--space-5);
+    background: var(--color-text-primary);
+    color: var(--color-surface);
+    border: none;
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-wider);
+    text-transform: uppercase;
+    overflow: hidden;
+    transition: transform var(--transition-base) var(--ease-premium);
+    cursor: pointer;
+}
+
+.btn-premium::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-inverse);
+    transform: translateY(100%);
+    transition: transform 0.4s var(--ease-premium);
+    z-index: -1;
+}
+
+.btn-premium:hover {
+    color: var(--color-text-primary);
+    transform: translateY(-2px);
+}
+
+.btn-premium:hover::after {
+    transform: translateY(0);
+}
+
+/* Hover effects - Optimized */
+.hover-reveal-image {
+    position: relative;
+    overflow: hidden;
+}
+
+.hover-reveal-image img {
+    transition: transform 0.4s var(--ease-out);
+}
+
+.hover-reveal-image:hover img {
+    transform: scale(1.05);
+}

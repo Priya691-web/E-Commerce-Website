@@ -1,0 +1,513 @@
+/* ============================================
+   CHECKOUT PAGE - Mobile-First Responsive
+   ============================================ */
+
+/* ============================================
+   CHECKOUT HEADER
+   ============================================ */
+
+.fs-checkout-header {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto var(--space-6);
+}
+
+.fs-checkout-header__tag {
+    display: inline-block;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-success);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-2);
+}
+
+/* ============================================
+   CHECKOUT PROGRESS
+   ============================================ */
+
+.fs-checkout-progress {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+    max-width: 400px;
+    margin-inline: auto;
+}
+
+@media (max-width: 640px) {
+    .fs-checkout-progress {
+        grid-template-columns: 1fr auto 1fr;
+        gap: var(--space-2);
+    }
+    
+    .fs-checkout-progress .fs-checkout-step:nth-child(4),
+    .fs-checkout-progress .fs-checkout-progress__line:nth-child(3) {
+        display: none;
+    }
+}
+
+.fs-checkout-step {
+    text-align: center;
+}
+
+.fs-checkout-step__number {
+    width: var(--space-10);
+    height: var(--space-10);
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--transition-base);
+}
+
+.fs-checkout-step--active .fs-checkout-step__number {
+    background: var(--color-text-primary);
+    color: var(--color-inverse);
+    border-color: var(--color-text-primary);
+    box-shadow: 0 0 0 4px rgba(16, 16, 16, 0.1);
+}
+
+.fs-checkout-step__label {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
+.fs-checkout-step--active .fs-checkout-step__label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.fs-checkout-progress__line {
+    height: 2px;
+    background: var(--color-border);
+}
+
+/* ============================================
+   CHECKOUT LAYOUT - Mobile-First Layout
+   ============================================ */
+
+.fs-checkout-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+    align-items: start;
+    max-width: var(--container-xl);
+    margin: 0 auto;
+    padding-inline: var(--container-padding-sm);
+}
+
+@media (min-width: 1024px) {
+    .fs-checkout-layout {
+        grid-template-columns: 1fr 360px;
+        gap: var(--space-8);
+        padding-inline: var(--container-padding-lg);
+    }
+}
+
+@media (min-width: 1280px) {
+    .fs-checkout-layout {
+        padding-inline: var(--container-padding-xl);
+    }
+}
+
+.fs-checkout-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* ============================================
+   CHECKOUT STEPS
+   ============================================ */
+
+.fs-checkout-step {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    padding: var(--space-6);
+    display: none;
+}
+
+.fs-checkout-step--active {
+    display: block;
+}
+
+/* ============================================
+   SAVED ADDRESSES
+   ============================================ */
+
+.fs-saved-addresses {
+    margin-bottom: var(--space-6);
+}
+
+.fs-saved-addresses__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-3);
+    gap: var(--space-3);
+}
+
+.fs-saved-addresses__header h4 {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.fs-saved-addresses__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-3);
+}
+
+.fs-address-card {
+    position: relative;
+    display: block;
+    padding: var(--space-4);
+    padding-left: 44px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.fs-address-card:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-alt);
+}
+
+.fs-address-card input[type="radio"] {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-text-primary);
+    cursor: pointer;
+}
+
+.fs-address-card--active {
+    border-color: var(--color-text-primary);
+    background: var(--color-surface);
+    box-shadow: 0 0 0 3px rgba(16, 16, 16, 0.06);
+}
+
+.fs-address-card--new {
+    border-style: dashed;
+    background: transparent;
+}
+
+.fs-address-card--new.fs-address-card--active {
+    border-style: solid;
+}
+
+.fs-address-card__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.fs-address-card__label {
+    font-weight: var(--font-weight-semibold);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-primary);
+}
+
+.fs-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border-radius: var(--radius-pill);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.fs-address-card__details {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+/* ============================================
+   NEW ADDRESS FORM
+   ============================================ */
+
+.fs-new-address-form {
+    display: none;
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-alt);
+}
+
+.fs-new-address-form--visible {
+    display: block;
+}
+
+.fs-new-address-form h4 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================
+   SHIPPING METHODS
+   ============================================ */
+
+.fs-shipping-methods {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+}
+
+.fs-shipping-method {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    padding: var(--space-3);
+    cursor: pointer;
+}
+
+.fs-shipping-method__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fs-shipping-method__name {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-sm);
+}
+
+/* ============================================
+   PAYMENT METHODS
+   ============================================ */
+
+.fs-payment-methods {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+}
+
+.fs-payment-method {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    padding: var(--space-3);
+    cursor: pointer;
+}
+
+.fs-payment-method__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fs-payment-method__name {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-sm);
+}
+
+/* ============================================
+   CHECKOUT ACTIONS
+   ============================================ */
+
+.fs-checkout-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-top: var(--space-6);
+}
+
+.fs-checkout-actions .btn-luxury {
+    flex: 1;
+}
+
+/* ============================================
+   ORDER REVIEW
+   ============================================ */
+
+.fs-order-review {
+    padding: var(--space-3);
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-md);
+}
+
+/* ============================================
+   ORDER SUMMARY
+   ============================================ */
+
+.fs-checkout-summary {
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-8));
+}
+
+@media (max-width: var(--breakpoint-lg)) {
+    .fs-checkout-summary {
+        position: static;
+    }
+}
+
+.fs-order-summary {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    padding: var(--space-6);
+}
+
+.fs-order-summary__items {
+    display: grid;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.fs-order-summary__item {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+.fs-order-summary__image {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-surface-alt);
+    position: relative;
+}
+
+.fs-order-summary__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fs-order-summary__qty {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-text-primary);
+    color: var(--color-inverse);
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fs-order-summary__details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fs-order-summary__details span:first-child {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.fs-order-summary__details span:last-child {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.fs-order-summary__divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-4) 0;
+}
+
+.fs-order-summary__totals {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.fs-order-summary__row {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--text-sm);
+}
+
+.fs-order-summary__row--total {
+    padding-top: var(--space-4);
+    margin-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+}
+
+.fs-order-summary__total {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+}
+
+/* ============================================
+   CHECKOUT ASSURANCE
+   ============================================ */
+
+.fs-checkout-assurance {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-6);
+}
+
+.fs-checkout-assurance__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-secondary);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: var(--breakpoint-md)) {
+    .fs-checkout-progress {
+        max-width: 100%;
+    }
+
+    .fs-saved-addresses__list {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

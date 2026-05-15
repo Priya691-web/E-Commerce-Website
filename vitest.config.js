@@ -1,0 +1,36 @@
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./tests/unit/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '**/*.test.{js,jsx,ts,tsx}',
+        '**/*.spec.{js,jsx,ts,tsx}',
+        '**/dist/**',
+        '**/build/**',
+      ],
+    },
+    include: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './frontend/admin/src'),
+      '@components': path.resolve(__dirname, './frontend/admin/src/components'),
+      '@pages': path.resolve(__dirname, './frontend/admin/src/pages'),
+      '@api': path.resolve(__dirname, './frontend/admin/src/api'),
+      '@auth': path.resolve(__dirname, './frontend/admin/src/auth'),
+      '@utils': path.resolve(__dirname, './frontend/admin/src/utils'),
+    },
+  },
+});

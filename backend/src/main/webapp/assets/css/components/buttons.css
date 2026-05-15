@@ -1,0 +1,321 @@
+/* ============================================
+   BUTTONS - STOREFRONT
+   ============================================ */
+
+/* ============================================
+   BUTTON BASE
+   ============================================ */
+
+.fs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family-sans);
+    line-height: var(--leading-tight);
+    text-decoration: none;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: transform var(--transition-hover), 
+                box-shadow var(--transition-hover),
+                background-color var(--transition-hover),
+                border-color var(--transition-hover),
+                color var(--transition-hover);
+    white-space: nowrap;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.01em;
+    min-height: var(--space-11);
+    min-width: var(--space-11);
+}
+
+.fs-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.fs-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.fs-btn svg {
+    width: var(--icon-md);
+    height: var(--icon-md);
+}
+
+/* ============================================
+   BUTTON SIZES
+   ============================================ */
+
+.fs-btn--xs {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-xs);
+}
+
+.fs-btn--sm {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+.fs-btn--md {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+}
+
+.fs-btn--lg {
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-base);
+}
+
+.fs-btn--xl {
+    padding: var(--space-5) var(--space-8);
+    font-size: var(--text-lg);
+}
+
+/* ============================================
+   BUTTON VARIANTS
+   ============================================ */
+
+/* Primary Button */
+.fs-btn--primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+    color: var(--color-text-inverse);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fs-btn--primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    transition: all var(--transition-hover);
+}
+
+.fs-btn--primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Secondary Button */
+.fs-btn--secondary {
+    background: var(--color-surface-alt);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+}
+
+.fs-btn--secondary:hover:not(:disabled) {
+    background: var(--color-surface);
+    border-color: var(--color-border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-hover);
+}
+
+.fs-btn--secondary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Outline Button */
+.fs-btn--outline {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+}
+
+.fs-btn--outline:hover:not(:disabled) {
+    background: var(--color-surface-alt);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-hover);
+}
+
+/* Ghost Button */
+.fs-btn--ghost {
+    background: transparent;
+    color: var(--color-text-primary);
+}
+
+.fs-btn--ghost:hover:not(:disabled) {
+    background: var(--color-surface-alt);
+    transition: all var(--transition-hover);
+}
+
+/* Accent Button */
+.fs-btn--accent {
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+    color: var(--color-text-inverse);
+}
+
+.fs-btn--accent:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-accent-hover) 0%, var(--color-accent) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-hover);
+}
+
+/* Success Button */
+.fs-btn--success {
+    background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-hover) 100%);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.fs-btn--success:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-success-hover) 0%, var(--color-success) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-hover);
+}
+
+/* Danger Button */
+.fs-btn--danger {
+    background: var(--color-danger);
+    color: white;
+}
+
+.fs-btn--danger:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-hover);
+}
+
+/* ============================================
+   BUTTON WIDTHS
+   ============================================ */
+
+.fs-btn--block,
+.fs-btn--full {
+    width: 100%;
+}
+
+/* ============================================
+   BUTTON WITH ICONS
+   ============================================ */
+
+.fs-btn--icon-only {
+    padding: var(--space-3);
+}
+
+.fs-btn--icon-left svg {
+    margin-right: var(--space-1);
+}
+
+.fs-btn--icon-right svg {
+    margin-left: var(--space-1);
+}
+
+/* ============================================
+   BUTTON GROUPS
+   ============================================ */
+
+.fs-btn--group {
+    display: flex;
+    gap: 0;
+}
+
+.fs-btn--full-width {
+    width: 100%;
+}
+
+.fs-btn--small {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+.fs-btn--margin-left {
+    margin-left: var(--space-4);
+}
+
+.fs-btn-group {
+    display: inline-flex;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.fs-btn-group .fs-btn {
+    border-radius: 0;
+    border-right: 1px solid var(--color-border);
+}
+
+.fs-btn-group .fs-btn:first-child {
+    border-top-left-radius: var(--radius-md);
+    border-bottom-left-radius: var(--radius-md);
+}
+
+.fs-btn-group .fs-btn:last-child {
+    border-right: none;
+    border-top-right-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.fs-btn--loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.fs-btn--loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: fs-spin 0.6s linear infinite;
+}
+
+@keyframes fs-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+[data-theme="dark"] .fs-btn--secondary {
+    background: var(--color-surface-alt);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+[data-theme="dark"] .fs-btn--secondary:hover:not(:disabled) {
+    background: var(--color-surface);
+    border-color: var(--color-border-strong);
+}
+
+[data-theme="dark"] .fs-btn--outline {
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+}
+
+[data-theme="dark"] .fs-btn--outline:hover:not(:disabled) {
+    background: var(--color-surface-alt);
+    border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .fs-btn--ghost {
+    color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .fs-btn--ghost:hover:not(:disabled) {
+    background: var(--color-surface-alt);
+}
+
+[data-theme="dark"] .fs-btn-group .fs-btn {
+    border-color: var(--color-border);
+}

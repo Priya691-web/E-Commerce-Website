@@ -1,0 +1,426 @@
+/**
+ * ============================================
+ * FASHIONSTORE - RESPONSIVE UTILITY CLASSES
+ * Mobile-first responsive utility system
+ * ============================================
+ */
+
+/* ============================================
+   CONTAINER SYSTEM
+   Responsive container utilities
+   ============================================ */
+
+.container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: var(--container-padding-sm);
+}
+
+@media (min-width: 640px) {
+    .container {
+        padding-inline: var(--container-padding-md);
+    }
+}
+
+@media (min-width: 768px) {
+    .container {
+        padding-inline: var(--container-padding-lg);
+    }
+}
+
+@media (min-width: 1024px) {
+    .container {
+        padding-inline: var(--container-padding-xl);
+    }
+}
+
+.container-sm {
+    max-width: var(--container-sm);
+}
+
+.container-md {
+    max-width: var(--container-md);
+}
+
+.container-lg {
+    max-width: var(--container-lg);
+}
+
+.container-xl {
+    max-width: var(--container-xl);
+}
+
+.container-2xl {
+    max-width: var(--container-2xl);
+}
+
+/* ============================================
+   GRID SYSTEM
+   Responsive grid utilities
+   ============================================ */
+
+.grid {
+    display: grid;
+}
+
+.grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+    .grid-cols-sm-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 768px) {
+    .grid-cols-md-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    
+    .grid-cols-md-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid-cols-lg-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    
+    .grid-cols-lg-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .grid-cols-xl-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.gap-4 {
+    gap: var(--space-4);
+}
+
+.gap-6 {
+    gap: var(--space-6);
+}
+
+.gap-8 {
+    gap: var(--space-8);
+}
+
+.gap-12 {
+    gap: var(--space-12);
+}
+
+/* ============================================
+   FLEX SYSTEM
+   Responsive flex utilities
+   ============================================ */
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.items-start {
+    align-items: flex-start;
+}
+
+.items-end {
+    align-items: flex-end;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.justify-start {
+    justify-content: flex-start;
+}
+
+.justify-end {
+    justify-content: flex-end;
+}
+
+/* ============================================
+   SPACING UTILITIES
+   Responsive spacing utilities
+   ============================================ */
+
+.p-4 {
+    padding: var(--space-4);
+}
+
+.p-6 {
+    padding: var(--space-6);
+}
+
+.p-8 {
+    padding: var(--space-8);
+}
+
+.p-12 {
+    padding: var(--space-12);
+}
+
+.px-4 {
+    padding-inline: var(--space-4);
+}
+
+.px-6 {
+    padding-inline: var(--space-6);
+}
+
+.px-8 {
+    padding-inline: var(--space-8);
+}
+
+.px-12 {
+    padding-inline: var(--space-12);
+}
+
+.py-4 {
+    padding-block: var(--space-4);
+}
+
+.py-6 {
+    padding-block: var(--space-6);
+}
+
+.py-8 {
+    padding-block: var(--space-8);
+}
+
+.py-12 {
+    padding-block: var(--space-12);
+}
+
+.m-4 {
+    margin: var(--space-4);
+}
+
+.m-6 {
+    margin: var(--space-6);
+}
+
+.m-8 {
+    margin: var(--space-8);
+}
+
+.m-12 {
+    margin: var(--space-12);
+}
+
+.mx-auto {
+    margin-inline: auto;
+}
+
+.my-4 {
+    margin-block: var(--space-4);
+}
+
+.my-6 {
+    margin-block: var(--space-6);
+}
+
+.my-8 {
+    margin-block: var(--space-8);
+}
+
+.my-12 {
+    margin-block: var(--space-12);
+}
+
+/* ============================================
+   DISPLAY UTILITIES
+   Responsive display utilities
+   ============================================ */
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 639px) {
+    .block-sm {
+        display: block;
+    }
+    
+    .hidden-sm {
+        display: none;
+    }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+    .block-md {
+        display: block;
+    }
+    
+    .hidden-md {
+        display: none;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .block-lg {
+        display: block;
+    }
+    
+    .hidden-lg {
+        display: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    .block-xl {
+        display: block;
+    }
+    
+    .hidden-xl {
+        display: none;
+    }
+}
+
+/* ============================================
+   TEXT ALIGNMENT
+   Responsive text alignment
+   ============================================ */
+
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+@media (min-width: 768px) {
+    .md-text-left {
+        text-align: left;
+    }
+    
+    .md-text-center {
+        text-align: center;
+    }
+    
+    .md-text-right {
+        text-align: right;
+    }
+}
+
+/* ============================================
+   WIDTH UTILITIES
+   Responsive width utilities
+   ============================================ */
+
+.w-full {
+    width: 100%;
+}
+
+.w-auto {
+    width: auto;
+}
+
+.max-w-full {
+    max-width: 100%;
+}
+
+/* ============================================
+   OVERFLOW UTILITIES
+   Prevent horizontal scrolling
+   ============================================ */
+
+.overflow-x-hidden {
+    overflow-x: hidden;
+}
+
+.overflow-y-auto {
+    overflow-y: auto;
+}
+
+/* ============================================
+   RESPONSIVE IMAGE SCALING
+   Proper image scaling for all breakpoints
+   ============================================ */
+
+img,
+picture,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ============================================
+   SECTION SPACING
+   Standardized section spacing
+   ============================================ */
+
+.section {
+    padding-block: var(--space-8);
+}
+
+@media (min-width: 768px) {
+    .section {
+        padding-block: var(--space-12);
+    }
+}
+
+@media (min-width: 1024px) {
+    .section {
+        padding-block: var(--space-16);
+    }
+}
+
+.section-sm {
+    padding-block: var(--space-6);
+}
+
+@media (min-width: 768px) {
+    .section-sm {
+        padding-block: var(--space-8);
+    }
+}
+
+.section-lg {
+    padding-block: var(--space-12);
+}
+
+@media (min-width: 768px) {
+    .section-lg {
+        padding-block: var(--space-16);
+    }
+}
+
+@media (min-width: 1024px) {
+    .section-lg {
+        padding-block: var(--space-20);
+    }
+}

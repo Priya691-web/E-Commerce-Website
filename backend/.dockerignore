@@ -1,0 +1,36 @@
+# ============================================
+# DOCKERIGNORE - Backend
+# ============================================
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.settings/
+.project
+.classpath
+
+# Build
+target/
+*.war
+*.jar
+*.ear
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.*
+
+# Documentation
+*.md
+docs/
+
+# Tests
+src/test/

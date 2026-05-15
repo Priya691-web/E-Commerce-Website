@@ -1,33 +1,146 @@
-# Java
+# ============================================
+# FASHIONSTORE - COMPREHENSIVE GITIGNORE
+# ============================================
+
+# ============================================
+# JAVA / MAVEN
+# ============================================
 *.class
 *.jar
 *.war
 *.ear
-
-# Maven
+*.iml
 target/
 bin/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
 
-# Node
+# ============================================
+# NODE / NPM / YARN
+# ============================================
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 package-lock.json
+package-lock.yaml
+yarn.lock
+yarn.lock.yaml
+.pnpm-debug.log*
+.pnpm-store/
+.pnpm-lock.yaml
 
-# Eclipse
+# ============================================
+# BUILD OUTPUTS
+# ============================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.vuepress/dist/
+.vite/
+.turbo/
+
+# ============================================
+# IDE
+# ============================================
 .settings/
 .classpath
 .project
-
-# VS Code
+.idea/
 .vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
 
-# Database
-*.db
-
-# OS
+# ============================================
+# OPERATING SYSTEM
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
-# Environment files (ignore actual .env with secrets, keep .env.example as template)
-# Temporarily allowing .env editing for Docker setup
-# .env
-# .env.local
-# .env.*.local
+# ============================================
+# DATABASE
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+
+# ============================================
+# LOGS
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+logs/*.log
+
+# ============================================
+# ENVIRONMENT FILES
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ============================================
+# DOCKER
+# ============================================
+*.pid
+*.seed
+*.pid.lock
+docker-compose.override.yml
+
+# ============================================
+# TESTING
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ============================================
+# MISC / CACHE
+# ============================================
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.prettiercache
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.swp
+*.swo
+*~.nfo
+
+# ============================================
+# DOCUMENTATION GENERATION
+# ============================================
+javadoc/
+apidocs/

@@ -1,0 +1,290 @@
+/**
+ * Loading States CSS
+ * Reusable loading, success, empty, and error state components
+ */
+
+/* ============================================
+   BASE LOADING STATE
+   ============================================ */
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    min-height: 200px;
+    gap: var(--space-4);
+    text-align: center;
+}
+
+.loading-state__spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-state__text {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-regular);
+}
+
+/* ============================================
+   SUCCESS STATE
+   ============================================ */
+
+.success-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    min-height: 200px;
+    gap: var(--space-4);
+    text-align: center;
+}
+
+.success-state__icon {
+    width: 48px;
+    height: 48px;
+    color: var(--color-success);
+    animation: successPulse 0.5s ease-out;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.success-state__title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.success-state__message {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    min-height: 200px;
+    gap: var(--space-4);
+    text-align: center;
+}
+
+.error-state__icon {
+    width: 48px;
+    height: 48px;
+    color: var(--color-error);
+}
+
+.error-state__title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.error-state__message {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    max-width: 400px;
+}
+
+.error-state__retry {
+    margin-top: var(--space-4);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    min-height: 200px;
+    gap: var(--space-4);
+    text-align: center;
+}
+
+.empty-state__icon {
+    width: 48px;
+    height: 48px;
+    color: var(--color-text-tertiary);
+}
+
+.empty-state__title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.empty-state__message {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    max-width: 400px;
+}
+
+.empty-state__action {
+    margin-top: var(--space-4);
+}
+
+/* ============================================
+   INLINE LOADING INDICATORS
+   ============================================ */
+
+.loading-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.loading-inline__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-inline__text {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+/* ============================================
+   BUTTON LOADING STATES
+   ============================================ */
+
+.btn--loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn--loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.btn--loading .btn__text {
+    visibility: hidden;
+}
+
+/* ============================================
+   OVERLAY LOADING
+   ============================================ */
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-overlay);
+    gap: var(--space-4);
+}
+
+.loading-overlay__spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ============================================
+   SKELETON + LOADING STATE INTEGRATION
+   ============================================ */
+
+.skeleton-wrapper {
+    position: relative;
+}
+
+.skeleton-wrapper.loading {
+    pointer-events: none;
+}
+
+.skeleton-wrapper.loading > * {
+    opacity: 0.3;
+    filter: blur(1px);
+}
+
+.skeleton-wrapper.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: var(--breakpoint-mobile)) {
+    .loading-state,
+    .success-state,
+    .error-state,
+    .empty-state {
+        padding: var(--space-6);
+        min-height: 150px;
+    }
+    
+    .loading-state__spinner,
+    .success-state__icon,
+    .error-state__icon,
+    .empty-state__icon {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.state-hidden {
+    display: none !important;
+}
+
+.state-visible {
+    display: flex !important;
+}
