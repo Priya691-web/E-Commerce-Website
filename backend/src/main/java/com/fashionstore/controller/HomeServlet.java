@@ -6,7 +6,6 @@ import com.fashionstore.service.CategoryService;
 import com.fashionstore.service.ProductService;
 import com.fashionstore.service.RecommendationService;
 import com.fashionstore.util.DBConnection;
-import com.fashionstore.util.NullSafetyUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,39 +54,55 @@ public class HomeServlet extends HttpServlet {
             }
 
             // Load featured products with null safety
-            List<Product> products = NullSafetyUtil.safeGet(() -> {
+            List<Product> products;
+            try {
                 List<Product> result = productService.getFeaturedProducts(8);
-                return result != null ? result : Collections.emptyList();
-            }, Collections.emptyList());
+                products = result != null ? result : Collections.emptyList();
+            } catch (Exception e) {
+                logger.error("Error loading featured products: {}", e.getMessage());
+                products = Collections.emptyList();
+            }
 
             if (products.isEmpty()) {
                 logger.warn("Featured products list is empty or null");
             }
 
             // Load active categories with null safety
-            List<Category> categories = NullSafetyUtil.safeGet(() -> {
+            List<Category> categories;
+            try {
                 List<Category> result = categoryService.getActiveCategories();
-                return result != null ? result : Collections.emptyList();
-            }, Collections.emptyList());
+                categories = result != null ? result : Collections.emptyList();
+            } catch (Exception e) {
+                logger.error("Error loading categories: {}", e.getMessage());
+                categories = Collections.emptyList();
+            }
 
             if (categories.isEmpty()) {
                 logger.warn("Categories list is empty or null");
             }
 
             // Get trending products for intelligent discovery
-            List<Product> trendingProducts = NullSafetyUtil.safeGet(() -> {
+            List<Product> trendingProducts;
+            try {
                 List<Product> result = recommendationService.getTrendingProducts(8);
-                return result != null ? result : Collections.emptyList();
-            }, Collections.emptyList());
+                trendingProducts = result != null ? result : Collections.emptyList();
+            } catch (Exception e) {
+                logger.error("Error loading trending products: {}", e.getMessage());
+                trendingProducts = Collections.emptyList();
+            }
 
             // Get recently viewed products from session
             HttpSession session = request.getSession();
             @SuppressWarnings("unchecked")
             List<Integer> recentlyViewedIds = (List<Integer>) session.getAttribute("recentlyViewed");
-            List<Product> recentlyViewedProducts = NullSafetyUtil.safeGet(() -> {
+            List<Product> recentlyViewedProducts;
+            try {
                 List<Product> result = recommendationService.getRecentlyViewed(recentlyViewedIds, 4);
-                return result != null ? result : Collections.emptyList();
-            }, Collections.emptyList());
+                recentlyViewedProducts = result != null ? result : Collections.emptyList();
+            } catch (Exception e) {
+                logger.error("Error loading recently viewed products: {}", e.getMessage());
+                recentlyViewedProducts = Collections.emptyList();
+            }
 
             request.setAttribute("products", products);
             request.setAttribute("categories", categories);

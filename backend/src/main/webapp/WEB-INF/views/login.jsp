@@ -38,7 +38,7 @@
             <% } %>
 
             <form id="loginForm" class="auth-form" action="<%= request.getContextPath() %>/login" method="post" novalidate>
-                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>" />
+                <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>" />
                 
                 <div class="auth-field">
                     <label for="email" class="auth-field__label">Email Address</label>

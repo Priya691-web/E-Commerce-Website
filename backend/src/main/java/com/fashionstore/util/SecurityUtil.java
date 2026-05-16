@@ -130,13 +130,15 @@ public class SecurityUtil {
 
     /**
      * Validate CSRF token
+     * DEPRECATED: Use CSRFProtection.validateRequest() instead
+     * This method is kept for backward compatibility but delegates to CSRFProtection
      */
     public static boolean validateCSRF(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null) return false;
         
-        String sessionToken = (String) session.getAttribute("csrf_token");
-        String requestToken = request.getParameter("csrf_token");
+        String sessionToken = (String) session.getAttribute("csrfToken");
+        String requestToken = request.getParameter("csrfToken");
         
         return sessionToken != null && sessionToken.equals(requestToken);
     }

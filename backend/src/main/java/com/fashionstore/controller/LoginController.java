@@ -3,6 +3,7 @@ package com.fashionstore.controller;
 import com.fashionstore.model.User;
 import com.fashionstore.security.RateLimiter;
 import com.fashionstore.security.CSRFProtection;
+import com.fashionstore.security.SessionSecurityUtil;
 import com.fashionstore.service.UserService;
 import com.fashionstore.util.AuditLogger;
 
@@ -84,21 +85,16 @@ public class LoginController extends HttpServlet {
             }
 
             if (user != null) {
-                // Session fixation protection: invalidate existing session and create new one
-                HttpSession oldSession = request.getSession(false);
-                if (oldSession != null) {
-                    oldSession.invalidate();
-                }
+                // Session fixation protection: use secure session creation
+                HttpSession session = SessionSecurityUtil.createSecureSession(request);
                 
-                HttpSession session = request.getSession(true);
                 session.setAttribute("userId", user.getUserId());
+                session.setAttribute("role", user.getRole());
                 // Use separate session keys for customer and admin to prevent collision
                 if (user.isAdmin()) {
                     session.setAttribute("adminAuth", user);
-                    session.setAttribute("adminId", user.getUserId());
-                } else {
-                    session.setAttribute("customerAuth", user);
-                    session.setAttribute("customerId", user.getUserId());
+                    session.setAttribute("userId", user.getUserId());
+                    session.setAttribute("role", user.getRole());
                 }
                 CSRFProtection.generateToken(request);
 
@@ -129,6 +125,11 @@ public class LoginController extends HttpServlet {
                                  (request.getHeader("Accept") != null && request.getHeader("Accept").contains("application/json"));
 
                 if (isAjax) {
+                    String jwtToken = null;
+                    if (user.isAdmin()) {
+                        jwtToken = com.fashionstore.util.JwtUtil.generateToken(user.getUserId(), user.getEmail(), "ADMIN");
+                    }
+
                     response.setContentType("application/json");
                     response.setCharacterEncoding("UTF-8");
                     java.util.Map<String, Object> map = new java.util.HashMap<>();
@@ -136,6 +137,9 @@ public class LoginController extends HttpServlet {
                     map.put("message", "Login successful");
                     map.put("csrfToken", CSRFProtection.getCurrentToken(request));
                     map.put("redirect", redirectUrl);
+                    if (jwtToken != null) {
+                        map.put("token", jwtToken);
+                    }
                     response.getWriter().write(com.fashionstore.util.JsonUtil.toJson(map));
                 } else {
                     response.sendRedirect(redirectUrl);

@@ -12,30 +12,83 @@
     request.setAttribute("_pageTitle", "Checkout");
     request.setAttribute("_pageCSS", "checkout");
 %>
-<jsp:include page="/WEB-INF/views/partials/head.jsp />
+<jsp:include page="/WEB-INF/views/partials/head.jsp" />
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3/"></script>
 <script>
-    // Initialize config with server-side variables
-    (function() {
-        const serverConfig = {
-            contextPath: '<%= request.getContextPath() %>',
-            stripePublishableKey: '<%= (request.getAttribute("stripePublishableKey") != null) ? request.getAttribute("stripePublishableKey") : "" %>',
-            userEmail: '<%= (session.getAttribute("email") != null) ? session.getAttribute("email") : "" %>',
-            csrfToken: '<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>'
-        };
-        if (typeof Config !== 'undefined') {
-            Config.init(serverConfig);
-        } else {
-            window.contextPath = serverConfig.contextPath;
-            window.stripePublishableKey = serverConfig.stripePublishableKey;
-            window.userEmail = serverConfig.userEmail;
-            window.csrfToken = serverConfig.csrfToken;
+    // Safe console logging
+    const safeLog = (message, data) => {
+        try {
+            if (typeof console !== 'undefined' && console.log) {
+                console.log(message, data);
+            }
+        } catch (e) {
+            // Ignore console errors
         }
-    })();
+    };
+    
+    // Safe error logging
+    const safeError = (message, error) => {
+        try {
+            if (typeof console !== 'undefined' && console.error) {
+                console.error(message, error);
+            }
+        } catch (e) {
+            // Ignore console errors
+        }
+    };
 </script>
 <script src="<%= request.getContextPath() %>/assets/js/modules/config.js"></script>
 <script src="<%= request.getContextPath() %>/assets/js/checkout.js"></script>
+<script>
+    // Initialize config with server-side variables after config.js loads
+    (function() {
+        try {
+            const serverConfig = {
+                contextPath: '<%= request.getContextPath() %>',
+                stripePublishableKey: '<%= (request.getAttribute("stripePublishableKey") != null) ? request.getAttribute("stripePublishableKey") : "" %>',
+                userEmail: '<%= (session.getAttribute("email") != null) ? session.getAttribute("email") : "" %>',
+                csrfToken: '<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>'
+            };
+            
+            safeLog('Checkout: Server config loaded', serverConfig);
+            
+            // Validate Stripe key
+            if (!serverConfig.stripePublishableKey) {
+                safeError('Checkout: Stripe publishable key is missing', serverConfig);
+            }
+            
+            // Initialize Config if available, otherwise fallback to window globals
+            if (typeof Config !== 'undefined' && Config.init) {
+                Config.init(serverConfig);
+                safeLog('Checkout: Config initialized successfully');
+            } else {
+                safeLog('Checkout: Config not available, using window globals fallback');
+                window.contextPath = serverConfig.contextPath;
+                window.stripePublishableKey = serverConfig.stripePublishableKey;
+                window.userEmail = serverConfig.userEmail;
+                window.csrfToken = serverConfig.csrfToken;
+            }
+            
+            // Initialize Stripe if key is available
+            if (typeof Stripe !== 'undefined' && serverConfig.stripePublishableKey) {
+                try {
+                    window.stripe = Stripe(serverConfig.stripePublishableKey);
+                    safeLog('Checkout: Stripe initialized successfully');
+                } catch (e) {
+                    safeError('Checkout: Stripe initialization failed', e);
+                }
+            } else {
+                safeError('Checkout: Stripe not available or no publishable key', {
+                    stripeAvailable: typeof Stripe !== 'undefined',
+                    hasKey: !!serverConfig.stripePublishableKey
+                });
+            }
+        } catch (e) {
+            safeError('Checkout: Configuration initialization failed', e);
+        }
+    })();
+</script>
 </head>
 
 <body>
@@ -223,9 +276,31 @@
                                 </div>
                             </label>
                         </div>
-                        <button type="button" class="fs-btn fs-btn--primary" onclick="Checkout.validateAndProceedToPayment()">
+                        <button type="button" class="fs-btn fs-btn--primary" id="continueToPaymentBtn">
                             Continue to Payment
                         </button>
+                        <script>
+                            // Defensive checkout button binding
+                            (function() {
+                                try {
+                                    const continueBtn = document.getElementById('continueToPaymentBtn');
+                                    if (continueBtn) {
+                                        continueBtn.addEventListener('click', function() {
+                                            if (typeof Checkout !== 'undefined' && Checkout.validateAndProceedToPayment) {
+                                                Checkout.validateAndProceedToPayment();
+                                            } else {
+                                                safeError('Checkout: Checkout object not available');
+                                                alert('Payment system is not ready. Please refresh the page and try again.');
+                                            }
+                                        });
+                                    } else {
+                                        safeError('Checkout: Continue to Payment button not found');
+                                    }
+                                } catch (e) {
+                                    safeError('Checkout: Button binding failed', e);
+                                }
+                            })();
+                        </script>
                     </div>
 
                     <div class="fs-checkout-step" id="step2">

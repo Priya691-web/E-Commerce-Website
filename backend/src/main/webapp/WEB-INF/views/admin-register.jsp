@@ -26,7 +26,7 @@
         <% } %>
 
         <form action="<%= request.getContextPath() %>/admin/register" method="post" class="auth-form">
-            <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>" />
+            <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>" />
 
             <label for="fullName">Full Name</label>
             <input type="text" id="fullName" name="fullName" placeholder="John Doe" autocomplete="name" required>

@@ -113,92 +113,70 @@ public class SavedItemDAOImpl implements SavedItemDAO {
 
     @Override
     public boolean moveToCart(int savedItemId) {
-        // Single-connection transaction: select-saved → upsert cart row → delete saved row.
-        // Previously this called cartDAO.addToCart() which acquired its own connection,
-        // so the cart insert was outside the transaction and could not be rolled back.
         String selectSql = "SELECT user_id, product_id, size_label FROM saved_items WHERE saved_item_id = ?";
         String findCartSql = "SELECT cart_item_id, quantity FROM cart_items WHERE user_id = ? AND product_id = ? AND size_label = ?";
         String updateCartSql = "UPDATE cart_items SET quantity = quantity + 1 WHERE cart_item_id = ?";
         String insertCartSql = "INSERT INTO cart_items (user_id, product_id, size_label, quantity) VALUES (?, ?, ?, 1)";
         String deleteSavedSql = "DELETE FROM saved_items WHERE saved_item_id = ?";
 
-        Connection con = null;
         try {
-            con = DBConnection.getConnection();
-            con.setAutoCommit(false);
+            return com.fashionstore.util.TransactionManager.executeInTransaction(con -> {
+                int userId = 0, productId = 0;
+                String sizeLabel = null;
 
-            int userId = 0, productId = 0;
-            String sizeLabel = null;
-
-            try (PreparedStatement ps = con.prepareStatement(selectSql)) {
-                ps.setInt(1, savedItemId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        userId = rs.getInt("user_id");
-                        productId = rs.getInt("product_id");
-                        sizeLabel = rs.getString("size_label");
+                try (PreparedStatement ps = con.prepareStatement(selectSql)) {
+                    ps.setInt(1, savedItemId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            userId = rs.getInt("user_id");
+                            productId = rs.getInt("product_id");
+                            sizeLabel = rs.getString("size_label");
+                        }
                     }
                 }
-            }
 
-            if (userId == 0) {
-                con.rollback();
-                return false;
-            }
-
-            String resolvedSize = sizeLabel != null ? sizeLabel : "M";
-
-            // Upsert into cart on the same transactional connection.
-            Integer existingCartItemId = null;
-            try (PreparedStatement ps = con.prepareStatement(findCartSql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, productId);
-                ps.setString(3, resolvedSize);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        existingCartItemId = rs.getInt("cart_item_id");
-                    }
+                if (userId == 0) {
+                    return false;
                 }
-            }
 
-            if (existingCartItemId != null) {
-                try (PreparedStatement ps = con.prepareStatement(updateCartSql)) {
-                    ps.setInt(1, existingCartItemId);
-                    ps.executeUpdate();
-                }
-            } else {
-                try (PreparedStatement ps = con.prepareStatement(insertCartSql)) {
+                String resolvedSize = sizeLabel != null ? sizeLabel : "M";
+
+                Integer existingCartItemId = null;
+                try (PreparedStatement ps = con.prepareStatement(findCartSql)) {
                     ps.setInt(1, userId);
                     ps.setInt(2, productId);
                     ps.setString(3, resolvedSize);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            existingCartItemId = rs.getInt("cart_item_id");
+                        }
+                    }
+                }
+
+                if (existingCartItemId != null) {
+                    try (PreparedStatement ps = con.prepareStatement(updateCartSql)) {
+                        ps.setInt(1, existingCartItemId);
+                        ps.executeUpdate();
+                    }
+                } else {
+                    try (PreparedStatement ps = con.prepareStatement(insertCartSql)) {
+                        ps.setInt(1, userId);
+                        ps.setInt(2, productId);
+                        ps.setString(3, resolvedSize);
+                        ps.executeUpdate();
+                    }
+                }
+
+                try (PreparedStatement ps = con.prepareStatement(deleteSavedSql)) {
+                    ps.setInt(1, savedItemId);
                     ps.executeUpdate();
                 }
-            }
 
-            try (PreparedStatement ps = con.prepareStatement(deleteSavedSql)) {
-                ps.setInt(1, savedItemId);
-                ps.executeUpdate();
-            }
-
-            con.commit();
-            return true;
+                return true;
+            });
         } catch (Exception e) {
-            if (con != null) {
-                try {
-                    con.rollback();
-                } catch (SQLException ignored) { /* best-effort */ }
-            }
             logger.error("SavedItemDAOImpl.moveToCart Error: {}", e.getMessage(), e);
             return false;
-        } finally {
-            if (con != null) {
-                try {
-                    con.setAutoCommit(true);
-                } catch (SQLException ignored) { /* connection may already be invalid */ }
-                try {
-                    con.close();
-                } catch (SQLException ignored) { /* best-effort */ }
-            }
         }
     }
 }

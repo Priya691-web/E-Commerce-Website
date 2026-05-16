@@ -462,170 +462,8 @@ public class CheckoutController extends HttpServlet {
                 return;
             }
             
-            // Extract required fields
-            String paymentMethod = (String) checkoutData.get("paymentMethod");
-            if (paymentMethod == null || paymentMethod.trim().isEmpty()) {
-                sendErrorResponse(response, "Payment method is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            // Get shipping address
-            Map<String, Object> shippingAddressData = (Map<String, Object>) checkoutData.get("shippingAddress");
-            if (shippingAddressData == null) {
-                sendErrorResponse(response, "Shipping address is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            // Validate shipping address fields
-            if (shippingAddressData.get("fullName") == null || ((String) shippingAddressData.get("fullName")).trim().isEmpty()) {
-                sendErrorResponse(response, "Full name is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (shippingAddressData.get("addressLine1") == null || ((String) shippingAddressData.get("addressLine1")).trim().isEmpty()) {
-                sendErrorResponse(response, "Address line 1 is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (shippingAddressData.get("city") == null || ((String) shippingAddressData.get("city")).trim().isEmpty()) {
-                sendErrorResponse(response, "City is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (shippingAddressData.get("state") == null || ((String) shippingAddressData.get("state")).trim().isEmpty()) {
-                sendErrorResponse(response, "State is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (shippingAddressData.get("postalCode") == null || ((String) shippingAddressData.get("postalCode")).trim().isEmpty()) {
-                sendErrorResponse(response, "Postal code is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-            if (shippingAddressData.get("phone") == null || ((String) shippingAddressData.get("phone")).trim().isEmpty()) {
-                sendErrorResponse(response, "Phone number is required", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            // Get cart items
-            List<com.fashionstore.model.CartItem> cartItems = cartService.getCartItems(userId);
-            if (cartItems == null || cartItems.isEmpty()) {
-                sendErrorResponse(response, "Your cart is empty", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            // Validate cart for checkout
-            if (!cartService.validateCartForCheckout(userId)) {
-                sendErrorResponse(response, "Some items in your cart are not available", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            // Validate stock availability before order creation
-            com.fashionstore.service.InventoryService inventoryService = new com.fashionstore.serviceimpl.InventoryServiceImpl();
-            for (com.fashionstore.model.CartItem item : cartItems) {
-                if (!inventoryService.isProductAvailable(item.getProductId(), item.getSizeLabel(), item.getQuantity())) {
-                    sendErrorResponse(response, "Insufficient stock for: " + item.getProductName(), HttpServletResponse.SC_BAD_REQUEST);
-                    return;
-                }
-            }
-
-            // Calculate totals with validation
-            String couponCode = (String) checkoutData.get("couponCode");
-            Map<String, Double> totals = checkoutService.calculateCheckoutTotals(userId, couponCode);
-            if (totals == null || totals.isEmpty()) {
-                sendErrorResponse(response, "Failed to calculate order totals", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return;
-            }
-
-            // Validate totals are reasonable
-            Double totalAmount = totals.get("total");
-            if (totalAmount == null || totalAmount <= 0) {
-                sendErrorResponse(response, "Invalid order total", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            // Reserve stock atomically
-            List<com.fashionstore.model.ProductSize> productSizes = new ArrayList<>();
-            for (com.fashionstore.model.CartItem item : cartItems) {
-                if (item == null || item.getProductId() <= 0 || item.getQuantity() <= 0) {
-                    sendErrorResponse(response, "Invalid cart item", HttpServletResponse.SC_BAD_REQUEST);
-                    return;
-                }
-                com.fashionstore.model.ProductSize ps = new com.fashionstore.model.ProductSize();
-                ps.setProductId(item.getProductId());
-                ps.setSizeLabel(item.getSizeLabel());
-                ps.setStockQuantity(item.getQuantity());
-                productSizes.add(ps);
-            }
-
-            // Reserve stock with rollback capability
-            if (!inventoryService.validateStockForOrder(productSizes)) {
-                sendErrorResponse(response, "Insufficient stock for one or more items", HttpServletResponse.SC_BAD_REQUEST);
-                return;
-            }
-
-            // Deduct stock atomically
-            boolean stockDeducted = inventoryService.processInventoryAfterOrder(productSizes);
-            if (!stockDeducted) {
-                sendErrorResponse(response, "Failed to reserve stock. Please try again.", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return;
-            }
-
-            // Prepare order data with validation
-            Map<String, Object> orderData = new HashMap<>();
-            orderData.put("userId", userId);
-            orderData.put("fullName", shippingAddressData.get("fullName"));
-            
-            // Safely concatenate address lines
-            String addressLine1 = (String) shippingAddressData.get("addressLine1");
-            String addressLine2 = (String) shippingAddressData.get("addressLine2");
-            String fullAddress = addressLine1 + (addressLine2 != null && !addressLine2.isEmpty() ? " " + addressLine2 : "");
-            orderData.put("address", fullAddress);
-            
-            orderData.put("city", shippingAddressData.get("city"));
-            orderData.put("state", shippingAddressData.get("state"));
-            orderData.put("zip", shippingAddressData.get("postalCode"));
-            orderData.put("phone", shippingAddressData.get("phone"));
-            orderData.put("paymentMethod", paymentMethod);
-            orderData.put("totalAmount", totalAmount);
-
-            // Prepare order items with validation
-            List<Map<String, Object>> itemsData = new ArrayList<>();
-            for (com.fashionstore.model.CartItem item : cartItems) {
-                Map<String, Object> itemData = new HashMap<>();
-                itemData.put("productId", item.getProductId());
-                itemData.put("quantity", item.getQuantity());
-                itemData.put("price", item.getPrice());
-                itemData.put("sizeLabel", item.getSizeLabel());
-                itemsData.add(itemData);
-            }
-            orderData.put("items", itemsData);
-
-            // Create order with transaction safety
-            com.fashionstore.model.Order order = null;
-            try {
-                order = orderService.createOrder(userId, orderData);
-            } catch (Exception e) {
-                logger.error("Order creation failed for user {}: {}", userId, e.getMessage(), e);
-                // Rollback stock if order creation fails
-                try {
-                    for (com.fashionstore.model.CartItem item : cartItems) {
-                        inventoryService.releaseReservedStock(item.getProductId(), item.getSizeLabel(), item.getQuantity());
-                    }
-                } catch (Exception rollbackErr) {
-                    logger.error("Stock rollback failed for user {}: {}", userId, rollbackErr.getMessage());
-                }
-                sendErrorResponse(response, "Failed to create order. Please try again.", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return;
-            }
-
-            if (order == null) {
-                // Rollback stock if order creation fails
-                try {
-                    for (com.fashionstore.model.CartItem item : cartItems) {
-                        inventoryService.releaseReservedStock(item.getProductId(), item.getSizeLabel(), item.getQuantity());
-                    }
-                } catch (Exception rollbackErr) {
-                    logger.error("Stock rollback failed for user {}: {}", userId, rollbackErr.getMessage());
-                }
-                sendErrorResponse(response, "Failed to create order. Please try again.", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return;
-            }
+            // Process checkout order through service layer orchestration
+            com.fashionstore.model.Order order = checkoutService.processCheckoutOrder(userId, checkoutData);
 
             // Clear cart after successful order creation
             try {
@@ -661,6 +499,10 @@ public class CheckoutController extends HttpServlet {
             data.put("message", "Order placed successfully");
 
             sendJsonResponse(response, data);
+        } catch (IllegalArgumentException e) {
+            sendErrorResponse(response, e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
+        } catch (IllegalStateException e) {
+            sendErrorResponse(response, e.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             logger.error("Error submitting order for user {}: {}", userId, e.getMessage(), e);
             sendErrorResponse(response, "Failed to submit order. Please try again.", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

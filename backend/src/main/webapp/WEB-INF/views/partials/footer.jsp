@@ -2,35 +2,55 @@
 
 <footer class="footer">
   <div class="footer-container">
-    
-    <div class="footer-brand">
-      <h2>FashionStore</h2>
-      <p>Modern fashion marketplace with curated styles.</p>
-    </div>
+    <div class="footer-grid">
+        <div class="footer-brand">
+          <h2>FashionStore</h2>
+          <p>A luxury marketplace for curated, premium fashion. Discover the latest editorial collections and elevate your wardrobe.</p>
+          <div class="footer-socials">
+            <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+            <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg></a>
+            <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+          </div>
+        </div>
 
-    <div class="footer-links">
-      <div>
-        <h4>Shop</h4>
-        <a href="<%= request.getContextPath() %>/products">All Products</a>
-        <a href="<%= request.getContextPath() %>/products?category=men">Men</a>
-        <a href="<%= request.getContextPath() %>/products?category=women">Women</a>
-      </div>
+        <div class="footer-links">
+          <h4>Shop Links</h4>
+          <a href="<%= request.getContextPath() %>/products">All Collections</a>
+          <a href="<%= request.getContextPath() %>/products?category=women">Womenswear</a>
+          <a href="<%= request.getContextPath() %>/products?category=men">Menswear</a>
+          <a href="<%= request.getContextPath() %>/products?category=accessories">Accessories</a>
+        </div>
 
-      <div>
-        <h4>Account</h4>
-        <a href="<%= request.getContextPath() %>/cart">Cart</a>
-        <a href="<%= request.getContextPath() %>/orders">Orders</a>
-      </div>
+        <div class="footer-support">
+          <h4>Support</h4>
+          <a href="<%= request.getContextPath() %>/login">Sign In / Account</a>
+          <a href="#">Shipping & Returns</a>
+          <a href="#">Size Guide</a>
+          <a href="#">Contact Us</a>
+        </div>
 
-      <div>
-        <h4>Legal</h4>
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms</a>
-      </div>
+        <div class="footer-newsletter">
+          <h4>Stay Updated</h4>
+          <p>Subscribe for exclusive offers, new arrivals, and editorial content.</p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Subscribed!');">
+            <input type="email" placeholder="Email address" required>
+            <button type="submit">→</button>
+          </form>
+        </div>
     </div>
   </div>
 
+
   <div class="footer-bottom">
-    &copy; 2026 FashionStore. All rights reserved.
+    <div class="footer-container footer-bottom-inner">
+      <div class="footer-copyright">
+        &copy; 2026 FashionStore. All rights reserved.
+      </div>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Cookie Settings</a>
+      </div>
+    </div>
   </div>
 </footer>

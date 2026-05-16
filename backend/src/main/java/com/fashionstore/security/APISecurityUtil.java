@@ -42,6 +42,8 @@ public class APISecurityUtil {
         "/api/products",
         "/api/categories",
         "/api/search",
+        "/api/admin/login",
+        "/api/admin/register",
         "/login",
         "/register",
         "/home",

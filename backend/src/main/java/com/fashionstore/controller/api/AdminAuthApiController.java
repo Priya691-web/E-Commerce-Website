@@ -3,6 +3,7 @@ package com.fashionstore.controller.api;
 import com.fashionstore.controller.ApiResponse;
 import com.fashionstore.model.User;
 import com.fashionstore.service.UserService;
+import com.fashionstore.security.SessionSecurityUtil;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,11 +17,11 @@ import java.util.*;
  * Refactored to leverage AdminApiBaseController and BaseController.
  */
 @WebServlet(urlPatterns = {
-    "/api/admin/auth/*",
     "/api/admin/login",
     "/api/admin/logout",
     "/api/admin/me",
-    "/api/admin/register"
+    "/api/admin/register",
+    "/api/admin/auth/*"
 })
 public class AdminAuthApiController extends AdminApiBaseController {
 
@@ -30,6 +31,7 @@ public class AdminAuthApiController extends AdminApiBaseController {
 
     @Override
     public void init() {
+        System.out.println("DEBUG: AdminAuthApiController init() called");
         super.init();
         userService = new UserService();
     }
@@ -44,8 +46,13 @@ public class AdminAuthApiController extends AdminApiBaseController {
             
             // GET /api/admin/auth/me or GET /api/admin/me
             if ((servletPath != null && servletPath.contains("/me")) || (pathInfo != null && pathInfo.equals("/me"))) {
-                User user = com.fashionstore.util.SecurityUtil.getCurrentUser(request);
-                if (user == null || !user.isAdmin()) {
+                HttpSession session = request.getSession(false);
+                if (session == null) {
+                    writeApiResponse(response, 401, ApiResponse.error("Not authenticated"));
+                    return;
+                }
+                User user = (User) session.getAttribute("adminAuth");
+                if (user == null) {
                     writeApiResponse(response, 401, ApiResponse.error("Not authenticated"));
                     return;
                 }
@@ -63,9 +70,15 @@ public class AdminAuthApiController extends AdminApiBaseController {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         applyCors(request, response);
         
+        // Debug logging
+        String servletPath = request.getServletPath();
+        String pathInfo = request.getPathInfo();
+        System.out.println("DEBUG AdminAuthApiController doPost: servletPath = " + servletPath);
+        System.out.println("DEBUG AdminAuthApiController doPost: pathInfo = " + pathInfo);
+        
         try {
-            String servletPath = request.getServletPath();
-            String pathInfo = request.getPathInfo();
+            servletPath = request.getServletPath();
+            pathInfo = request.getPathInfo();
             
             // POST /api/admin/auth/login or POST /api/admin/login
             if ((servletPath != null && servletPath.contains("/login")) || (pathInfo != null && pathInfo.equals("/login"))) {
@@ -108,10 +121,12 @@ public class AdminAuthApiController extends AdminApiBaseController {
             return;
         }
 
-        HttpSession session = request.getSession(true);
-        // Use separate session key for admin to prevent collision with customer auth
+        // Use secure session creation with proper session attributes
+        HttpSession session = SessionSecurityUtil.createSecureSession(request);
+        // Standard session attributes: adminAuth, userId, role
         session.setAttribute("adminAuth", user);
-        session.setAttribute("adminId", user.getUserId());
+        session.setAttribute("userId", user.getUserId());
+        session.setAttribute("role", user.getRole());
         writeApiResponse(response, 200, ApiResponse.success("Login successful", publicUser(user)));
     }
 
@@ -120,7 +135,7 @@ public class AdminAuthApiController extends AdminApiBaseController {
         if (session != null) {
             // Only clear admin session attributes, preserve customer session if exists
             session.removeAttribute("adminAuth");
-            session.removeAttribute("adminId");
+            // userId and role are shared with customer auth, don't remove
         }
         writeApiResponse(response, 200, ApiResponse.success("Logout successful", null));
     }

@@ -34,6 +34,7 @@ public class AdminAuthorizationUtil {
     
     /**
      * Check if user is admin
+     * This method ONLY checks adminAuth attribute - session validation delegated to SessionSecurityUtil
      */
     public static boolean isAdmin(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
@@ -42,7 +43,11 @@ public class AdminAuthorizationUtil {
         }
         
         Object adminAuth = session.getAttribute("adminAuth");
-        return adminAuth != null;
+        if (adminAuth == null) {
+            return false;
+        }
+        
+        return true;
     }
     
     /**
@@ -129,38 +134,48 @@ public class AdminAuthorizationUtil {
     }
     
     /**
-     * Validate admin access
+     * Validate admin access - role-based authorization ONLY
+     * Session validation is delegated to SessionSecurityUtil (single source of truth)
+     * This method ONLY checks adminAuth and role - no session metadata validation
      */
     public static AuthorizationResult validateAdminAccess(HttpServletRequest request) {
         AuthorizationResult result = new AuthorizationResult();
-        
-        // Check if user is authenticated
+        String path = request.getRequestURI();
         HttpSession session = request.getSession(false);
+        String sessionId = session != null ? session.getId() : "null";
+        String userId = (String) (session != null ? session.getAttribute("userId") : null);
+        
+        // Check if user is authenticated (session existence check only)
         if (session == null) {
             result.setAuthorized(false);
             result.setReason("Not authenticated");
             return result;
         }
         
-        // Check if user is admin
+        // Check if user has adminAuth attribute (role-based check only)
         Object adminAuth = session.getAttribute("adminAuth");
         if (adminAuth == null) {
             result.setAuthorized(false);
             result.setReason("Not authorized as admin");
+            logger.warn("validateAdminAccess failed: adminAuth not in session - Path: {}, Session ID: {}", path, sessionId);
             return result;
         }
         
-        // Validate session
-        SessionSecurityUtil.SessionValidationResult sessionResult = SessionSecurityUtil.validateSession(request);
-        if (!sessionResult.isValid()) {
+        // Check user role if available (role-based authorization)
+        String role = (String) session.getAttribute("role");
+        if (role != null && !ADMIN_ROLES.contains(role.toLowerCase())) {
             result.setAuthorized(false);
-            result.setReason("Invalid session: " + sessionResult.getReason());
+            result.setReason("Invalid admin role: " + role);
+            logger.warn("validateAdminAccess failed: Invalid admin role - Path: {}, Session ID: {}, Role: {}", 
+                path, sessionId, role);
             return result;
         }
+        
+        // Session validation (metadata, IP, user-agent) is delegated to SessionSecurityUtil
+        // This method ONLY handles role-based authorization
         
         result.setAuthorized(true);
-        result.setUserId((String) session.getAttribute("userId"));
-        result.setAdminId((String) session.getAttribute("adminId"));
+        result.setUserId(userId);
         
         return result;
     }
@@ -186,34 +201,17 @@ public class AdminAuthorizationUtil {
     
     /**
      * Log admin action for audit trail
+     * Uses SessionSecurityUtil.getClientIP() for consistent IP extraction
      */
     public static void logAdminAction(HttpServletRequest request, String action, String details) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             String userId = (String) session.getAttribute("userId");
-            String adminId = (String) session.getAttribute("adminId");
-            String clientIP = getClientIP(request);
+            String clientIP = SessionSecurityUtil.getClientIP(request);
             
-            logger.info("Admin Action - User: {}, Admin: {}, Action: {}, Details: {}, IP: {}", 
-                userId, adminId, action, details, clientIP);
+            logger.info("Admin Action - User: {}, Action: {}, Details: {}, IP: {}", 
+                userId, action, details, clientIP);
         }
-    }
-    
-    /**
-     * Get client IP address
-     */
-    private static String getClientIP(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        String xRealIP = request.getHeader("X-Real-IP");
-        if (xRealIP != null && !xRealIP.isEmpty()) {
-            return xRealIP;
-        }
-        
-        return request.getRemoteAddr();
     }
     
     /**
@@ -223,7 +221,6 @@ public class AdminAuthorizationUtil {
         private boolean authorized;
         private String reason;
         private String userId;
-        private String adminId;
         
         public boolean isAuthorized() {
             return authorized;
@@ -247,14 +244,6 @@ public class AdminAuthorizationUtil {
         
         public void setUserId(String userId) {
             this.userId = userId;
-        }
-        
-        public String getAdminId() {
-            return adminId;
-        }
-        
-        public void setAdminId(String adminId) {
-            this.adminId = adminId;
         }
     }
 }

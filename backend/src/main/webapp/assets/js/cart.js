@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add CSRF token to request body (fallback for missing header)
         if (window.csrfToken) {
-            params.append('csrf_token', window.csrfToken);
+            params.append('csrfToken', window.csrfToken);
         }
 
         // Track this request

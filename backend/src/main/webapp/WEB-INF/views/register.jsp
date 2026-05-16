@@ -31,7 +31,7 @@
             <% } %>
 
             <form id="registerForm" class="auth-form" action="<%= request.getContextPath() %>/register" method="post" novalidate>
-                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>" />
+                <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>" />
                 
                 <div class="auth-field">
                     <label for="fullName" class="auth-field__label">Full Name</label>

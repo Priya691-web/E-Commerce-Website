@@ -99,20 +99,20 @@
                             <div class="admin-actions">
                                 <% if (!"admin".equals(user.getRole()) && !"disabled".equals(user.getRole())) { %>
                                 <form action="<%= request.getContextPath() %>/admin/users" method="post" class="admin-form-inline">
-                                    <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                                    <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                                     <input type="hidden" name="action" value="setAdmin">
                                     <input type="hidden" name="userId" value="<%= user.getUserId() %>">
                                     <button type="submit" class="admin-btn" onclick="return confirm('Promote this user to admin?')">Make Admin</button>
                                 </form>
                                 <form action="<%= request.getContextPath() %>/admin/users" method="post" class="admin-form-inline">
-                                    <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                                    <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                                     <input type="hidden" name="action" value="disableUser">
                                     <input type="hidden" name="userId" value="<%= user.getUserId() %>">
                                     <button type="submit" class="admin-btn admin-btn-danger" onclick="return confirm('Disable this user account?')">Disable</button>
                                 </form>
                                 <% } else if ("disabled".equals(user.getRole())) { %>
                                 <form action="<%= request.getContextPath() %>/admin/users" method="post" class="admin-form-inline">
-                                    <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                                    <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
                                     <input type="hidden" name="action" value="enableUser">
                                     <input type="hidden" name="userId" value="<%= user.getUserId() %>">
                                     <button type="submit" class="admin-btn" onclick="return confirm('Enable this user account?')">Enable</button>

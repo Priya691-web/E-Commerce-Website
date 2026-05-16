@@ -2,7 +2,6 @@ package com.fashionstore.security;
 
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.MultipartConfig;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
@@ -15,7 +14,6 @@ import java.io.IOException;
  * File Upload Security Filter
  * Validates and secures all file uploads
  */
-@WebFilter(urlPatterns = {"/upload", "/api/upload", "/admin/upload"})
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024, // 1 MB
     maxFileSize = 10 * 1024 * 1024, // 10 MB
@@ -71,17 +69,7 @@ public class FileUploadSecurityFilter implements Filter {
         }
 
         try {
-            // Check authentication
-            SessionSecurityUtil.SessionValidationResult sessionResult = 
-                SessionSecurityUtil.validateSession(request);
-            
-            if (!sessionResult.isValid()) {
-                logger.warn("File upload attempted without valid session: {}", path);
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
-                return false;
-            }
-
-            // Check admin authorization for admin uploads
+            // Check admin authorization for admin uploads (skip session validation for admin endpoints)
             if (path.startsWith("/admin") || path.startsWith("/api/admin")) {
                 AdminAuthorizationUtil.AuthorizationResult authResult = 
                     AdminAuthorizationUtil.validateAdminAccess(request);
@@ -89,6 +77,16 @@ public class FileUploadSecurityFilter implements Filter {
                 if (!authResult.isAuthorized()) {
                     logger.warn("File upload attempted without admin authorization: {}", path);
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin authorization required");
+                    return false;
+                }
+            } else {
+                // Check authentication for non-admin uploads
+                SessionSecurityUtil.SessionValidationResult sessionResult = 
+                    SessionSecurityUtil.validateSession(request);
+                
+                if (!sessionResult.isValid()) {
+                    logger.warn("File upload attempted without valid session: {}", path);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
                     return false;
                 }
             }

@@ -13,14 +13,8 @@
    Using semantic spacing scale
    ============================================ */
 
-/* Base container - uses design tokens */
-.container {
-    width: 100%;
-    max-width: var(--container-xl);
-    margin: 0 auto;
-    padding-left: var(--container-padding-md);
-    padding-right: var(--container-padding-md);
-}
+/* Base container removed to prevent overriding base.css */
+
 
 /* Legacy shell support (for backward compatibility) */
 .shell {
@@ -280,11 +274,10 @@
 
 /* ============================================
    RESPONSIVE BREAKPOINTS
-   Mobile-first overrides
+   Desktop-first overrides
    ============================================ */
 
 @media (max-width: var(--breakpoint-lg)) {
-    .container,
     .shell {
         padding-left: var(--container-padding-sm);
         padding-right: var(--container-padding-sm);

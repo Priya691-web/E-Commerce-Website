@@ -44,7 +44,7 @@
 
             <form id="forgotPasswordForm" class="auth-form" action="<%= request.getContextPath() %>/forgot-password" method="post" novalidate>
                 <% if (request.getAttribute("csrfToken") != null) { %>
-                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>" />
                 <% } %>
                 
                 <div class="auth-field">

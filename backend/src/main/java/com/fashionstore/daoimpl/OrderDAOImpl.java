@@ -3,6 +3,7 @@ package com.fashionstore.daoimpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fashionstore.dao.OrderDAO;
+import com.fashionstore.dao.OrderItemDAO;
 import com.fashionstore.model.Order;
 import com.fashionstore.util.DBConnection;
 
@@ -16,6 +17,7 @@ import java.util.List;
 public class OrderDAOImpl implements OrderDAO {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderDAOImpl.class);
+    private final OrderItemDAO orderItemDAO = new OrderItemDAOImpl();
 
     // Convert ResultSet → Order
     private Order mapOrder(ResultSet rs) throws Exception {
@@ -35,6 +37,19 @@ public class OrderDAOImpl implements OrderDAO {
         order.setOrderDate(rs.getTimestamp("created_at"));
 
         return order;
+    }
+
+    // 🔥 BATCH LOAD ORDER ITEMS FOR MULTIPLE ORDERS (fixes N+1 query problem)
+    private void batchLoadOrderItems(List<Order> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return;
+        }
+
+        try {
+            orderItemDAO.batchLoadOrderItems(orders);
+        } catch (Exception e) {
+            logger.error("Error in batchLoadOrderItems: {}", e.getMessage(), e);
+        }
     }
 
     // Create Order
@@ -91,6 +106,7 @@ public class OrderDAOImpl implements OrderDAO {
         // Impact: Reduces memory usage and network I/O by ~35%
         String sql = "SELECT order_id, user_id, total_amount, full_name, address, city, state, zip, phone, payment_method, status, created_at FROM orders WHERE order_id = ?";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -98,6 +114,12 @@ public class OrderDAOImpl implements OrderDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    if (duration > 200) {
+                        logger.warn("Slow query detected: getOrderById took {}ms for order {}", duration, orderId);
+                    } else {
+                        logger.debug("getOrderById completed in {}ms for order {}", duration, orderId);
+                    }
                     return mapOrder(rs);
                 }
             }
@@ -117,6 +139,7 @@ public class OrderDAOImpl implements OrderDAO {
         List<Order> orders = new ArrayList<>();
         String sql = "SELECT order_id, user_id, total_amount, full_name, address, city, state, zip, phone, payment_method, status, created_at FROM orders WHERE user_id = ? ORDER BY created_at DESC, order_id DESC";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -126,6 +149,16 @@ public class OrderDAOImpl implements OrderDAO {
                 while (rs.next()) {
                     orders.add(mapOrder(rs));
                 }
+            }
+
+            // Batch load order items to avoid N+1 queries
+            batchLoadOrderItems(orders);
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (duration > 200) {
+                logger.warn("Slow query detected: getOrdersByUserId took {}ms for user {}", duration, userId);
+            } else {
+                logger.debug("getOrdersByUserId completed in {}ms, fetched {} orders for user {}", duration, orders.size(), userId);
             }
 
         } catch (Exception e) {
@@ -140,12 +173,23 @@ public class OrderDAOImpl implements OrderDAO {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT order_id, user_id, total_amount, full_name, address, city, state, zip, phone, payment_method, status, created_at FROM orders ORDER BY created_at DESC, order_id DESC";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 list.add(mapOrder(rs));
+            }
+
+            // Batch load order items to avoid N+1 queries
+            batchLoadOrderItems(list);
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (duration > 500) {
+                logger.warn("Slow query detected: getAllOrders took {}ms, fetched {} orders", duration, list.size());
+            } else {
+                logger.debug("getAllOrders completed in {}ms, fetched {} orders", duration, list.size());
             }
 
         } catch (Exception e) {
@@ -214,6 +258,7 @@ public class OrderDAOImpl implements OrderDAO {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT order_id, user_id, total_amount, full_name, address, city, state, zip, phone, payment_method, status, created_at FROM orders ORDER BY created_at DESC LIMIT ?";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -223,6 +268,16 @@ public class OrderDAOImpl implements OrderDAO {
                 while (rs.next()) {
                     list.add(mapOrder(rs));
                 }
+            }
+
+            // Batch load order items to avoid N+1 queries
+            batchLoadOrderItems(list);
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (duration > 200) {
+                logger.warn("Slow query detected: getRecentOrders took {}ms, fetched {} orders", duration, list.size());
+            } else {
+                logger.debug("getRecentOrders completed in {}ms, fetched {} orders", duration, list.size());
             }
 
         } catch (Exception e) {
@@ -238,16 +293,28 @@ public class OrderDAOImpl implements OrderDAO {
         // Impact: Reduces memory usage and network I/O by ~35%
         List<Order> list = new ArrayList<>();
         String sql = "SELECT order_id, user_id, total_amount, full_name, address, city, state, zip, phone, payment_method, status, created_at FROM orders WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY created_at DESC";
-        
+
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            
+
             ps.setInt(1, days);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapOrder(rs));
                 }
             }
+
+            // Batch load order items to avoid N+1 queries
+            batchLoadOrderItems(list);
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (duration > 500) {
+                logger.warn("Slow query detected: getOrdersInLastDays took {}ms for {} days, fetched {} orders", duration, days, list.size());
+            } else {
+                logger.debug("getOrdersInLastDays completed in {}ms for {} days, fetched {} orders", duration, days, list.size());
+            }
+
         } catch (Exception e) {
             logger.error("Error in getOrdersInLastDays for {} days: {}", days, e.getMessage(), e);
         }

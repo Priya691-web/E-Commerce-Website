@@ -34,7 +34,6 @@ public class LogoutController extends HttpServlet {
             } else if (adminAuth != null) {
                 // Admin logout - clear admin session attributes only
                 session.removeAttribute("adminAuth");
-                session.removeAttribute("adminId");
             }
         }
 

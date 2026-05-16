@@ -67,7 +67,7 @@ const FashionStoreCartDrawer = (function() {
         }
         
         const contextPath = window.contextPath || '';
-        fetch(`${contextPath}/cart/api`, {
+        fetch(`${contextPath}/cart?action=get`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
@@ -180,16 +180,11 @@ const FashionStoreCartDrawer = (function() {
             FashionStore.showLoading(cartItem, 'Updating...');
         }
         
-        fetch(`${contextPath}/cart/api/update`, {
+        fetch(`${contextPath}/cart?action=update&cartItemId=${cartItemId}&currentQty=${newQty}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-                cartItemId: cartItemId,
-                quantity: newQty
-            })
+            }
         })
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -220,13 +215,11 @@ const FashionStoreCartDrawer = (function() {
             FashionStore.showLoading(cartItem, 'Removing...');
         }
         
-        fetch(`${contextPath}/cart/api/remove`, {
+        fetch(`${contextPath}/cart?action=remove&cartItemId=${cartItemId}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ cartItemId })
+            }
         })
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -253,17 +246,11 @@ const FashionStoreCartDrawer = (function() {
         
         FashionStore.showToast('Adding to cart...', 'info');
         
-        fetch(`${contextPath}/cart/api/add`, {
+        fetch(`${contextPath}/cart?action=add&productId=${productId}&size=${size}&quantity=${quantity}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-                productId: productId,
-                size: size,
-                quantity: quantity
-            })
+            }
         })
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -91,12 +91,15 @@ public class CartDAOImpl implements CartDAO {
     @Override
     public List<CartItem> getCartItemsByUserId(int userId) {
         List<CartItem> list = new ArrayList<>();
+        // PREVIOUS N+1 ISSUE: Product details fetched separately for each cart item
+        // NEW OPTIMIZED STRATEGY: JOIN with products table to fetch all details in single query
         String sql = "SELECT ci.cart_item_id, ci.user_id, ci.product_id, ci.size_label, ci.quantity, " +
                      "p.product_name, p.image_url, p.price " +
                      "FROM cart_items ci " +
                      "JOIN products p ON ci.product_id = p.product_id " +
                      "WHERE ci.user_id = ?";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -115,6 +118,14 @@ public class CartDAOImpl implements CartDAO {
                     list.add(item);
                 }
             }
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (duration > 200) {
+                logger.warn("Slow query detected: getCartItemsByUserId took {}ms for user {}", duration, userId);
+            } else {
+                logger.debug("getCartItemsByUserId completed in {}ms, fetched {} items for user {}", duration, list.size(), userId);
+            }
+
         } catch (Exception e) {
             logger.error("Error fetching cart for user {}: {}", userId, e.getMessage(), e);
         }

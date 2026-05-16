@@ -1,16 +1,15 @@
 /**
  * Main App Component
- * Uses centralized DeviceRouter for device detection
- * Single rendering authority prevents hydration mismatch
+ * Unified responsive rendering entry point.
  */
 
 import AppProviders from './app/providers/AppProviders.jsx';
-import DeviceRouter from './app/DeviceRouter.jsx';
+import AppRoutes from './routes/AppRoutes.jsx';
 
 export default function App() {
   return (
     <AppProviders>
-      <DeviceRouter />
+      <AppRoutes />
     </AppProviders>
   );
 }

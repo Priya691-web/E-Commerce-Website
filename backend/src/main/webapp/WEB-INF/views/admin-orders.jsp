@@ -166,7 +166,7 @@
                 <!-- STATUS UPDATE & SHIPMENT SIMULATION -->
                 <div class="admin-order-card__actions">
                     <form action="<%= request.getContextPath() %>/admin/orders" method="post" class="status-form">
-                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                        <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">>
                         <input type="hidden" name="orderId" value="<%= order.getOrderId() %>">
                         <label for="status-<%= order.getOrderId() %>" class="sr-only">Update order status</label>
                         <select name="status" id="status-<%= order.getOrderId() %>">

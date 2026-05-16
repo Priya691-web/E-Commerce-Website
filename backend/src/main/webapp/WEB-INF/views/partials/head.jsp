@@ -20,7 +20,7 @@
 <meta name="description" content="<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(_pageDescription) %>">
 
 <%-- Skip to content link for keyboard accessibility --%>
-<style>
+<style nonce="<%= request.getAttribute("cspNonce") %>">
     .skip-to-content {
         position: absolute;
         top: -40px;
@@ -65,56 +65,38 @@
 <link rel="preload" href="<%= request.getContextPath() %>/assets/css/reset.css" as="style">
 <link rel="preload" href="<%= request.getContextPath() %>/assets/css/base.css" as="style">
 <link rel="preload" href="<%= request.getContextPath() %>/assets/css/layout.css" as="style">
-<link rel="preload" href="<%= request.getContextPath() %>/assets/css/utilities.css" as="style">
-<link rel="preload" href="<%= request.getContextPath() %>/assets/css/responsive-utilities.css" as="style">
-<link rel="preload" href="<%= request.getContextPath() %>/assets/css/premium-core.css" as="style">
-<link rel="preload" href="<%= request.getContextPath() %>/assets/css/components/product-card.css" as="style">
 <link rel="preload" href="<%= request.getContextPath() %>/assets/css/main.css" as="style">
 
-<%-- Design system ALWAYS loads first (correct order) --%>
+<%-- 1. CRITICAL CSS (loads synchronously) --%>
 <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/design-tokens.css">
 <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/reset.css">
 <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/base.css">
 <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/layout.css">
-<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/utilities.css">
-<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/responsive-utilities.css">
-<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/premium-core.css">
 
-<%-- Unified component styles --%>
-<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/product-card.css">
+<%-- 2. COMPONENT CSS (Consolidated) --%>
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/buttons.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/forms.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/navbar.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/footer.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/skeleton.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/loading-states.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/components/mini-cart.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/toast-premium.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/main.css">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/premium-core.css">
 
 <%-- DNS prefetch for external resources --%>
 <link rel="dns-prefetch" href="//fonts.googleapis.com">
 <link rel="dns-prefetch" href="//fonts.gstatic.com">
 
-<%-- Async load non-critical CSS to prevent render-blocking --%>
-<script>
-(function() {
-    // Load main.css asynchronously
-    function loadCSS(href) {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        link.media = 'print';
-        link.onload = function() { link.media = 'all'; };
-        document.head.appendChild(link);
-    }
-    
-    // Load non-critical CSS after critical CSS
-    window.addEventListener('load', function() {
-        loadCSS('<%= request.getContextPath() %>/assets/css/main.css');
-    });
-})();
-</script>
-
 <%-- Global context and CSRF must be set before any external script reads them --%>
-<script>
+<script nonce="<%= request.getAttribute("cspNonce") %>">
     window.contextPath = '<%= request.getContextPath() %>';
     window.csrfToken = '<%= request.getAttribute("csrfToken") != null ? org.apache.commons.text.StringEscapeUtils.escapeEcmaScript(request.getAttribute("csrfToken").toString()) : "" %>';
 </script>
 
 <%-- Critical JavaScript (inline for performance) --%>
-<script>
+<script nonce="<%= request.getAttribute("cspNonce") %>">
     // Theme initialization MUST run before CSS loads to prevent flicker
     (function() {
         const STORAGE_KEY = 'fashionstore-theme';
@@ -145,50 +127,46 @@
 
 <%-- Modular JavaScript - deferred for non-blocking load --%>
 <%-- Core utilities (must load first) --%>
-<script defer src="<%= request.getContextPath() %>/assets/js/modules/utilities.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/modules/utilities.js" defer></script>
 
 <%-- Notifications (used by other modules) --%>
-<script defer src="<%= request.getContextPath() %>/assets/js/modules/notifications.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/modules/notifications.js" defer></script>
 
 <%-- Theme module --%>
-<script defer src="<%= request.getContextPath() %>/assets/js/modules/theme.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/modules/theme.js" defer></script>
 
 <%-- Navbar module --%>
-<script defer src="<%= request.getContextPath() %>/assets/js/modules/navbar.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/modules/navbar.js" defer></script>
 
 <%-- Search module --%>
-<script defer src="<%= request.getContextPath() %>/assets/js/modules/search.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/modules/search.js" defer></script>
 
 <%-- Cart drawer module --%>
 <% if (_pageCSS == null || !_pageCSS.contains("auth")) { %>
-<script defer src="<%= request.getContextPath() %>/assets/js/modules/cart-drawer.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/modules/cart-drawer.js" defer></script>
 <% } %>
 
 <%-- Product interactions module --%>
 <% if (_pageCSS == null || !_pageCSS.contains("auth")) { %>
-<script defer src="<%= request.getContextPath() %>/assets/js/modules/product-interactions.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/modules/product-interactions.js" defer></script>
 <% } %>
 
 <%-- Cart.js - skip on auth pages to reduce loading --%>
 <% if (_pageCSS == null || !_pageCSS.contains("auth")) { %>
-<script defer src="<%= request.getContextPath() %>/assets/js/cart.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/cart.js" defer></script>
 <% } %>
 
 <%-- Lazy-loading.js - skip on auth pages to reduce loading --%>
 <% if (_pageCSS == null || !_pageCSS.contains("auth")) { %>
-<script defer src="<%= request.getContextPath() %>/assets/js/lazy-loading.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/lazy-loading.js" defer></script>
 <% } %>
 
-<%-- Consolidated component styles (single HTTP request) --%>
-<link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/main.css">
-
-<%-- Page-level CSS (comma-separated filenames) --%>
+<%-- 3. PAGE CSS (Synchronous – page CSS is render-critical) --%>
 <% if (_pageCSS != null && !_pageCSS.trim().isEmpty()) {
        for (String _css : _pageCSS.split(",")) {
            _css = _css.trim();
            if (!_css.isEmpty()) { %>
 <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/<%= ("account".equals(_css) || "admin".equals(_css)) ? _css + ".css" : "pages/" + _css + ".css" %>">
-<%     }
-   }
-} %>
-<%-- Unified CSS architecture ends above; no overlay layers. --%>
+<%         }
+       }
+   } %>

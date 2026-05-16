@@ -18,17 +18,7 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 2. Security Headers (set headers after CORS) - Consolidated security filter -->
-  <filter>
-    <filter-name>SecurityHeadersFilter</filter-name>
-    <filter-class>com.fashionstore.filter.SecurityHeadersFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>SecurityHeadersFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-
-  <!-- 3. Security Hardening (rate limiting, IP blocking) -->
+  <!-- 2. Security Hardening (rate limiting, IP blocking, CSP headers, CSRF validation) -->
   <filter>
     <filter-name>SecurityHardeningFilter</filter-name>
     <filter-class>com.fashionstore.security.SecurityHardeningFilter</filter-class>
@@ -38,17 +28,7 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 4. Concurrency Control (idempotency, duplicate prevention) -->
-  <filter>
-    <filter-name>ConcurrencyControlFilter</filter-name>
-    <filter-class>com.fashionstore.security.ConcurrencyControlFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>ConcurrencyControlFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-
-  <!-- 5. Request Logging (log all requests) -->
+  <!-- 3. Request Logging (log all requests) -->
   <filter>
     <filter-name>RequestLoggingFilter</filter-name>
     <filter-class>com.fashionstore.filter.RequestLoggingFilter</filter-class>
@@ -58,24 +38,16 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 6. Authentication (check auth before CSRF) -->
+  <!-- 4. File Upload Security (apply to upload endpoints only) -->
   <filter>
-    <filter-name>AuthFilter</filter-name>
-    <filter-class>com.fashionstore.filter.AuthFilter</filter-class>
+    <filter-name>FileUploadSecurityFilter</filter-name>
+    <filter-class>com.fashionstore.security.FileUploadSecurityFilter</filter-class>
   </filter>
   <filter-mapping>
-    <filter-name>AuthFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-
-  <!-- 7. CSRF (validate after auth) -->
-  <filter>
-    <filter-name>CSRFFilter</filter-name>
-    <filter-class>com.fashionstore.filter.CSRFFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>CSRFFilter</filter-name>
-    <url-pattern>/*</url-pattern>
+    <filter-name>FileUploadSecurityFilter</filter-name>
+    <url-pattern>/upload</url-pattern>
+    <url-pattern>/api/upload</url-pattern>
+    <url-pattern>/admin/upload</url-pattern>
   </filter-mapping>
 
   <!-- Error Pages Configuration -->
@@ -95,12 +67,12 @@
   </welcome-file-list>
 
   <!-- Session Configuration -->
+  <!-- Cookie security flags are set programmatically based on environment (HTTP vs HTTPS) -->
   <session-config>
     <session-timeout>15</session-timeout>
     <cookie-config>
       <http-only>true</http-only>
-      <secure>true</secure>
-      <same-site>Strict</same-site>
+      <!-- secure and same-site are set programmatically in SecurityHardeningFilter -->
     </cookie-config>
     <tracking-mode>COOKIE</tracking-mode>
   </session-config>

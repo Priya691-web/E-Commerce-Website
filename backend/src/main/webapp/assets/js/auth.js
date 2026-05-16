@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Update CSRF token
                     if (data.csrfToken) {
                         window.csrfToken = data.csrfToken;
-                        const csrfInputs = document.querySelectorAll('input[name="csrf_token"], input[name="csrfToken"]');
+                        const csrfInputs = document.querySelectorAll('input[name="csrfToken"]');
                         csrfInputs.forEach(inp => inp.value = data.csrfToken);
                     }
 
@@ -278,9 +278,9 @@ document.addEventListener('DOMContentLoaded', () => {
             requirementItems.forEach(item => {
                 const requirement = item.getAttribute('data-requirement');
                 if (requirements[requirement]) {
-                    item.classList.add('auth-password-requirements__item--valid');
+                    item.classList.add('valid');
                 } else {
-                    item.classList.remove('auth-password-requirements__item--valid');
+                    item.classList.remove('valid');
                 }
             });
 

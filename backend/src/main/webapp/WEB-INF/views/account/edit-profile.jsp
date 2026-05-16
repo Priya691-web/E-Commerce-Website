@@ -54,7 +54,7 @@
 
                 <form action="<%= request.getContextPath() %>/account/profile" method="POST" class="fs-form-grid">
                     <input type="hidden" name="action" value="updateProfile">
-                    <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                    <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
 
                     <div class="fs-form-group">
                         <label for="fullName">Full Name *</label>

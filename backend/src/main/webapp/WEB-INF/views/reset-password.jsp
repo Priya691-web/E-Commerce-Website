@@ -33,7 +33,7 @@
             <form id="resetPasswordForm" class="auth-form" action="<%= request.getContextPath() %>/reset-password?token=<%= request.getAttribute("token") %>" method="post" novalidate>
                 <input type="hidden" name="token" value="<%= request.getAttribute("token") %>">
                 <% if (request.getAttribute("csrfToken") != null) { %>
-                <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") %>">
+                <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") %>">
                 <% } %>
 
                 <div class="auth-field auth-field--password">

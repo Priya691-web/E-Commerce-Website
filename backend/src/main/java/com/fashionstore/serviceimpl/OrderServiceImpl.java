@@ -12,6 +12,7 @@ import com.fashionstore.model.Product;
 import com.fashionstore.service.InventoryService;
 import com.fashionstore.service.OrderService;
 import com.fashionstore.util.AuditLogger;
+import com.fashionstore.util.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -230,55 +231,44 @@ public class OrderServiceImpl implements OrderService {
         String updateSql = "UPDATE orders SET status = ? WHERE order_id = ?";
         String historySql = "INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, notes) VALUES (?, ?, ?, ?, ?)";
 
-        java.sql.Connection con = null;
         try {
-            con = com.fashionstore.util.DBConnection.getConnection();
-            con.setAutoCommit(false);
-
-            // Get current status
-            String currentStatus = "Unknown";
-            try (java.sql.PreparedStatement selectPs = con.prepareStatement(selectSql)) {
-                selectPs.setInt(1, orderId);
-                try (java.sql.ResultSet rs = selectPs.executeQuery()) {
-                    if (rs.next()) {
-                        currentStatus = rs.getString("status");
+            return TransactionManager.executeInTransaction(conn -> {
+                // Get current status
+                String currentStatus = "Unknown";
+                try (java.sql.PreparedStatement selectPs = conn.prepareStatement(selectSql)) {
+                    selectPs.setInt(1, orderId);
+                    try (java.sql.ResultSet rs = selectPs.executeQuery()) {
+                        if (rs.next()) {
+                            currentStatus = rs.getString("status");
+                        }
                     }
                 }
-            }
 
-            // Update status
-            boolean updated = false;
-            try (java.sql.PreparedStatement updatePs = con.prepareStatement(updateSql)) {
-                updatePs.setString(1, newStatus);
-                updatePs.setInt(2, orderId);
-                updated = updatePs.executeUpdate() > 0;
-            }
-
-            // Log history if updated
-            if (updated) {
-                try (java.sql.PreparedStatement historyPs = con.prepareStatement(historySql)) {
-                    historyPs.setInt(1, orderId);
-                    historyPs.setString(2, currentStatus);
-                    historyPs.setString(3, newStatus);
-                    historyPs.setString(4, "Admin");
-                    historyPs.setString(5, "Order status transitioned from " + currentStatus + " to " + newStatus + ".");
-                    historyPs.executeUpdate();
+                // Update status
+                boolean updated = false;
+                try (java.sql.PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                    updatePs.setString(1, newStatus);
+                    updatePs.setInt(2, orderId);
+                    updated = updatePs.executeUpdate() > 0;
                 }
-            }
 
-            con.commit();
-            return updated;
+                // Log history if updated
+                if (updated) {
+                    try (java.sql.PreparedStatement historyPs = conn.prepareStatement(historySql)) {
+                        historyPs.setInt(1, orderId);
+                        historyPs.setString(2, currentStatus);
+                        historyPs.setString(3, newStatus);
+                        historyPs.setString(4, "Admin");
+                        historyPs.setString(5, "Order status transitioned from " + currentStatus + " to " + newStatus + ".");
+                        historyPs.executeUpdate();
+                    }
+                }
 
+                return updated;
+            });
         } catch (Exception e) {
-            if (con != null) {
-                try { con.rollback(); } catch (Exception rollbackEx) { logger.error("Rollback failed: {}", rollbackEx.getMessage()); }
-            }
             logger.error("Error in updateOrderStatusWithHistory for ID {}: {}", orderId, e.getMessage(), e);
             return false;
-        } finally {
-            if (con != null) {
-                try { con.close(); } catch (Exception closeEx) { logger.error("Close connection failed: {}", closeEx.getMessage()); }
-            }
         }
     }
 

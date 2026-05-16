@@ -1,7 +1,6 @@
 package com.fashionstore.security;
 
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -9,12 +8,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Base64;
+
+import static com.fashionstore.security.SessionSecurityUtil.SessionValidationResult;
 
 /**
  * Enterprise-grade security hardening filter
@@ -32,6 +33,9 @@ public class SecurityHardeningFilter implements Filter {
     // Rate limiting enabled flag
     private boolean rateLimitEnabled = true;
     
+    // Secure random for nonce generation
+    private static final SecureRandom secureRandom = new SecureRandom();
+    
     // Rate limiting storage
     private final Map<String, RequestTracker> requestTrackers = new ConcurrentHashMap<>();
     private final Map<String, LoginTracker> loginTrackers = new ConcurrentHashMap<>();
@@ -42,11 +46,13 @@ public class SecurityHardeningFilter implements Filter {
     
     // Suspicious activity patterns
     private static final Set<String> SUSPICIOUS_PATHS = Set.of(
-        "/admin", "/api/admin", "/api/internal", "/system", "/config"
+        "/admin", "/api/internal", "/system", "/config"
     );
     
     private static final Set<String> WHITELISTED_PATHS = Set.of(
-        "/api/metrics"
+        "/api/metrics",
+        "/api/admin/login",
+        "/api/admin/register"
     );
     
     private static final Set<String> SENSITIVE_OPERATIONS = Set.of(
@@ -76,6 +82,9 @@ public class SecurityHardeningFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         
         try {
+            // Configure session cookies based on environment
+            configureSessionCookies(httpRequest, httpResponse);
+            
             // Apply security hardening
             if (!applySecurityMeasures(httpRequest, httpResponse)) {
                 return; // Security measure blocked the request
@@ -87,6 +96,39 @@ public class SecurityHardeningFilter implements Filter {
         } catch (Exception e) {
             logger.error("Security filter error: {}", e.getMessage(), e);
             httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    /**
+     * Configure session cookies based on environment
+     * - Production/HTTPS: Secure=true, SameSite=Strict
+     * - Development/localhost: Secure=false, SameSite=Lax
+     */
+    private void configureSessionCookies(HttpServletRequest request, HttpServletResponse response) {
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        boolean isHttps = "https".equalsIgnoreCase(scheme);
+        boolean isLocalhost = serverName.equals("localhost") || serverName.equals("127.0.0.1");
+        boolean isDevelopment = isLocalhost || !isHttps;
+        
+        // Set secure flag based on environment
+        boolean secureFlag = isHttps && !isLocalhost;
+        
+        // Set SameSite based on environment
+        String sameSiteValue = isDevelopment ? "Lax" : "Strict";
+        
+        // Set cookie headers
+        String cookieHeader = String.format(
+            "JSESSIONID=%s; Path=/; %s; SameSite=%s; HttpOnly",
+            request.getSession(false) != null ? request.getSession(false).getId() : "",
+            secureFlag ? "Secure" : "",
+            sameSiteValue
+        );
+        
+        // Add Set-Cookie header for new sessions
+        HttpSession session = request.getSession(false);
+        if (session != null && session.isNew()) {
+            response.setHeader("Set-Cookie", cookieHeader);
         }
     }
     
@@ -109,7 +151,9 @@ public class SecurityHardeningFilter implements Filter {
         }
         
         // 2. Brute-force protection for login attempts (only on POST requests)
-        if ("POST".equalsIgnoreCase(method) && (path.contains("/login") || path.contains("/auth"))) {
+        // Skip for whitelisted login endpoints
+        if ("POST".equalsIgnoreCase(method) && (path.contains("/login") || path.contains("/auth")) &&
+            !WHITELISTED_PATHS.stream().anyMatch(path::contains)) {
             if (!checkBruteForceProtection(clientIP, userAgent)) {
                 logger.warn("Brute force protection triggered for IP: {}", clientIP);
                 response.sendError(429, "Too many login attempts");
@@ -125,7 +169,7 @@ public class SecurityHardeningFilter implements Filter {
         }
         
         // 4. Apply security headers
-        applySecurityHeaders(response);
+        applySecurityHeaders(request, response);
         
         // 5. Validate session security
         if (!validateSessionSecurity(request, response)) {
@@ -211,24 +255,43 @@ public class SecurityHardeningFilter implements Filter {
     }
     
     /**
+     * Generate a cryptographically secure nonce for CSP
+     */
+    private String generateNonce() {
+        byte[] nonceBytes = new byte[16];
+        secureRandom.nextBytes(nonceBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(nonceBytes);
+    }
+    
+    /**
      * Apply security headers
      */
-    private void applySecurityHeaders(HttpServletResponse response) {
-        // Content Security Policy
-        // SECURITY FIX: Remove 'unsafe-inline' and 'unsafe-eval' to prevent XSS attacks
+    private void applySecurityHeaders(HttpServletRequest request, HttpServletResponse response) {
+        // Generate a nonce for this request
+        String nonce = generateNonce();
+        
+        // Store nonce in request attribute for use in JSP
+        request.setAttribute("cspNonce", nonce);
+        
+        // Content Security Policy - Production-grade without unsafe-inline
+        // SECURITY FIX: Removed 'unsafe-inline' and replaced with nonce-based CSP
         // Exploit scenario: Attacker injects malicious script via XSS vulnerability
         // Impact: Cross-site scripting attacks can steal cookies, session tokens, or redirect users
-        // Remediation: Remove unsafe directives and use nonce/hash-based CSP for legitimate inline scripts
-        response.setHeader("Content-Security-Policy", 
+        // Remediation: Use nonce-based CSP for legitimate inline scripts only
+        String cspPolicy = 
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com; " +
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "script-src 'self' 'nonce-" + nonce + "' https://js.stripe.com https://cdn.jsdelivr.net https://www.gstatic.com; " +
+            "style-src 'self' 'nonce-" + nonce + "' https://fonts.googleapis.com; " +
             "font-src 'self' https://fonts.gstatic.com; " +
-            "img-src 'self' data: https:; " +
-            "connect-src 'self'; " +
+            "img-src 'self' data: https: https://*.stripe.com; " +
+            "connect-src 'self' https://api.stripe.com https://js.stripe.com; " +
+            "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
             "frame-ancestors 'none'; " +
             "base-uri 'self'; " +
-            "form-action 'self'");
+            "form-action 'self'; " +
+            "report-uri /csp-violation-report";
+        
+        response.setHeader("Content-Security-Policy", cspPolicy);
         
         // Other security headers
         response.setHeader("X-Frame-Options", "DENY");
@@ -249,54 +312,27 @@ public class SecurityHardeningFilter implements Filter {
     
     /**
      * Validate session security
+     * Delegates to SessionSecurityUtil for single source of truth
      */
-    private boolean validateSessionSecurity(HttpServletRequest request, HttpServletResponse response) {
-        HttpSession session = request.getSession(false);
+    private boolean validateSessionSecurity(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String path = request.getRequestURI();
         
-        if (session != null) {
-            // Check session fixation
-            String sessionID = session.getId();
-            String lastSessionID = (String) session.getAttribute("lastSessionID");
-            
-            if (lastSessionID != null && !lastSessionID.equals(sessionID)) {
-                // Session ID changed - possible fixation attempt
-                logger.warn("Session ID change detected for session: {}", sessionID);
-                session.invalidate();
-                return false;
-            }
-            
-            // Update last session ID
-            session.setAttribute("lastSessionID", sessionID);
-            
-            // Check session age
-            long sessionAge = System.currentTimeMillis() - session.getCreationTime();
-            long maxSessionAge = 30 * 60 * 1000; // 30 minutes
-            
-            if (sessionAge > maxSessionAge) {
-                logger.info("Session expired due to age: {}", sessionID);
-                session.invalidate();
-                return false;
-            }
-            
-            // Check concurrent sessions
-            String userID = (String) session.getAttribute("userID");
-            if (userID != null && !validateConcurrentSessions(userID, sessionID)) {
-                logger.warn("Concurrent session limit exceeded for user: {}", userID);
-                session.invalidate();
-                return false;
-            }
+        // Skip session validation for login/register endpoints
+        if (path.equals("/api/admin/login") || path.equals("/api/admin/register") || 
+            path.equals("/api/auth/login") || path.equals("/login") || path.equals("/register")) {
+            return true;
+        }
+        
+        // Delegate to SessionSecurityUtil for validation
+        SessionValidationResult result = SessionSecurityUtil.validateSession(request);
+        
+        if (!result.isValid()) {
+            logger.warn("Session validation failed: {} - Path: {}", result.getReason(), path);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session validation failed");
+            return false;
         }
         
         return true;
-    }
-    
-    /**
-     * Validate concurrent sessions
-     */
-    private boolean validateConcurrentSessions(String userID, String sessionID) {
-        // Implementation would check against a session registry
-        // For now, allow up to 3 concurrent sessions per user
-        return true; // Simplified for this implementation
     }
     
     /**

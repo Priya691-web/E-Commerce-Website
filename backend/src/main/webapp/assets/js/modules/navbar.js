@@ -126,28 +126,32 @@ const FashionStoreNavbar = (function() {
     }
     
     function setupScrollBehavior() {
-        navbarElement = document.querySelector('.fs-storefront-nav');
+        // Prefer the actual .navbar header; fall back to legacy .fs-storefront-nav
+        navbarElement = document.querySelector('.navbar') || document.querySelector('.fs-storefront-nav');
         if (!navbarElement) return;
-        
+
+        // Determine which scrolled class to toggle based on which element we found
+        const scrolledClass = navbarElement.classList.contains('navbar')
+            ? 'navbar--scrolled'
+            : 'fs-storefront-nav--scrolled';
+
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
-            
+
             // Detect scroll direction
-            if (currentScrollY > lastScrollY) {
-                isScrollingDown = true;
-            } else {
-                isScrollingDown = false;
-            }
-            
+            isScrollingDown = currentScrollY > lastScrollY;
             lastScrollY = currentScrollY;
-            
-            // Add scrolled state for visual feedback
+
+            // Add scrolled state for visual feedback (shadow + blur)
             if (currentScrollY > 10) {
+                navbarElement.classList.add(scrolledClass);
+                // Keep legacy class in sync if element has both
                 navbarElement.classList.add('fs-storefront-nav--scrolled');
             } else {
+                navbarElement.classList.remove(scrolledClass);
                 navbarElement.classList.remove('fs-storefront-nav--scrolled');
             }
-            
+
             // Hide/show navbar based on scroll direction
             if (currentScrollY > 100) {
                 if (isScrollingDown) {
@@ -159,9 +163,9 @@ const FashionStoreNavbar = (function() {
                 navbarElement.classList.remove('navbar-hidden');
             }
         };
-        
+
         window.addEventListener('scroll', handleScroll, { passive: true });
-        
+
         // Track listener for cleanup
         eventListeners.push({ target: window, event: 'scroll', handler: handleScroll });
     }

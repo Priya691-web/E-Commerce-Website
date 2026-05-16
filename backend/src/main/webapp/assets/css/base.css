@@ -14,7 +14,7 @@ body {
 body {
     font-family: var(--font-family-sans);
     color: var(--color-text-primary);
-    background: var(--gradient-hero);
+    background: var(--color-bg);
     line-height: var(--leading-relaxed);
     font-weight: var(--font-weight-regular);
     text-rendering: optimizeLegibility;
@@ -27,28 +27,8 @@ body {
    ============================================ */
 
 .container {
-    width: 100%;
-    max-width: var(--container-xl);
+    width: min(1320px, 92%);
     margin-inline: auto;
-    padding-inline: var(--container-padding-sm);
-}
-
-@media (min-width: 768px) {
-    .container {
-        padding-inline: var(--container-padding-md);
-    }
-}
-
-@media (min-width: 1024px) {
-    .container {
-        padding-inline: var(--container-padding-lg);
-    }
-}
-
-@media (min-width: 1280px) {
-    .container {
-        padding-inline: var(--container-padding-xl);
-    }
 }
 
 .container-md {
@@ -59,6 +39,11 @@ body {
     max-width: var(--container-sm);
 }
 
+.page-wrapper {
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
 /* ============================================
    GLOBAL RESPONSIVE MEDIA SCALING
    ============================================ */
@@ -66,11 +51,32 @@ body {
 img,
 picture,
 video,
-canvas,
-svg {
+canvas {
     max-width: 100%;
     display: block;
     height: auto;
+}
+
+svg {
+   display: block;
+}
+
+.icon,
+svg.icon {
+   width: 24px;
+   height: 24px;
+   flex-shrink: 0;
+}
+
+
+.nav-icon {
+   width: 22px;
+   height: 22px;
+}
+
+.footer-icon {
+   width: 20px;
+   height: 20px;
 }
 
 /* Prevent layout shifts with aspect-ratio support */
@@ -78,6 +84,18 @@ img[width][height] {
     aspect-ratio: attr(width) / attr(height);
     height: auto;
 }
+
+.image-wrapper {
+   overflow: hidden;
+   border-radius: 24px;
+}
+
+.hero-image,
+.product-image {
+   width: 100%;
+   object-fit: cover;
+}
+
 
 /* Lazy loading placeholder to prevent layout shift */
 img[loading="lazy"] {
@@ -100,19 +118,9 @@ img.loaded {
    LAYOUT SHIFT PREVENTION
    ============================================ */
 
-/* Reserve space for dynamic content */
-.skeleton-loader {
-    background: linear-gradient(90deg, var(--color-surface-alt) 25%, var(--color-surface) 50%, var(--color-surface-alt) 75%);
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s infinite;
-    min-height: 100px;
-    border-radius: var(--radius-md);
-}
-
-@keyframes skeleton-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
+/* NOTE: Skeleton loading states are now in components/skeleton.css
+   This is the single source of truth for all skeleton styles.
+   Do not duplicate skeleton code here. */
 
 /* Prevent layout shifts for cards with dynamic content */
 .card {
@@ -164,6 +172,10 @@ img.loaded {
 
 section {
     margin-bottom: clamp(var(--space-8), 5vw, var(--space-12));
+}
+
+.section {
+    padding-block: 72px;
 }
 
 section:last-child {
@@ -245,69 +257,9 @@ a {
     text-decoration: none;
 }
 
-img,
-picture,
-video,
-canvas,
-svg {
-    max-width: 100%;
-    display: block;
-}
 
-/* Prevent SVG infinite scaling */
-svg {
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-}
 
-.container {
-    width: min(100%, var(--container-xl));
-    margin-inline: auto;
-    padding-inline: max(clamp(var(--space-3), 3vw, var(--space-6)), env(safe-area-inset-left), env(safe-area-inset-right));
-}
 
-/* ============================================
-   MOBILE-FIRST RESPONSIVE ARCHITECTURE
-   ============================================ */
-
-/* Base mobile styles */
-.container {
-    width: min(100%, var(--container-sm));
-    padding-inline: var(--space-3);
-}
-
-/* Tablet and up */
-@media (min-width: var(--breakpoint-tablet)) {
-    .container {
-        width: min(100%, var(--container-md));
-        padding-inline: var(--space-4);
-    }
-}
-
-/* Laptop and up */
-@media (min-width: var(--breakpoint-laptop)) {
-    .container {
-        width: min(100%, var(--container-xl));
-        padding-inline: var(--space-6);
-    }
-}
-
-/* Desktop and up */
-@media (min-width: var(--breakpoint-desktop)) {
-    .container {
-        width: min(100%, var(--container-xl));
-        padding-inline: var(--space-8);
-    }
-}
-
-/* Wide screens */
-@media (min-width: var(--breakpoint-wide)) {
-    .container {
-        width: min(100%, var(--container-2xl));
-        padding-inline: var(--space-8);
-    }
-}
 
 /* ============================================
    MOBILE-FIRST TOUCH SPACING
@@ -351,7 +303,8 @@ button, a[role="button"], input[type="button"], input[type="submit"] {
 
 /* Buttons: see components/buttons.css (loaded after base) */
 
-.section {
+/* Section padding — only for pages NOT setting their own .section rules */
+.site-main > .section {
     padding-block: clamp(var(--space-8), 5vw, var(--space-11));
 }
 
@@ -641,37 +594,8 @@ button, a[role="button"], input[type="button"], input[type="submit"] {
 }
 
 /* -------------------------------------------------------------------------
-   Loading skeletons
-   ========================================================================== */
-
-.skeleton {
-    background: linear-gradient(90deg, var(--color-surface-alt) 25%, var(--color-surface) 50%, var(--color-surface-alt) 75%);
-    background-size: 200% 100%;
-    animation: skeleton-loading var(--duration-slow) var(--ease-in-out) infinite;
-}
-
-@keyframes skeleton-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
-.skeleton-text { height: 1em; }
-.skeleton-text-sm { height: 0.875em; }
-.skeleton-text-lg { height: 1.25rem; }
-.skeleton-text-xl { height: 1.5rem; }
-
-.skeleton-avatar {
-    border-radius: 50%;
-    aspect-ratio: 1;
-}
-
-.skeleton-image {
-    aspect-ratio: 16/9;
-    width: 100%;
-}
-
-/* -------------------------------------------------------------------------
    Fade-in animations
+   NOTE: Essential animations kept here. Full skeleton animation system in components/skeleton.css
    ------------------------------------------------------------------------- */
 @keyframes fadeIn {
     from { opacity: 0; }

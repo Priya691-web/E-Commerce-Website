@@ -37,6 +37,7 @@
     <mockito.version>5.7.0</mockito.version>
     <testcontainers.version>1.19.3</testcontainers.version>
     <h2.version>2.2.224</h2.version>
+    <jjwt.version>0.11.5</jjwt.version>
   </properties>
 
   <dependencies>
@@ -161,6 +162,25 @@
       <version>${commons.text.version}</version>
     </dependency>
 
+    <!-- JJWT for JWT Authentication -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
     <!-- Stripe Java SDK for payment processing -->
     <dependency>
       <groupId>com.stripe</groupId>
@@ -267,19 +287,18 @@
         </executions>
       </plugin>
 
-      <!-- Tomcat Maven Plugin for running the WAR file -->
+      <!-- Jetty Maven Plugin for running the WAR file (supports jakarta.servlet) -->
       <plugin>
-        <groupId>org.apache.tomcat.maven</groupId>
-        <artifactId>tomcat7-maven-plugin</artifactId>
-        <version>2.2</version>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-maven-plugin</artifactId>
+        <version>11.0.15</version>
         <configuration>
-          <port>8080</port>
-          <path>/</path>
-          <uriEncoding>UTF-8</uriEncoding>
-          <server>tomcat</server>
-          <systemProperties>
-            <JAVA_OPTS>-Djava.security.egd=file:/dev/./urandom</JAVA_OPTS>
-          </systemProperties>
+          <webApp>
+            <contextPath>/</contextPath>
+          </webApp>
+          <httpConnector>
+            <port>8080</port>
+          </httpConnector>
         </configuration>
       </plugin>
     </plugins>

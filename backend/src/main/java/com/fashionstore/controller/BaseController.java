@@ -120,7 +120,7 @@ public abstract class BaseController extends HttpServlet {
     }
 
     protected boolean ensureAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        User user = SecurityUtil.getCurrentUser(request);
+        User user = SecurityUtil.getAuthenticatedAdmin(request);
         if (user == null) {
             writeApiResponse(response, 401, ApiResponse.error("Authentication required"));
             return false;

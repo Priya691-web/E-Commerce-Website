@@ -1,18 +1,22 @@
 /**
  * AppProviders - Unified Provider Architecture
- * Centralized provider management to reduce nesting and complexity
- * Only client-state providers remain; server-state moved to React Query
+ * Single source of truth for ALL application providers.
+ * main.jsx provides ONLY: BrowserRouter + ErrorBoundary.
+ * Everything else lives here.
  */
 
-import { ThemeProvider } from '../../design-system/ThemeProvider.jsx';
+import { ThemeProvider } from '../../auth/ThemeContext.jsx';
 import { AuthProvider } from '../../auth/AuthContext.jsx';
+import { ToastProvider } from '../../context/ToastContext.jsx';
 
 export default function AppProviders({ children }) {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        {children}
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

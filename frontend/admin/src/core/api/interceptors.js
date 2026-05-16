@@ -18,6 +18,10 @@ export function setupRequestInterceptors(axiosInstance) {
         return Promise.reject(new Error('Invalid request configuration'));
       }
       
+      // Session-based authentication - rely on JSESSIONID cookie
+      // No JWT token needed - withCredentials: true is set in client.js
+      // The backend uses HttpSession with adminAuth and adminId attributes
+      
       // Log request in development
       if (import.meta.env.DEV) {
         console.debug(`[API] ${config.method?.toUpperCase()} ${config.url}`);

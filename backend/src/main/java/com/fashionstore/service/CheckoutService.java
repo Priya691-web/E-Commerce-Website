@@ -73,4 +73,9 @@ public interface CheckoutService {
      * Remove coupon from checkout
      */
     boolean removeCouponFromCheckout(int userId);
+
+    /**
+     * Process complete checkout flow including validation, stock reservation, and order creation
+     */
+    Order processCheckoutOrder(int userId, Map<String, Object> checkoutData) throws Exception;
 }

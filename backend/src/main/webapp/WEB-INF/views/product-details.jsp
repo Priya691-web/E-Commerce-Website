@@ -5,6 +5,11 @@
 <html lang="en">
 <head>
 <%
+    Product product = null;
+    Object productObj = request.getAttribute("product");
+    if (productObj instanceof Product) {
+        product = (Product) productObj;
+    }
     request.setAttribute("_pageTitle", product != null ? product.getProductName() : "Product Details");
     request.setAttribute("_pageCSS", "product-details");
 %>
@@ -18,13 +23,7 @@
 <!-- NAVBAR -->
 <jsp:include page="/WEB-INF/views/partials/navbar.jsp" />
 
-<%
-    Product product = null;
-    Object productObj = request.getAttribute("product");
-    if (productObj instanceof Product) {
-        product = (Product) productObj;
-    }
-%>
+
 
 <main class="shell section-block" id="main-content">
 

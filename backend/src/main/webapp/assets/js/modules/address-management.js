@@ -21,7 +21,7 @@ const AddressManagement = (function() {
         const formData = new URLSearchParams();
         formData.append('action', 'setDefault');
         formData.append('addressId', addressId);
-        formData.append('csrf_token', window.csrfToken || '');
+        formData.append('csrfToken', window.csrfToken || '');
         
         fetch(window.contextPath + '/account/addresses', {
             method: 'POST',
@@ -72,7 +72,7 @@ const AddressManagement = (function() {
         const formData = new URLSearchParams();
         formData.append('action', 'delete');
         formData.append('addressId', addressId);
-        formData.append('csrf_token', window.csrfToken || '');
+        formData.append('csrfToken', window.csrfToken || '');
         
         fetch(window.contextPath + '/account/addresses', {
             method: 'POST',

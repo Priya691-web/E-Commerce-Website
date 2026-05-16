@@ -42,7 +42,7 @@
         <% } %>
 
         <form action="<%= request.getContextPath() %>/admin/products" method="post" onsubmit="return validateForm()">
-            <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+            <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
             <input type="hidden" name="action" value="<%= mode %>">
             <% if ("edit".equals(mode)) { %>
                 <input type="hidden" name="productId" value="<%= p.getProductId() %>">
@@ -156,7 +156,7 @@
     </div><!-- /.form-card -->
 </main>
 
-<jsp:include page="/WEB-INF/views/partials/footer.jsp />
+<jsp:include page="/WEB-INF/views/partials/footer.jsp" />
 
 </body>
 </html>

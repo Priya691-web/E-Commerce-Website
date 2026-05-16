@@ -1,9 +1,8 @@
 package com.fashionstore.controller;
 
 import com.fashionstore.model.User;
-import com.fashionstore.security.SecurityUtils;
+import com.fashionstore.security.CSRFProtection;
 import com.fashionstore.service.SearchAnalyticsService;
-import com.fashionstore.util.JsonUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -90,7 +89,7 @@ public class SearchAnalyticsController extends HttpServlet {
         }
 
         // CSRF validation for POST requests
-        if (!SecurityUtils.validateCSRFToken(request, session)) {
+        if (!CSRFProtection.validateRequest(request)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }

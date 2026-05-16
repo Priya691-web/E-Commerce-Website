@@ -54,7 +54,7 @@
                         <% if (isEdit) { %>
                             <input type="hidden" name="addressId" value="<%= address.getAddressId() %>">
                         <% } %>
-                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                        <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
 
                         <div class="fs-form-group <%= fieldErrors != null && fieldErrors.containsKey("addressType") ? "has-error" : "" %>">
                             <label for="addressType">Address Type *</label>

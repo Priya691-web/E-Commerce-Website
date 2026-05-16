@@ -388,7 +388,8 @@
 }
 
 /* ============================================
-   EMPTY STATE - Premium Design
+   EMPTY STATE — Simple utility class
+   Used for generic empty states across the app
    ============================================ */
 
 .empty-state {
@@ -398,6 +399,65 @@
     align-items: center;
     justify-content: center;
     text-align: center;
+    padding: 48px 24px;
+    gap: 0;
+}
+
+.empty-state-icon {
+    font-size: 72px;
+    line-height: 1;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-2xl);
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border);
+}
+
+.empty-state h2 {
+    margin: 0 0 12px;
+    font-family: var(--font-family-display);
+    font-size: var(--display-sm, 1.75rem);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--color-text-primary);
+}
+
+.empty-state p {
+    margin: 0 0 8px;
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+    max-width: 400px;
+}
+
+.empty-btn {
+    margin-top: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 28px;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family-sans);
+    color: var(--color-text-inverse);
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.empty-btn:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
 }
 
 /* ============================================
@@ -606,18 +666,26 @@
 }
 
 /* ============================================
-   EMPTY STATE - Premium Luxury Design
+   FS-EMPTY-STATE - Premium Luxury Design
+   The catalog-page empty state (no products found)
+   Must span all product grid columns when inside grid
    ============================================ */
 
 .fs-empty-state {
+    /* Span all columns when nested inside product-card-grid */
+    grid-column: 1 / -1;
+    min-height: 420px;
     text-align: center;
     padding: var(--section-spacing-xl) var(--section-spacing-md);
-    display: grid;
-    gap: var(--section-spacing-md);
-    justify-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--grid-gap-md);
     max-width: 600px;
     margin: 0 auto;
     animation: empty-state-fade-in 0.4s var(--ease-premium);
+    width: 100%;
 }
 
 @keyframes empty-state-fade-in {
@@ -640,6 +708,8 @@
     padding: var(--card-padding-lg);
     background: var(--color-surface-alt);
     border-radius: var(--radius-2xl);
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
 }
 
 .fs-empty-state__title {
@@ -665,6 +735,7 @@
     flex-wrap: wrap;
     gap: var(--grid-gap-md);
     justify-content: center;
+    margin-top: 8px;
 }
 
 /* ============================================

@@ -16,6 +16,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import com.fashionstore.service.InventoryService;
+import com.fashionstore.service.OrderService;
+import com.fashionstore.serviceimpl.InventoryServiceImpl;
+import com.fashionstore.serviceimpl.OrderServiceImpl;
+
 /**
  * Service implementation for checkout operations with business logic
  * Handles checkout validation, address management, and order preparation
@@ -285,5 +290,121 @@ public class CheckoutServiceImpl implements CheckoutService {
             logger.error("Error removing coupon from checkout: {}", e.getMessage(), e);
             return false;
         }
+    }
+
+    @Override
+    public Order processCheckoutOrder(int userId, Map<String, Object> checkoutData) throws Exception {
+        String paymentMethod = (String) checkoutData.get("paymentMethod");
+        if (paymentMethod == null || paymentMethod.trim().isEmpty()) {
+            throw new IllegalArgumentException("Payment method is required");
+        }
+
+        Map<String, Object> shippingAddressData = (Map<String, Object>) checkoutData.get("shippingAddress");
+        if (shippingAddressData == null) {
+            throw new IllegalArgumentException("Shipping address is required");
+        }
+
+        String[] requiredFields = {"fullName", "addressLine1", "city", "state", "postalCode", "phone"};
+        for (String field : requiredFields) {
+            if (shippingAddressData.get(field) == null || ((String) shippingAddressData.get(field)).trim().isEmpty()) {
+                throw new IllegalArgumentException(field + " is required");
+            }
+        }
+
+        List<CartItem> cartItems = cartService.getCartItems(userId);
+        if (cartItems == null || cartItems.isEmpty()) {
+            throw new IllegalArgumentException("Your cart is empty");
+        }
+
+        if (!cartService.validateCartForCheckout(userId)) {
+            throw new IllegalArgumentException("Some items in your cart are not available");
+        }
+
+        InventoryService inventoryService = new InventoryServiceImpl();
+        for (CartItem item : cartItems) {
+            if (!inventoryService.isProductAvailable(item.getProductId(), item.getSizeLabel(), item.getQuantity())) {
+                throw new IllegalArgumentException("Insufficient stock for: " + item.getProductName());
+            }
+        }
+
+        String couponCode = (String) checkoutData.get("couponCode");
+        Map<String, Double> totals = calculateCheckoutTotals(userId, couponCode);
+        if (totals == null || totals.isEmpty()) {
+            throw new IllegalStateException("Failed to calculate order totals");
+        }
+
+        Double totalAmount = totals.get("total");
+        if (totalAmount == null || totalAmount <= 0) {
+            throw new IllegalArgumentException("Invalid order total");
+        }
+
+        List<ProductSize> productSizes = new ArrayList<>();
+        for (CartItem item : cartItems) {
+            ProductSize ps = new ProductSize();
+            ps.setProductId(item.getProductId());
+            ps.setSizeLabel(item.getSizeLabel());
+            ps.setStockQuantity(item.getQuantity());
+            productSizes.add(ps);
+        }
+
+        if (!inventoryService.validateStockForOrder(productSizes)) {
+            throw new IllegalArgumentException("Insufficient stock for one or more items");
+        }
+
+        boolean stockDeducted = inventoryService.processInventoryAfterOrder(productSizes);
+        if (!stockDeducted) {
+            throw new IllegalStateException("Failed to reserve stock. Please try again.");
+        }
+
+        Map<String, Object> orderData = new HashMap<>();
+        orderData.put("userId", userId);
+        orderData.put("fullName", shippingAddressData.get("fullName"));
+        
+        String addressLine1 = (String) shippingAddressData.get("addressLine1");
+        String addressLine2 = (String) shippingAddressData.get("addressLine2");
+        String fullAddress = addressLine1 + (addressLine2 != null && !addressLine2.isEmpty() ? " " + addressLine2 : "");
+        orderData.put("address", fullAddress);
+        
+        orderData.put("city", shippingAddressData.get("city"));
+        orderData.put("state", shippingAddressData.get("state"));
+        orderData.put("zip", shippingAddressData.get("postalCode"));
+        orderData.put("phone", shippingAddressData.get("phone"));
+        orderData.put("paymentMethod", paymentMethod);
+        orderData.put("totalAmount", totalAmount);
+
+        List<Map<String, Object>> itemsData = new ArrayList<>();
+        for (CartItem item : cartItems) {
+            Map<String, Object> itemData = new HashMap<>();
+            itemData.put("productId", item.getProductId());
+            itemData.put("quantity", item.getQuantity());
+            itemData.put("price", item.getPrice());
+            itemData.put("sizeLabel", item.getSizeLabel());
+            itemsData.add(itemData);
+        }
+        orderData.put("items", itemsData);
+
+        OrderService orderService = new OrderServiceImpl();
+        Order order = null;
+        try {
+            order = orderService.createOrder(userId, orderData);
+        } catch (Exception e) {
+            for (CartItem item : cartItems) {
+                try {
+                    inventoryService.releaseReservedStock(item.getProductId(), item.getSizeLabel(), item.getQuantity());
+                } catch (Exception ignored) {}
+            }
+            throw new IllegalStateException("Failed to create order. Please try again.", e);
+        }
+
+        if (order == null) {
+            for (CartItem item : cartItems) {
+                try {
+                    inventoryService.releaseReservedStock(item.getProductId(), item.getSizeLabel(), item.getQuantity());
+                } catch (Exception ignored) {}
+            }
+            throw new IllegalStateException("Failed to create order. Please try again.");
+        }
+
+        return order;
     }
 }

@@ -9,7 +9,6 @@ import com.fashionstore.service.UserService;
 import com.fashionstore.security.CSRFProtection;
 import com.fashionstore.security.RateLimiter;
 import com.fashionstore.util.AuditLogger;
-import com.fashionstore.util.NullSafetyUtil;
 import com.fashionstore.validation.Validator;
 
 import org.slf4j.Logger;
@@ -101,9 +100,9 @@ public class PasswordResetController extends HttpServlet {
             return;
         }
 
-        String email = NullSafetyUtil.safeString(request.getParameter("email"), null);
+        String email = request.getParameter("email");
 
-        if (NullSafetyUtil.isNullOrEmpty(email)) {
+        if (email == null || email.isBlank()) {
             request.setAttribute("error", "Email address is required");
             attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);
@@ -168,11 +167,11 @@ public class PasswordResetController extends HttpServlet {
     private void handleResetPassword(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String token = NullSafetyUtil.safeString(request.getParameter("token"), null);
-        String password = NullSafetyUtil.safeString(request.getParameter("password"), null);
-        String confirmPassword = NullSafetyUtil.safeString(request.getParameter("confirmPassword"), null);
+        String token = request.getParameter("token");
+        String password = request.getParameter("password");
+        String confirmPassword = request.getParameter("confirmPassword");
 
-        if (NullSafetyUtil.isNullOrEmpty(token)) {
+        if (token == null || token.isBlank()) {
             request.setAttribute("error", "Invalid reset link");
             attachCsrfForView(request);
             request.getRequestDispatcher("/WEB-INF/views/forgot-password.jsp").forward(request, response);

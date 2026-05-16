@@ -107,7 +107,7 @@
     </div>
 </main>
 
-<jsp:include page="/WEB-INF/views/partials/footer.jsp />
+<jsp:include page="/WEB-INF/views/partials/footer.jsp" />
 
 </body>
 </html>

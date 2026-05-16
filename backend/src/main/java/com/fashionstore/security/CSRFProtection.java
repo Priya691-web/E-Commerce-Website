@@ -2,6 +2,8 @@ package com.fashionstore.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,8 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CSRFProtection {
     
-    private static final String CSRF_TOKEN_SESSION_KEY = "csrf_token";
-    private static final String CSRF_TOKEN_TIME_KEY = "csrf_token_time";
+    private static final Logger logger = LoggerFactory.getLogger(CSRFProtection.class);
+    
+    private static final String CSRF_TOKEN_SESSION_KEY = "csrfToken";
+    private static final String CSRF_TOKEN_TIME_KEY = "csrfTokenTime";
     private static final int TOKEN_EXPIRY_TIME = 3600; // 1 hour
     private static final int TOKEN_LENGTH = 32;
     private static final SecureRandom secureRandom = new SecureRandom();
@@ -44,9 +48,8 @@ public class CSRFProtection {
         long generatedAt = System.currentTimeMillis();
         session.setAttribute(CSRF_TOKEN_SESSION_KEY, token);
         session.setAttribute(CSRF_TOKEN_TIME_KEY, generatedAt);
-        // Backward compatibility for older views/tests still using legacy key names.
-        session.setAttribute("csrfToken", token);
-        session.setAttribute("csrfTokenTime", generatedAt);
+        
+        logger.debug("CSRF token generated for session: {}", session.getId());
         
         return token;
     }
@@ -59,43 +62,44 @@ public class CSRFProtection {
      */
     public static boolean validateToken(HttpServletRequest request, String token) {
         if (token == null || token.trim().isEmpty()) {
+            logger.warn("CSRF validation failed: token is null or empty - Path: {}", request.getRequestURI());
             return false;
         }
         
         HttpSession session = request.getSession(false);
         if (session == null) {
+            logger.warn("CSRF validation failed: no session exists - Path: {}", request.getRequestURI());
             return false;
         }
         
         // Get stored token
         String sessionToken = (String) session.getAttribute(CSRF_TOKEN_SESSION_KEY);
-        if (sessionToken == null) {
-            sessionToken = (String) session.getAttribute("csrfToken");
-        }
         Long tokenTime = (Long) session.getAttribute(CSRF_TOKEN_TIME_KEY);
-        if (tokenTime == null) {
-            tokenTime = (Long) session.getAttribute("csrfTokenTime");
-        }
         
         if (sessionToken == null) {
+            logger.warn("CSRF validation failed: no token in session - Session ID: {}, Path: {}", 
+                session.getId(), request.getRequestURI());
             return false;
         }
         
         // Check if token matches
         if (!token.equals(sessionToken)) {
+            logger.warn("CSRF validation failed: token mismatch - Session ID: {}, Path: {}, Provided token: {}... , Expected token: {}...", 
+                session.getId(), request.getRequestURI(), 
+                token.substring(0, Math.min(8, token.length())), 
+                sessionToken.substring(0, Math.min(8, sessionToken.length())));
             return false;
-        }
-        
-        // Legacy compatibility: older sessions/tests may not have timestamp metadata.
-        if (tokenTime == null) {
-            return true;
         }
 
         // Check if token has expired
-        if (System.currentTimeMillis() - tokenTime > TOKEN_EXPIRY_TIME * 1000) {
+        if (tokenTime != null && System.currentTimeMillis() - tokenTime > TOKEN_EXPIRY_TIME * 1000) {
+            logger.warn("CSRF validation failed: token expired - Session ID: {}, Path: {}, Token age: {}ms", 
+                session.getId(), request.getRequestURI(), 
+                System.currentTimeMillis() - tokenTime);
             return false;
         }
         
+        logger.debug("CSRF validation successful - Session ID: {}, Path: {}", session.getId(), request.getRequestURI());
         return true;
     }
     
@@ -169,6 +173,9 @@ public class CSRFProtection {
      */
     public static boolean validateTokenFromRequest(HttpServletRequest request, String paramName) {
         String token = request.getParameter(paramName);
+        if (token == null || token.trim().isEmpty()) {
+            logger.debug("CSRF token not found in parameter: {} - Path: {}", paramName, request.getRequestURI());
+        }
         return validateToken(request, token);
     }
     
@@ -180,6 +187,9 @@ public class CSRFProtection {
      */
     public static boolean validateTokenFromHeader(HttpServletRequest request, String headerName) {
         String token = request.getHeader(headerName);
+        if (token == null || token.trim().isEmpty()) {
+            logger.debug("CSRF token not found in header: {} - Path: {}", headerName, request.getRequestURI());
+        }
         return validateToken(request, token);
     }
     
@@ -204,7 +214,7 @@ public class CSRFProtection {
         String token = getTokenForAjax(request);
         if (token != null) {
             request.setAttribute("csrfToken", token);
-            request.setAttribute("csrfTokenParamName", "csrf_token");
+            request.setAttribute("csrfTokenParamName", "csrfToken");
             request.setAttribute("csrfTokenHeaderName", "X-CSRF-Token");
         }
     }
@@ -278,11 +288,6 @@ public class CSRFProtection {
             return false;
         }
 
-        // Wishlist API - public endpoints for authenticated users
-        if (path != null && path.startsWith("/api/wishlist")) {
-            return false;
-        }
-
         return true;
     }
     
@@ -296,21 +301,18 @@ public class CSRFProtection {
             return true;
         }
         
-        // Check parameter first
-        if (validateTokenFromRequest(request, "csrf_token")) {
-            return true;
-        }
-
-        // Backward compatibility for legacy forms/tests.
+        // Check parameter first (standardized key)
         if (validateTokenFromRequest(request, "csrfToken")) {
             return true;
         }
         
-        // Check header
+        // Check header for AJAX requests
         if (validateTokenFromHeader(request, "X-CSRF-Token")) {
             return true;
         }
         
+        logger.warn("CSRF validation failed for request - Path: {}, Method: {}", 
+            request.getRequestURI(), request.getMethod());
         return false;
     }
     

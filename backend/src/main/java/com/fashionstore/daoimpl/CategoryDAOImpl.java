@@ -102,6 +102,7 @@ public class CategoryDAOImpl implements CategoryDAO {
     public Category getCategoryById(int categoryId) {
         String sql = "SELECT * FROM categories WHERE category_id = ?";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -109,6 +110,12 @@ public class CategoryDAOImpl implements CategoryDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    long duration = System.currentTimeMillis() - startTime;
+                    if (duration > 200) {
+                        logger.warn("Slow query detected: getCategoryById took {}ms for category {}", duration, categoryId);
+                    } else {
+                        logger.debug("getCategoryById completed in {}ms for category {}", duration, categoryId);
+                    }
                     return mapCategory(rs);
                 }
             }
@@ -127,12 +134,20 @@ public class CategoryDAOImpl implements CategoryDAO {
                 "CASE LOWER(TRIM(category_name)) " +
                 "WHEN 'men' THEN 1 WHEN 'women' THEN 2 WHEN 'footwear' THEN 3 WHEN 'accessories' THEN 4 ELSE 99 END, category_name";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 list.add(mapCategory(rs));
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (duration > 200) {
+                logger.warn("Slow query detected: getAllCategories took {}ms", duration);
+            } else {
+                logger.debug("getAllCategories completed in {}ms, fetched {} categories", duration, list.size());
             }
 
         } catch (Exception e) {
@@ -149,12 +164,20 @@ public class CategoryDAOImpl implements CategoryDAO {
                 "CASE LOWER(TRIM(category_name)) " +
                 "WHEN 'men' THEN 1 WHEN 'women' THEN 2 WHEN 'footwear' THEN 3 WHEN 'accessories' THEN 4 ELSE 99 END, category_name";
 
+        long startTime = System.currentTimeMillis();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 list.add(mapCategory(rs));
+            }
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (duration > 200) {
+                logger.warn("Slow query detected: getActiveCategories took {}ms", duration);
+            } else {
+                logger.debug("getActiveCategories completed in {}ms, fetched {} categories", duration, list.size());
             }
 
         } catch (Exception e) {

@@ -68,18 +68,21 @@ a {
 img,
 picture,
 video,
-canvas,
-svg {
+canvas {
     display: block;
     max-width: 100%;
     height: auto;
 }
 
-/* Prevent SVG from inheriting text styles */
+/* Prevent SVG from scaling infinitely */
 svg {
     display: block;
     vertical-align: middle;
+    width: auto;
+    height: auto;
 }
+
+
 
 /* ============================================
    FORM ELEMENT RESET

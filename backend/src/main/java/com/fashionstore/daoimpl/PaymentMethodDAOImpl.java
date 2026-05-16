@@ -25,45 +25,39 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
                      "last_four, expiry_month, expiry_year, card_brand, is_default, " +
                      "is_active, gateway_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        Connection conn = null;
         try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
-
-            if (paymentMethod.isDefault()) {
-                unsetDefaultPaymentMethods(conn, paymentMethod.getUserId());
-            }
-
-            try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                pstmt.setInt(1, paymentMethod.getUserId());
-                pstmt.setString(2, paymentMethod.getMethodType());
-                pstmt.setString(3, paymentMethod.getProvider());
-                pstmt.setString(4, paymentMethod.getMethodAlias());
-                pstmt.setString(5, paymentMethod.getLastFour());
-                pstmt.setObject(6, paymentMethod.getExpiryMonth());
-                pstmt.setObject(7, paymentMethod.getExpiryYear());
-                pstmt.setString(8, paymentMethod.getCardBrand());
-                pstmt.setBoolean(9, paymentMethod.isDefault());
-                pstmt.setBoolean(10, paymentMethod.isActive());
-                pstmt.setString(11, paymentMethod.getGatewayToken());
-
-                int result = pstmt.executeUpdate();
-                if (result > 0) {
-                    try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                        if (generatedKeys.next()) {
-                            paymentMethod.setPaymentMethodId(generatedKeys.getInt(1));
-                        }
-                    }
-                    conn.commit();
-                    return true;
+            return com.fashionstore.util.TransactionManager.executeInTransaction(conn -> {
+                if (paymentMethod.isDefault()) {
+                    unsetDefaultPaymentMethods(conn, paymentMethod.getUserId());
                 }
-                conn.rollback();
-            }
-        } catch (SQLException e) {
-            rollbackQuietly(conn);
+
+                try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                    pstmt.setInt(1, paymentMethod.getUserId());
+                    pstmt.setString(2, paymentMethod.getMethodType());
+                    pstmt.setString(3, paymentMethod.getProvider());
+                    pstmt.setString(4, paymentMethod.getMethodAlias());
+                    pstmt.setString(5, paymentMethod.getLastFour());
+                    pstmt.setObject(6, paymentMethod.getExpiryMonth());
+                    pstmt.setObject(7, paymentMethod.getExpiryYear());
+                    pstmt.setString(8, paymentMethod.getCardBrand());
+                    pstmt.setBoolean(9, paymentMethod.isDefault());
+                    pstmt.setBoolean(10, paymentMethod.isActive());
+                    pstmt.setString(11, paymentMethod.getGatewayToken());
+
+                    int result = pstmt.executeUpdate();
+                    if (result > 0) {
+                        try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                            if (generatedKeys.next()) {
+                                paymentMethod.setPaymentMethodId(generatedKeys.getInt(1));
+                            }
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+            });
+        } catch (Exception e) {
             logger.error("PaymentMethodDAOImpl.addPaymentMethod Error: {}", e.getMessage(), e);
-        } finally {
-            closeQuietly(conn);
         }
         return false;
     }
@@ -75,43 +69,30 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
                      "is_default = ?, is_active = ?, gateway_token = ?, updated_at = CURRENT_TIMESTAMP " +
                      "WHERE payment_method_id = ? AND user_id = ?";
 
-        Connection conn = null;
         try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
+            return com.fashionstore.util.TransactionManager.executeInTransaction(conn -> {
+                if (paymentMethod.isDefault()) {
+                    unsetDefaultPaymentMethods(conn, paymentMethod.getUserId());
+                }
 
-            if (paymentMethod.isDefault()) {
-                unsetDefaultPaymentMethods(conn, paymentMethod.getUserId());
-            }
-
-            boolean updated;
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setString(1, paymentMethod.getMethodType());
-                pstmt.setString(2, paymentMethod.getProvider());
-                pstmt.setString(3, paymentMethod.getMethodAlias());
-                pstmt.setString(4, paymentMethod.getLastFour());
-                pstmt.setObject(5, paymentMethod.getExpiryMonth());
-                pstmt.setObject(6, paymentMethod.getExpiryYear());
-                pstmt.setString(7, paymentMethod.getCardBrand());
-                pstmt.setBoolean(8, paymentMethod.isDefault());
-                pstmt.setBoolean(9, paymentMethod.isActive());
-                pstmt.setString(10, paymentMethod.getGatewayToken());
-                pstmt.setInt(11, paymentMethod.getPaymentMethodId());
-                pstmt.setInt(12, paymentMethod.getUserId());
-                updated = pstmt.executeUpdate() > 0;
-            }
-
-            if (updated) {
-                conn.commit();
-            } else {
-                conn.rollback();
-            }
-            return updated;
-        } catch (SQLException e) {
-            rollbackQuietly(conn);
+                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    pstmt.setString(1, paymentMethod.getMethodType());
+                    pstmt.setString(2, paymentMethod.getProvider());
+                    pstmt.setString(3, paymentMethod.getMethodAlias());
+                    pstmt.setString(4, paymentMethod.getLastFour());
+                    pstmt.setObject(5, paymentMethod.getExpiryMonth());
+                    pstmt.setObject(6, paymentMethod.getExpiryYear());
+                    pstmt.setString(7, paymentMethod.getCardBrand());
+                    pstmt.setBoolean(8, paymentMethod.isDefault());
+                    pstmt.setBoolean(9, paymentMethod.isActive());
+                    pstmt.setString(10, paymentMethod.getGatewayToken());
+                    pstmt.setInt(11, paymentMethod.getPaymentMethodId());
+                    pstmt.setInt(12, paymentMethod.getUserId());
+                    return pstmt.executeUpdate() > 0;
+                }
+            });
+        } catch (Exception e) {
             logger.error("PaymentMethodDAOImpl.updatePaymentMethod Error: {}", e.getMessage(), e);
-        } finally {
-            closeQuietly(conn);
         }
         return false;
     }
@@ -203,35 +184,21 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
         String updateSql = "UPDATE payment_methods SET is_default = TRUE, " +
                            "updated_at = CURRENT_TIMESTAMP WHERE payment_method_id = ? AND user_id = ?";
 
-        Connection conn = null;
         try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
+            return com.fashionstore.util.TransactionManager.executeInTransaction(conn -> {
+                try (PreparedStatement pstmt = conn.prepareStatement(unsetSql)) {
+                    pstmt.setInt(1, userId);
+                    pstmt.executeUpdate();
+                }
 
-            try (PreparedStatement pstmt = conn.prepareStatement(unsetSql)) {
-                pstmt.setInt(1, userId);
-                pstmt.executeUpdate();
-            }
-
-            boolean updated;
-            try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
-                updatePstmt.setInt(1, paymentMethodId);
-                updatePstmt.setInt(2, userId);
-                updated = updatePstmt.executeUpdate() > 0;
-            }
-
-            if (updated) {
-                conn.commit();
-            } else {
-                // No row matched the (paymentMethodId, userId) pair – revert the unset.
-                conn.rollback();
-            }
-            return updated;
-        } catch (SQLException e) {
-            rollbackQuietly(conn);
+                try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
+                    updatePstmt.setInt(1, paymentMethodId);
+                    updatePstmt.setInt(2, userId);
+                    return updatePstmt.executeUpdate() > 0;
+                }
+            });
+        } catch (Exception e) {
             logger.error("PaymentMethodDAOImpl.setDefaultPaymentMethod Error: {}", e.getMessage(), e);
-        } finally {
-            closeQuietly(conn);
         }
         return false;
     }
@@ -351,24 +318,5 @@ public class PaymentMethodDAOImpl implements PaymentMethodDAO {
         }
     }
 
-    private void rollbackQuietly(Connection conn) {
-        if (conn == null) return;
-        try {
-            conn.rollback();
-        } catch (SQLException ex) {
-            logger.error("PaymentMethodDAOImpl rollback failed: {}", ex.getMessage());
-        }
-    }
 
-    private void closeQuietly(Connection conn) {
-        if (conn == null) return;
-        try {
-            conn.setAutoCommit(true);
-        } catch (SQLException ignored) { /* connection may already be invalid */ }
-        try {
-            conn.close();
-        } catch (SQLException ex) {
-            logger.error("PaymentMethodDAOImpl close failed: {}", ex.getMessage());
-        }
-    }
 }

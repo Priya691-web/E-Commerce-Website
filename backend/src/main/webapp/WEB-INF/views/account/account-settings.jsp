@@ -39,7 +39,7 @@
 
                     <form action="<%= request.getContextPath() %>/account/profile" method="POST" class="fs-form-grid account-form">
                         <input type="hidden" name="action" value="updateSettings">
-                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                        <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
 
                         <div class="fs-form-group checkbox-group">
                             <label class="fs-form-checkbox">
@@ -117,7 +117,7 @@
 
                     <form action="<%= request.getContextPath() %>/account/profile" method="POST" class="fs-form-grid account-form">
                         <input type="hidden" name="action" value="changePassword">
-                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                        <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
 
                         <div class="fs-form-group">
                             <label for="currentPassword">Current Password *</label>
@@ -179,7 +179,7 @@
 
                     <form action="<%= request.getContextPath() %>/account/profile" method="POST" class="fs-form-grid account-form">
                         <input type="hidden" name="action" value="updateSettings">
-                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                        <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
 
                         <div class="fs-form-group">
                             <label for="language">Language</label>
@@ -223,7 +223,7 @@
 
                     <form action="<%= request.getContextPath() %>/account/profile" method="POST" class="fs-form-grid account-form">
                         <input type="hidden" name="action" value="updateSettings">
-                        <input type="hidden" name="csrf_token" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
+                        <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>">
 
                         <div class="fs-form-group checkbox-group">
                             <label class="fs-form-checkbox">
