@@ -29,6 +29,7 @@
  * - Session expiry detection and redirect
  * - CSRF error handling
  * - Network error handling
+ * - Request/Response interceptors
  * 
  * IMPORTANT SEPARATION:
  * ====================
@@ -75,22 +76,22 @@
  * USAGE EXAMPLES:
  * ===============
  * // GET request
- * FashionStoreAPI.get('/api/products').then(response => {
+ * FashionStoreAPI.get('/products').then(response => {
  *   console.log(response.data);
  * });
  * 
  * // POST request with CSRF token (auto-injected)
- * FashionStoreAPI.post('/api/cart', { productId: 1, quantity: 2 }).then(response => {
+ * FashionStoreAPI.post('/cart', { productId: 1, quantity: 2 }).then(response => {
  *   console.log(response.data);
  * });
  * 
  * // PUT request
- * FashionStoreAPI.put('/api/profile', { name: 'John' }).then(response => {
+ * FashionStoreAPI.put('/account/profile', { name: 'John' }).then(response => {
  *   console.log(response.data);
  * });
  * 
  * // DELETE request
- * FashionStoreAPI.delete('/api/cart/1').then(response => {
+ * FashionStoreAPI.delete('/cart?action=remove&productId=1').then(response => {
  *   console.log(response.data);
  * });
  */
@@ -108,6 +109,50 @@ const API_CONFIG = {
         retryDelay: 1000
     }
 };
+
+// Request interceptors
+const requestInterceptors = [];
+// Response interceptors
+const responseInterceptors = [];
+
+/**
+ * Add request interceptor
+ */
+function addRequestInterceptor(interceptor) {
+    requestInterceptors.push(interceptor);
+}
+
+/**
+ * Add response interceptor
+ */
+function addResponseInterceptor(interceptor) {
+    responseInterceptors.push(interceptor);
+}
+
+/**
+ * Apply request interceptors
+ */
+function applyRequestInterceptors(config) {
+    let modifiedConfig = { ...config };
+    for (const interceptor of requestInterceptors) {
+        modifiedConfig = interceptor(modifiedConfig) || modifiedConfig;
+    }
+    return modifiedConfig;
+}
+
+/**
+ * Apply response interceptors
+ */
+function applyResponseInterceptors(response, error = null) {
+    let modifiedResponse = error ? { error, data: null } : { error: null, data: response };
+    for (const interceptor of responseInterceptors) {
+        modifiedResponse = interceptor(modifiedResponse) || modifiedResponse;
+    }
+    if (modifiedResponse.error) {
+        throw modifiedResponse.error;
+    }
+    return modifiedResponse.data;
+}
 
 /**
  * Get CSRF token from meta tag or window variable
@@ -127,18 +172,18 @@ function buildUrl(url, params) {
 }
 
 /**
- * Normalize response structure
+ * Normalize response structure to standard format
  */
 function normalizeResponse(data) {
     // If response already has standard structure, return as-is
-    if (data && typeof data === 'object' && ('success' in data || 'status' in data)) {
+    if (data && typeof data === 'object' && ('success' in data)) {
         return data;
     }
 
     // Wrap plain data in standard structure
     return {
         success: true,
-        status: 'success',
+        message: 'Operation successful',
         data: data
     };
 }
@@ -146,11 +191,12 @@ function normalizeResponse(data) {
 /**
  * Create standardized API error
  */
-function createApiError(message, statusCode, originalError) {
+function createApiError(message, statusCode, originalError, data = null) {
     const error = new Error(message);
     error.name = 'ApiError';
     error.statusCode = statusCode;
     error.originalError = originalError;
+    error.data = data;
     return error;
 }
 
@@ -202,18 +248,20 @@ async function retryRequest(fn, retryCount = 0) {
 }
 
 /**
- * Core fetch wrapper
+ * Core fetch wrapper with interceptors
  */
 async function fetchAPI(url, options = {}) {
     const isGet = !options.method || options.method.toUpperCase() === 'GET';
     
-    const config = {
+    let config = {
         method: options.method || 'GET',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
+            ...API_CONFIG.headers,
             ...options.headers
         },
+        credentials: 'include', // CRITICAL: Include cookies for session-based auth
         ...options
     };
     
@@ -236,6 +284,9 @@ async function fetchAPI(url, options = {}) {
         }
     }
     
+    // Apply request interceptors
+    config = applyRequestInterceptors(config);
+    
     // Log request in development
     if (window.DEBUG_MODE) {
         console.log(`[API Request] ${config.method.toUpperCase()} ${finalUrl}`, config.body);
@@ -252,30 +303,37 @@ async function fetchAPI(url, options = {}) {
         // Handle session expiry
         if (response.status === 401) {
             handleSessionExpiry();
-            throw createApiError('Session expired. Please login again.', 401);
+            const error = createApiError('Session expired. Please login again.', 401, null);
+            return applyResponseInterceptors(null, error);
         }
         
         // Handle CSRF errors
         if (response.status === 403) {
             handleCsrfError();
-            throw createApiError('Security token expired. Please refresh the page.', 403);
+            const error = createApiError('Security token expired. Please refresh the page.', 403, null);
+            return applyResponseInterceptors(null, error);
         }
         
         // Handle server errors
         if (response.status >= 500) {
-            throw createApiError('Server error. Please try again later.', response.status);
+            const error = createApiError('Server error. Please try again later.', response.status, null);
+            return applyResponseInterceptors(null, error);
         }
         
         // Parse JSON response
         const data = await response.json();
+        const normalizedData = normalizeResponse(data);
         
-        return normalizeResponse(data);
+        // Apply response interceptors
+        return applyResponseInterceptors(normalizedData);
     } catch (error) {
         // Handle network errors
         if (!error.statusCode) {
-            throw createApiError('Network error. Please check your connection.', 0, error);
+            const networkError = createApiError('Network error. Please check your connection.', 0, error);
+            return applyResponseInterceptors(null, networkError);
         }
-        throw error;
+        // Re-throw API errors
+        return applyResponseInterceptors(null, error);
     }
 }
 
@@ -298,7 +356,11 @@ const api = {
     },
     removeHeader: (key) => {
         delete API_CONFIG.headers[key];
-    }
+    },
+    
+    // Interceptors
+    addRequestInterceptor,
+    addResponseInterceptor
 };
 
 // Make available globally for backward compatibility

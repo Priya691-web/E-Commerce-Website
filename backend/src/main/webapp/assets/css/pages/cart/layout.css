@@ -183,7 +183,7 @@
 
 @media (max-width: var(--breakpoint-mobile)) {
     .cart-breadcrumb {
-        font-size: 10px;
+        font-size: var(--text-xs);
         gap: var(--space-1);
     }
     

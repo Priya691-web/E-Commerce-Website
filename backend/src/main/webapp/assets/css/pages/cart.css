@@ -44,7 +44,7 @@
 
 .fs-free-ship-bar__progress {
     flex-basis: 100%;
-    height: 4px;
+    height: var(--space-1);
     background: var(--color-surface-alt);
     border-radius: var(--radius-pill);
     overflow: hidden;
@@ -145,6 +145,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    min-width: 0;
 }
 
 .fs-cart-item__info {
@@ -158,7 +159,7 @@
     font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
     text-decoration: none;
-    line-height: 1.4;
+    line-height: var(--leading-snug);
 }
 
 .fs-cart-item__name:hover {
@@ -185,7 +186,7 @@
 .fs-cart-item__meta li span:first-child {
     color: var(--color-text-tertiary);
     text-transform: uppercase;
-    font-size: 10px;
+    font-size: var(--text-xs);
 }
 
 .fs-cart-item__stock {
@@ -193,10 +194,11 @@
 }
 
 .fs-cart-item__stock span:first-child {
-    width: 6px;
-    height: 6px;
+    width: var(--space-1_5);
+    height: var(--space-1_5);
     border-radius: 50%;
     background: var(--color-success);
+    display: inline-block;
 }
 
 .fs-cart-item__actions {
@@ -280,7 +282,7 @@
 }
 
 .fs-cart-item__total span:first-child {
-    font-size: 10px;
+    font-size: var(--text-xs);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--color-text-tertiary);
@@ -375,7 +377,7 @@
     flex-direction: column;
     align-items: center;
     gap: var(--space-1);
-    font-size: 10px;
+    font-size: var(--text-xs);
     color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.06em;

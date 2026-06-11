@@ -122,14 +122,16 @@ public class DBConnection {
                     config.setIdleTimeout(60000);
                     config.setConnectionTimeout(30000);
                     config.setMaxLifetime(1800000);
-                    logger.info("Production pool configuration applied");
+                    config.setLeakDetectionThreshold(30000); // Detect connection leaks after 30s
+                    logger.info("Production pool configuration applied with leak detection");
                 } else {
-                    config.setMaximumPoolSize(50);
-                    config.setMinimumIdle(10);
+                    config.setMaximumPoolSize(20); // Reduced for development
+                    config.setMinimumIdle(5);
                     config.setIdleTimeout(60000);
                     config.setConnectionTimeout(30000);
                     config.setMaxLifetime(1800000);
-                    logger.info("Development pool configuration applied (increased for stability)");
+                    config.setLeakDetectionThreshold(60000); // More lenient in dev
+                    logger.info("Development pool configuration applied");
                 }
 
                 // Optimizations

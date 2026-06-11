@@ -6,6 +6,7 @@ import com.fashionstore.model.Order;
 import com.fashionstore.model.User;
 import com.fashionstore.registry.ServiceRegistry;
 import com.fashionstore.service.OrderService;
+import com.fashionstore.service.StripePaymentService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -26,10 +27,13 @@ public class PaymentController extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
     private OrderService orderService;
+    private StripePaymentService stripePaymentService;
 
     @Override
     public void init() throws ServletException {
-        orderService = ServiceRegistry.getInstance().getOrderService();
+        ServiceRegistry registry = ServiceRegistry.getInstance();
+        orderService = registry.getOrderService();
+        stripePaymentService = registry.getStripePaymentService();
     }
     
     @Override
@@ -191,7 +195,42 @@ public class PaymentController extends HttpServlet {
      */
     private void handleStripeWebhook(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
-            resp.setStatus(HttpServletResponse.SC_OK);
+            // Read the webhook payload
+            StringBuilder payload = new StringBuilder();
+            String line;
+            try (java.io.BufferedReader reader = req.getReader()) {
+                while ((line = reader.readLine()) != null) {
+                    payload.append(line);
+                }
+            }
+            
+            String payloadString = payload.toString();
+            String signatureHeader = req.getHeader("Stripe-Signature");
+            
+            // Verify webhook signature
+            if (stripePaymentService != null && stripePaymentService.verifyWebhookSignature(payloadString, signatureHeader, req)) {
+                // Parse the webhook event
+                com.stripe.model.Event event = stripePaymentService.parseWebhookEvent(payloadString);
+                
+                // Handle the event based on its type
+                String eventType = event.getType();
+                logger.info("Processing Stripe webhook event: {}", eventType);
+                
+                if ("payment_intent.succeeded".equals(eventType)) {
+                    stripePaymentService.handlePaymentSucceeded(event, req);
+                } else if ("payment_intent.payment_failed".equals(eventType)) {
+                    stripePaymentService.handlePaymentFailed(event, req);
+                } else {
+                    logger.info("Unhandled Stripe webhook event type: {}", eventType);
+                }
+                
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.getWriter().write("{\"status\":\"received\"}");
+            } else {
+                logger.error("Stripe webhook signature verification failed");
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\":\"Invalid signature\"}");
+            }
         } catch (Exception e) {
             logger.error("Error handling Stripe webhook: {}", e.getMessage(), e);
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -199,9 +238,12 @@ public class PaymentController extends HttpServlet {
     }
     
     /**
-     * Create order - delegates to service layer
+     * Create order - delegates to CheckoutService for proper order creation with cart items and addresses
+     * PaymentController should NOT be used for order creation - use CheckoutController.submitOrder instead
      */
     private int createOrder(int userId, String paymentMethod, HttpServletRequest req) {
+        logger.warn("PaymentController.createOrder called - this method is deprecated. Use CheckoutController.submitOrder for proper order creation with cart items and addresses.");
+        
         Map<String, Object> orderData = new HashMap<>();
         orderData.put("paymentMethod", paymentMethod);
 

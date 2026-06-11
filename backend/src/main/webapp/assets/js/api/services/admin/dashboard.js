@@ -15,7 +15,7 @@ const AdminDashboardAPI = {
      */
     async getDashboardStats() {
         try {
-            const response = await api.get('/api/admin/dashboard/stats');
+            const response = await api.get('/api/admin/dashboard');
             return response.data;
         } catch (error) {
             throw handleApiError(error);
@@ -27,7 +27,7 @@ const AdminDashboardAPI = {
      */
     async getSalesData(params = {}) {
         try {
-            const response = await api.get('/api/admin/dashboard/sales', { params });
+            const response = await api.get('/api/admin/stats', { params });
             return response.data;
         } catch (error) {
             throw handleApiError(error);
@@ -39,7 +39,7 @@ const AdminDashboardAPI = {
      */
     async getRecentOrders(limit = 10) {
         try {
-            const response = await api.get('/api/admin/dashboard/orders', { params: { limit } });
+            const response = await api.get('/api/admin/orders/recent', { params: { limit } });
             return response.data;
         } catch (error) {
             throw handleApiError(error);
@@ -51,7 +51,7 @@ const AdminDashboardAPI = {
      */
     async getTopProducts(limit = 10) {
         try {
-            const response = await api.get('/api/admin/dashboard/products', { params: { limit } });
+            const response = await api.get('/api/admin/products', { params: { limit, sort: 'popularity' } });
             return response.data;
         } catch (error) {
             throw handleApiError(error);

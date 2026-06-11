@@ -28,6 +28,9 @@ public class UserDAOImpl implements UserDAO {
         user.setGender(rs.getString("gender"));
         user.setAddress(rs.getString("address"));
         user.setRole(rs.getString("role"));
+        user.setActive(rs.getBoolean("is_active"));
+        user.setCreatedAt(rs.getTimestamp("created_at"));
+        user.setUpdatedAt(rs.getTimestamp("updated_at"));
         return user;
     }
 
@@ -86,7 +89,7 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public User getUserById(int userId) {
-        String sql = "SELECT user_id, full_name, email, phone, password, gender, address, role FROM users WHERE user_id = ?";
+        String sql = "SELECT user_id, full_name, email, phone, password, gender, address, role, is_active, created_at, updated_at FROM users WHERE user_id = ?";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -108,7 +111,7 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public User getUserByEmail(String email) {
-        String sql = "SELECT user_id, full_name, email, phone, password, gender, address, role FROM users WHERE email = ?";
+        String sql = "SELECT user_id, full_name, email, phone, password, gender, address, role, is_active, created_at, updated_at FROM users WHERE email = ?";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -208,7 +211,7 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, full_name, email, phone, password, gender, address, role FROM users ORDER BY user_id DESC";
+        String sql = "SELECT user_id, full_name, email, phone, password, gender, address, role, is_active, created_at, updated_at FROM users ORDER BY user_id DESC";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);

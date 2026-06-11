@@ -266,6 +266,23 @@ select {
 }
 
 /* ============================================
+   FORM ERROR MESSAGES
+   ============================================ */
+
+.form-error {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-md);
+    font-size: 0.9rem;
+}
+
+.form-error--hidden {
+    display: none;
+}
+
+/* ============================================
    LEGACY INPUT SUPPORT
    ============================================ */
 
@@ -293,7 +310,7 @@ select {
 .fs-form-textarea:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(16, 16, 14, 0.06);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .fs-form-input:disabled,

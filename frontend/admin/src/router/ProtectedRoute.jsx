@@ -9,14 +9,20 @@ import { useState, useEffect, useRef } from 'react';
  *   </Route>
  *
  * Must render <Outlet /> (not children) so nested routes render.
+ * 
+ * SECURITY:
+ * - Checks authentication status from AuthContext
+ * - Redirects to /admin/login if not authenticated
+ * - Uses absolute paths to prevent redirect loops
+ * - Includes role validation for admin access
  */
 export default function ProtectedRoute() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
   const [hasTimedOut, setHasTimedOut] = useState(false);
   const timeoutRef = useRef(null);
 
-  // Add 10-second timeout for auth check
+  // Add 10-second timeout for auth check to prevent indefinite loading
   useEffect(() => {
     if (loading && !hasTimedOut) {
       timeoutRef.current = setTimeout(() => {
@@ -34,7 +40,7 @@ export default function ProtectedRoute() {
   if (loading) {
     // If timeout reached, redirect to login
     if (hasTimedOut) {
-      return <Navigate to="../login" replace state={{ from: location, error: 'auth_timeout' }} />;
+      return <Navigate to="/admin/login" replace state={{ from: location, error: 'auth_timeout' }} />;
     }
 
     return (
@@ -62,8 +68,13 @@ export default function ProtectedRoute() {
   }
 
   // Redirect to login if not authenticated
-  if (!user) {
-    return <Navigate to="../login" replace state={{ from: location }} />;
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/admin/login" replace state={{ from: location }} />;
+  }
+
+  // Check if user has admin role
+  if (user.role && user.role !== 'admin') {
+    return <Navigate to="/admin/login" replace state={{ from: location, error: 'insufficient_permissions' }} />;
   }
 
   // Render nested routes via Outlet

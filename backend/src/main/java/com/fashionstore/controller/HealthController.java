@@ -18,8 +18,9 @@ import java.util.Map;
 /**
  * Health check endpoint for monitoring and observability
  * Provides health status for Kubernetes probes, load balancers, and monitoring systems
+ * Supports both /health and /healthz endpoints for compatibility
  */
-@WebServlet("/healthz")
+@WebServlet({"/health", "/healthz"})
 public class HealthController extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(HealthController.class);

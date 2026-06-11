@@ -12,9 +12,9 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-    transition: transform var(--transition-hover), 
-                box-shadow var(--transition-hover),
-                border-color var(--transition-hover);
+    transition: transform var(--transition-base), 
+                box-shadow var(--transition-base),
+                border-color var(--transition-base);
 }
 
 .fs-card:hover {

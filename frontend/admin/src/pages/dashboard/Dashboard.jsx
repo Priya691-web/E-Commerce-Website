@@ -10,7 +10,7 @@ import StatCard from '../../components/StatCard.jsx';
 import DataTable from '../../components/DataTable.jsx';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import ChartErrorBoundary from '../../components/ChartErrorBoundary.jsx';
-import { DashboardApi, OrdersApi, UsersApi, ProductsApi } from '../../api/client.js';
+import { DashboardApi, OrdersApi, UsersApi, ProductsApi } from '../../core/api/endpoints.js';
 import { useToast } from '../../context/ToastContext.jsx';
 
 const SALES_MOCK = [

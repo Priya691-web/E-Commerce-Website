@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Store, CreditCard, Truck, Receipt, Save } from 'lucide-react';
 import { useToast } from '../../context/ToastContext.jsx';
+import { AdminApi } from '../../core/api/endpoints.js';
 
 const TABS = [
   { key: 'store', label: 'Store', Icon: Store },
@@ -13,7 +14,34 @@ export default function Settings() {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('store');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const saveTimeoutRef = useRef(null);
+
+  const [store, setStore] = useState({ name: 'FashionStore', email: 'support@fashionstore.com', currency: 'USD', timezone: 'UTC' });
+  const [payment, setPayment] = useState({ gateway: 'stripe', publicKey: '', secretKey: '', enabled: true });
+  const [shipping, setShipping] = useState({ flatRate: '5.00', freeThreshold: '50.00', enabled: true });
+  const [taxes, setTaxes] = useState({ rate: '8.00', inclusive: false });
+
+  // Load settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await AdminApi.settings.get();
+        if (data) {
+          if (data.store) setStore(data.store);
+          if (data.payment) setPayment(data.payment);
+          if (data.shipping) setShipping(data.shipping);
+          if (data.taxes) setTaxes(data.taxes);
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+        // Keep default values if API fails
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -24,22 +52,22 @@ export default function Settings() {
     };
   }, []);
 
-  const [store, setStore] = useState({ name: 'FashionStore', email: 'support@fashionstore.com', currency: 'USD', timezone: 'UTC' });
-  const [payment, setPayment] = useState({ gateway: 'stripe', publicKey: '', secretKey: '', enabled: true });
-  const [shipping, setShipping] = useState({ flatRate: '5.00', freeThreshold: '50.00', enabled: true });
-  const [taxes, setTaxes] = useState({ rate: '8.00', inclusive: false });
-
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    // Clear any existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(() => {
+    try {
+      await AdminApi.settings.update({
+        store,
+        payment,
+        shipping,
+        taxes,
+      });
+      addToast('Settings saved successfully', 'success');
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      addToast('Failed to save settings', 'error');
+    } finally {
       setSaving(false);
-      addToast('Settings saved', 'success');
-      saveTimeoutRef.current = null;
-    }, 600);
+    }
   };
 
   const renderTab = () => {
@@ -141,31 +169,42 @@ export default function Settings() {
     <div className="space-y-5">
       <h1 className="text-2xl font-bold text-ink-900 dark:text-white">Settings</h1>
 
-      <div className="flex flex-wrap gap-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={[
-              'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition',
-              activeTab === tab.key
-                ? 'bg-ink-900 text-white dark:bg-white dark:text-ink-900'
-                : 'bg-white dark:bg-ink-800 border border-ink-200 dark:border-ink-700 text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-700',
-            ].join(' ')}
-          >
-            <tab.Icon size={16} /> {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="card p-6">
-        {renderTab()}
-        <div className="mt-6 pt-4 border-t border-ink-200 dark:border-ink-700">
-          <button onClick={handleSave} disabled={saving} className="btn-primary">
-            <Save size={16} /> {saving ? 'Saving…' : 'Save Settings'}
-          </button>
+      {loading ? (
+        <div className="card p-6 space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-10 bg-ink-100 dark:bg-ink-800 animate-pulse rounded" />
+          ))}
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={[
+                  'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition',
+                  activeTab === tab.key
+                    ? 'bg-ink-900 text-white dark:bg-white dark:text-ink-900'
+                    : 'bg-white dark:bg-ink-800 border border-ink-200 dark:border-ink-700 text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-700',
+                ].join(' ')}
+                aria-current={activeTab === tab.key ? 'true' : undefined}
+              >
+                <tab.Icon size={16} /> {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="card p-6">
+            {renderTab()}
+            <div className="mt-6 pt-4 border-t border-ink-200 dark:border-ink-700">
+              <button onClick={handleSave} disabled={saving} className="btn-primary">
+                <Save size={16} /> {saving ? 'Saving…' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

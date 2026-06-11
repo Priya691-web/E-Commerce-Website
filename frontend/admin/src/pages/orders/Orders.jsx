@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Eye, PackageCheck, PackageX, Truck, CheckCircle, RotateCcw } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
-import { OrdersApi } from '../../api/client.js';
+import { OrdersApi } from '../../core/api/endpoints.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import { useDataTableWithFilter } from '../../hooks/useDataTable.js';
@@ -144,11 +144,29 @@ export default function Orders() {
 
       {/* Order Detail Modal */}
       {detailOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <div ref={modalRef} className="card container-lg w-full max-h-[80vh] overflow-auto p-6 animate-scale-in">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" 
+          role="dialog" 
+          aria-modal="true" 
+          aria-labelledby="modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setDetailOrder(null);
+            }
+          }}
+        >
+          <div 
+            ref={modalRef} 
+            className="card container-lg w-full max-h-[80vh] overflow-auto p-6 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-6">
               <h2 id="modal-title" className="text-h2">Order #{detailOrder.id}</h2>
-              <button onClick={() => setDetailOrder(null)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors" aria-label="Close modal">
+              <button 
+                onClick={() => setDetailOrder(null)} 
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors" 
+                aria-label="Close modal"
+              >
                 ✕
               </button>
             </div>

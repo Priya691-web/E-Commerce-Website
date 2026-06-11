@@ -10,7 +10,7 @@ export default function Topbar({ onMenuClick }) {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login', { replace: true });
+    navigate('/admin/login', { replace: true });
   };
 
   const initials = (user?.fullName || user?.email || '?')

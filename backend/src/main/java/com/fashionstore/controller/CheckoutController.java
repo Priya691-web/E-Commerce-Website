@@ -7,6 +7,7 @@ import com.fashionstore.registry.ServiceRegistry;
 import com.fashionstore.service.CartService;
 import com.fashionstore.service.CheckoutService;
 import com.fashionstore.service.OrderService;
+import com.fashionstore.service.StripePaymentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -50,6 +51,7 @@ public class CheckoutController extends HttpServlet {
     private CheckoutService checkoutService;
     private CartService cartService;
     private OrderService orderService;
+    private StripePaymentService stripePaymentService;
     private ObjectMapper objectMapper;
 
     @Override
@@ -58,6 +60,7 @@ public class CheckoutController extends HttpServlet {
         checkoutService = registry.getCheckoutService();
         cartService = registry.getCartService();
         orderService = registry.getOrderService();
+        stripePaymentService = registry.getStripePaymentService();
         objectMapper = new ObjectMapper();
     }
 
@@ -102,7 +105,10 @@ public class CheckoutController extends HttpServlet {
         }
 
         try {
-            if ("/submit".equals(path)) {
+            // Handle root path POST (form submission from checkout.jsp)
+            if ("/".equals(path)) {
+                handleFormSubmission(request, response, user);
+            } else if ("/submit".equals(path)) {
                 submitOrder(request, response, user);
             } else if ("/apply-coupon".equals(path)) {
                 applyCoupon(request, response, user);
@@ -122,6 +128,182 @@ public class CheckoutController extends HttpServlet {
     /** Normalize servlet pathInfo: treat null/blank as root slash. */
     private String normalizePath(String pathInfo) {
         return (pathInfo == null || pathInfo.isBlank()) ? "/" : pathInfo;
+    }
+
+    /**
+     * Handle form submission from checkout.jsp (form-data)
+     * This handles both COD and Stripe payment methods
+     */
+    private void handleFormSubmission(HttpServletRequest request, HttpServletResponse response, User user) 
+            throws ServletException, IOException {
+        
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        int userId = user.getUserId();
+
+        try {
+            // Extract form parameters
+            String shippingAddressId = request.getParameter("shippingAddressId");
+            String paymentMethod = request.getParameter("paymentMethod");
+            String fullName = request.getParameter("fullName");
+            String address = request.getParameter("address");
+            String city = request.getParameter("city");
+            String state = request.getParameter("state");
+            String zip = request.getParameter("zip");
+            String phone = request.getParameter("phone");
+            String saveAddress = request.getParameter("saveAddress");
+            String shippingMethod = request.getParameter("shippingMethod");
+
+            // Validate payment method
+            if (paymentMethod == null || paymentMethod.trim().isEmpty()) {
+                request.setAttribute("error", "Please select a payment method");
+                displayCheckoutPage(request, response, user);
+                return;
+            }
+
+            // Build checkout data
+            Map<String, Object> checkoutData = new HashMap<>();
+            checkoutData.put("paymentMethod", paymentMethod);
+            
+            // Build shipping address data
+            Map<String, Object> shippingAddressData = new HashMap<>();
+            
+            if ("new".equals(shippingAddressId) || shippingAddressId == null || shippingAddressId.isEmpty()) {
+                // Using new address
+                if (fullName == null || fullName.trim().isEmpty() ||
+                    address == null || address.trim().isEmpty() ||
+                    city == null || city.trim().isEmpty() ||
+                    state == null || state.trim().isEmpty() ||
+                    zip == null || zip.trim().isEmpty() ||
+                    phone == null || phone.trim().isEmpty()) {
+                    request.setAttribute("error", "Please fill in all required shipping address fields");
+                    request.setAttribute("fieldErrors", Map.of(
+                        "postalCode", zip == null || zip.trim().isEmpty() ? "ZIP code is required" : null,
+                        "phone", phone == null || phone.trim().isEmpty() ? "Phone number is required" : null
+                    ));
+                    displayCheckoutPage(request, response, user);
+                    return;
+                }
+                
+                shippingAddressData.put("fullName", fullName);
+                shippingAddressData.put("addressLine1", address);
+                shippingAddressData.put("addressLine2", "");
+                shippingAddressData.put("city", city);
+                shippingAddressData.put("state", state);
+                shippingAddressData.put("postalCode", zip);
+                shippingAddressData.put("phone", phone);
+                shippingAddressData.put("saveAddress", "true".equals(saveAddress));
+            } else {
+                // Using saved address - fetch from database
+                try {
+                    int addressId = Integer.parseInt(shippingAddressId);
+                    List<com.fashionstore.model.Address> addresses = checkoutService.getUserCheckoutAddresses(userId);
+                    com.fashionstore.model.Address savedAddress = null;
+                    if (addresses != null) {
+                        savedAddress = addresses.stream()
+                            .filter(a -> a.getAddressId() == addressId)
+                            .findFirst()
+                            .orElse(null);
+                    }
+                    if (savedAddress == null) {
+                        request.setAttribute("error", "Selected address not found");
+                        displayCheckoutPage(request, response, user);
+                        return;
+                    }
+                    
+                    shippingAddressData.put("fullName", savedAddress.getFullName());
+                    shippingAddressData.put("addressLine1", savedAddress.getAddressLine1());
+                    shippingAddressData.put("addressLine2", savedAddress.getAddressLine2() != null ? savedAddress.getAddressLine2() : "");
+                    shippingAddressData.put("city", savedAddress.getCity());
+                    shippingAddressData.put("state", savedAddress.getState());
+                    shippingAddressData.put("postalCode", savedAddress.getPostalCode());
+                    shippingAddressData.put("phone", savedAddress.getPhone());
+                    shippingAddressData.put("saveAddress", false);
+                } catch (NumberFormatException e) {
+                    request.setAttribute("error", "Invalid address selection");
+                    displayCheckoutPage(request, response, user);
+                    return;
+                }
+            }
+            
+            checkoutData.put("shippingAddress", shippingAddressData);
+            checkoutData.put("shippingMethod", shippingMethod != null ? shippingMethod : "STANDARD");
+
+            // Handle different payment methods
+            if ("STRIPE".equalsIgnoreCase(paymentMethod)) {
+                // For Stripe, create order first, then create payment intent
+                try {
+                    com.fashionstore.model.Order order = checkoutService.processCheckoutOrder(userId, checkoutData);
+                    
+                    // Create Stripe payment intent using StripePaymentService
+                    if (stripePaymentService == null || !stripePaymentService.isConfigured()) {
+                        throw new IllegalStateException("Stripe is not configured. Please contact support.");
+                    }
+                    
+                    // Get user email from session
+                    String userEmail = (user != null) ? user.getEmail() : "";
+                    String userName = (user != null) ? user.getFullName() : "";
+                    
+                    // Create metadata for Stripe
+                    Map<String, String> metadata = new HashMap<>();
+                    metadata.put("order_id", String.valueOf(order.getOrderId()));
+                    metadata.put("user_id", String.valueOf(userId));
+                    
+                    // Create payment intent
+                    com.stripe.model.PaymentIntent paymentIntent = stripePaymentService.createPaymentIntent(
+                        java.math.BigDecimal.valueOf(order.getTotalAmount()),
+                        "INR",
+                        userEmail,
+                        userName,
+                        "Order #" + order.getOrderId(),
+                        metadata,
+                        request
+                    );
+                    
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("success", true);
+                    data.put("orderId", order.getOrderId());
+                    data.put("clientSecret", paymentIntent.getClientSecret());
+                    data.put("paymentIntentId", paymentIntent.getId());
+                    data.put("amount", order.getTotalAmount());
+                    
+                    sendJsonResponse(response, data);
+                } catch (IllegalArgumentException e) {
+                    request.setAttribute("error", e.getMessage());
+                    displayCheckoutPage(request, response, user);
+                } catch (com.stripe.exception.StripeException e) {
+                    logger.error("Stripe error processing order for user {}: {}", userId, e.getMessage(), e);
+                    request.setAttribute("error", "Payment processing failed. Please try again or use COD.");
+                    displayCheckoutPage(request, response, user);
+                } catch (Exception e) {
+                    logger.error("Error processing Stripe order for user {}: {}", userId, e.getMessage(), e);
+                    request.setAttribute("error", "Failed to process order. Please try again.");
+                    displayCheckoutPage(request, response, user);
+                }
+            } else {
+                // For COD, process order directly and redirect to success
+                try {
+                    com.fashionstore.model.Order order = checkoutService.processCheckoutOrder(userId, checkoutData);
+                    
+                    // Redirect to payment success page
+                    response.sendRedirect(request.getContextPath() + "/payment?action=success&orderId=" + order.getOrderId());
+                } catch (IllegalArgumentException e) {
+                    request.setAttribute("error", e.getMessage());
+                    displayCheckoutPage(request, response, user);
+                } catch (Exception e) {
+                    logger.error("Error processing COD order for user {}: {}", userId, e.getMessage(), e);
+                    request.setAttribute("error", "Failed to process order. Please try again.");
+                    displayCheckoutPage(request, response, user);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error in handleFormSubmission for user {}: {}", userId, e.getMessage(), e);
+            request.setAttribute("error", "An error occurred while processing your order. Please try again.");
+            displayCheckoutPage(request, response, user);
+        }
     }
 
     private void displayCheckoutPage(HttpServletRequest request, HttpServletResponse response, User user)
@@ -331,8 +513,10 @@ public class CheckoutController extends HttpServlet {
                 return;
             }
             
+            // CRITICAL FIX: Cart clearing is now inside the transaction in CheckoutServiceImpl.processCheckoutOrder()
+            // This ensures atomicity: order creation, inventory update, payment, and cart clearing all happen together or not at all
+            // If any step fails, the entire transaction rolls back and cart is preserved
             com.fashionstore.model.Order order = checkoutService.processCheckoutOrder(userId, checkoutData);
-            cartService.clearCart(userId);
 
             Map<String, Object> data = new HashMap<>();
             data.put("success", true);

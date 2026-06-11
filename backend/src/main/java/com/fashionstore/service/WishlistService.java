@@ -38,15 +38,22 @@ public class WishlistService {
     public Map<String, Object> addToWishlist(int userId, int productId) {
         Map<String, Object> result = new HashMap<>();
         if (wishlistDAO == null) {
-            logger.warn("WishlistDAO not initialized");
-            result.put("success", false);
-            result.put("message", "Service not available");
-            return result;
+            throw new IllegalStateException("WishlistDAO not initialized - cannot add to wishlist");
         }
         try {
+            // Check if already in wishlist to provide better feedback
+            boolean alreadyInWishlist = wishlistDAO.isProductInWishlist(userId, productId);
+            if (alreadyInWishlist) {
+                result.put("success", false);
+                result.put("message", "Item already in wishlist");
+                result.put("alreadyInWishlist", true);
+                return result;
+            }
+            
             boolean added = wishlistDAO.addWishlistItem(userId, productId);
             result.put("success", added);
-            result.put("message", added ? "Item added to wishlist successfully" : "Item already in wishlist");
+            result.put("message", added ? "Item added to wishlist successfully" : "Failed to add item to wishlist");
+            result.put("alreadyInWishlist", false);
         } catch (Exception e) {
             logger.error("Error adding item to wishlist: {}", e.getMessage(), e);
             result.put("success", false);
@@ -61,10 +68,7 @@ public class WishlistService {
     public Map<String, Object> removeFromWishlist(int userId, int productId) {
         Map<String, Object> result = new HashMap<>();
         if (wishlistDAO == null) {
-            logger.warn("WishlistDAO not initialized");
-            result.put("success", false);
-            result.put("message", "Service not available");
-            return result;
+            throw new IllegalStateException("WishlistDAO not initialized - cannot remove from wishlist");
         }
         try {
             boolean removed = wishlistDAO.removeWishlistItem(userId, productId);
@@ -84,10 +88,7 @@ public class WishlistService {
     public Map<String, Object> getWishlist(int userId) {
         Map<String, Object> result = new HashMap<>();
         if (wishlistDAO == null) {
-            logger.warn("WishlistDAO not initialized");
-            result.put("success", false);
-            result.put("message", "Service not available");
-            return result;
+            throw new IllegalStateException("WishlistDAO not initialized - cannot get wishlist");
         }
         try {
             List<WishlistItem> wishlist = wishlistDAO.getWishlistByUserId(userId);
@@ -107,8 +108,7 @@ public class WishlistService {
      */
     public List<WishlistItem> getWishlistItems(int userId) {
         if (wishlistDAO == null) {
-            logger.warn("WishlistDAO not initialized");
-            return new java.util.ArrayList<>();
+            throw new IllegalStateException("WishlistDAO not initialized - cannot get wishlist items");
         }
         try {
             return wishlistDAO.getWishlistByUserId(userId);
@@ -123,8 +123,7 @@ public class WishlistService {
      */
     public boolean isProductInWishlist(int userId, int productId) {
         if (wishlistDAO == null) {
-            logger.warn("WishlistDAO not initialized");
-            return false;
+            throw new IllegalStateException("WishlistDAO not initialized - cannot check if product is in wishlist");
         }
         try {
             return wishlistDAO.isProductInWishlist(userId, productId);

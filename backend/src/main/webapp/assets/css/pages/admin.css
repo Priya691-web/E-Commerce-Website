@@ -28,9 +28,10 @@
     border-right: 1px solid var(--color-border);
     padding: var(--space-6);
     position: sticky;
-    top: 72px;
-    height: calc(100vh - 72px);
+    top: var(--nav-height);
+    height: calc(100vh - var(--nav-height));
     overflow-y: auto;
+    align-self: start;
 }
 
 .admin-menu-toggle {
@@ -48,8 +49,8 @@
 }
 
 .admin-menu-toggle svg {
-    width: 22px;
-    height: 22px;
+    width: var(--icon-lg);
+    height: var(--icon-lg);
 }
 
 .admin-sidebar-backdrop {
@@ -239,6 +240,8 @@
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     margin-bottom: var(--space-6);
+    -ms-overflow-style: scrollbar;
+    scrollbar-width: auto;
 }
 
 .admin-table {
@@ -267,30 +270,31 @@
 }
 
 .admin-table tbody tr:hover {
-    background: var(--color-bg-tertiary);
+    background: var(--color-surface-alt);
 }
 
 .admin-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
+    align-items: center;
 }
 
 .admin-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 36px;
+    min-height: var(--space-9);
     padding: 0 var(--space-3);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
+    color: var(--color-text-primary);
     cursor: pointer;
-    transition:
-        border-color var(--transition-fast),
-        background var(--transition-fast);
+    white-space: nowrap;
+    transition: all var(--transition-fast);
 }
 
 .admin-btn:hover {
@@ -677,7 +681,7 @@
 
 .admin-filter-label {
     display: block;
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: var(--font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wider);

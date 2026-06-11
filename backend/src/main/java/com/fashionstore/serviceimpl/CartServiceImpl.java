@@ -24,42 +24,9 @@ public class CartServiceImpl implements CartService {
     private final CartDAO cartDAO;
     private final ProductDAO productDAO;
 
-    public CartServiceImpl() {
-        // Default constructor - DAOs will be set via setter injection
-        this.cartDAO = null;
-        this.productDAO = null;
-    }
-
     public CartServiceImpl(CartDAO cartDAO, ProductDAO productDAO) {
         this.cartDAO = cartDAO;
         this.productDAO = productDAO;
-    }
-
-    public void setCartDAO(CartDAO cartDAO) {
-        // For backward compatibility - use constructor injection when possible
-        if (this.cartDAO == null) {
-            // Hack to set final field via reflection for backward compatibility
-            try {
-                java.lang.reflect.Field field = CartServiceImpl.class.getDeclaredField("cartDAO");
-                field.setAccessible(true);
-                field.set(this, cartDAO);
-            } catch (Exception e) {
-                logger.error("Failed to set cartDAO", e);
-            }
-        }
-    }
-
-    public void setProductDAO(ProductDAO productDAO) {
-        // For backward compatibility - use constructor injection when possible
-        if (this.productDAO == null) {
-            try {
-                java.lang.reflect.Field field = CartServiceImpl.class.getDeclaredField("productDAO");
-                field.setAccessible(true);
-                field.set(this, productDAO);
-            } catch (Exception e) {
-                logger.error("Failed to set productDAO", e);
-            }
-        }
     }
 
     @Override
@@ -110,6 +77,14 @@ public class CartServiceImpl implements CartService {
             return false;
         }
 
+        // Validate stock level for the specific size
+        int availableStock = getStockForSize(product, size);
+        if (availableStock < quantity) {
+            logger.warn("Insufficient stock for product {} size {}: requested {}, available {}", 
+                       productId, size, quantity, availableStock);
+            return false;
+        }
+
         // Check current cart size
         List<CartItem> currentItems = getCartItems(userId);
         if (currentItems.size() >= MAX_CART_ITEMS) {
@@ -125,6 +100,12 @@ public class CartServiceImpl implements CartService {
                 int newQuantity = existingItem.getQuantity() + quantity;
                 if (newQuantity > MAX_QUANTITY_PER_ITEM) {
                     logger.warn("Combined quantity exceeds maximum: {}", newQuantity);
+                    return false;
+                }
+                // Validate stock again for combined quantity
+                if (availableStock < newQuantity) {
+                    logger.warn("Insufficient stock for combined quantity: requested {}, available {}", 
+                               newQuantity, availableStock);
                     return false;
                 }
                 result = cartDAO.updateQuantity(existingItem.getCartItemId(), userId, newQuantity);
@@ -286,5 +267,27 @@ public class CartServiceImpl implements CartService {
             }
         }
         return null;
+    }
+
+    /**
+     * Get available stock for a specific product size
+     * Returns the stock quantity for the requested size, or 0 if size not found
+     */
+    private int getStockForSize(Product product, String size) {
+        if (product == null || product.getSizes() == null) {
+            return 0;
+        }
+        
+        String normalizedSize = size != null ? size.trim() : "M";
+        
+        for (com.fashionstore.model.ProductSize productSize : product.getSizes()) {
+            if (productSize.getSizeLabel() != null && 
+                productSize.getSizeLabel().trim().equals(normalizedSize)) {
+                return productSize.getStockQuantity();
+            }
+        }
+        
+        // If specific size not found, return overall product stock as fallback
+        return product.getStockQuantity();
     }
 }

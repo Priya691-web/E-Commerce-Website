@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { AlertTriangle, Package, Save } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
 import OptimizedImage from '../../components/OptimizedImage.jsx';
-import { InventoryApi, ProductsApi } from '../../api/client.js';
+import { InventoryApi, ProductsApi } from '../../core/api/endpoints.js';
 import { useToast } from '../../context/ToastContext.jsx';
 
 export default function Inventory() {

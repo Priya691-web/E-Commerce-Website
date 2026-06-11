@@ -797,7 +797,21 @@ END//
 DELIMITER ;
 
 -- ============================================================
--- 14. SEED DATA
+-- 14. SETTINGS TABLE
+-- ============================================================
+
+CREATE TABLE settings (
+    setting_id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT,
+    setting_type ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
+    description VARCHAR(255),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_setting_key (setting_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Application settings and configuration';
+
+-- ============================================================
+-- 15. SEED DATA
 -- ============================================================
 
 -- Admin Account (Password: admin123)

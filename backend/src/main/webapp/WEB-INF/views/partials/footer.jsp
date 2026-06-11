@@ -1,5 +1,43 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 
+<!-- MINI CART OVERLAY AND DRAWER -->
+<div id="mini-cart-overlay" class="mini-cart-overlay"></div>
+<div id="mini-cart-drawer" class="mini-cart-drawer">
+    <div class="mini-cart-header">
+        <h2>Your Cart</h2>
+        <button class="mini-cart-close" id="mini-cart-close" aria-label="Close cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+    
+    <div id="mini-cart-empty" class="mini-cart-empty mini-cart-empty--hidden">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <p>Your cart is empty</p>
+        <a href="<%= request.getContextPath() %>/products" class="fs-btn fs-btn--primary">Continue Shopping</a>
+    </div>
+    
+    <div id="mini-cart-content" class="mini-cart-content">
+        <div id="mini-cart-items" class="mini-cart-items">
+            <!-- Cart items will be dynamically loaded here -->
+        </div>
+        
+        <div class="mini-cart-footer">
+            <div class="mini-cart-total">
+                <span>Subtotal</span>
+                <span id="mini-cart-total">₹0.00</span>
+            </div>
+            <a href="<%= request.getContextPath() %>/cart" class="fs-btn fs-btn--primary fs-btn--full-width">View Cart</a>
+        </div>
+    </div>
+</div>
+
 <footer class="footer">
   <div class="footer-container">
     <div class="footer-grid">

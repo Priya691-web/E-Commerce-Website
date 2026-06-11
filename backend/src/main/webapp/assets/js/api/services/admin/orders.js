@@ -47,11 +47,11 @@ const AdminOrdersAPI = {
     },
 
     /**
-     * Get order statistics
+     * Get recent orders
      */
-    async getOrderStats() {
+    async getRecentOrders(limit = 10) {
         try {
-            const response = await api.get('/api/admin/orders/stats');
+            const response = await api.get('/api/admin/orders/recent', { params: { limit } });
             return response.data;
         } catch (error) {
             throw handleApiError(error);

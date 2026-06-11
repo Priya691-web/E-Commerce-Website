@@ -197,7 +197,9 @@ Security:
     <div class="fs-checkout-layout">
             
             <div class="fs-checkout-main">
+                <div id="form-error" class="form-error form-error--hidden"></div>
                 <form action="<%= request.getContextPath() %>/checkout" method="post" id="checkoutForm">
+                    <input type="hidden" name="csrfToken" value="<%= request.getAttribute("csrfToken") != null ? request.getAttribute("csrfToken") : "" %>
                     <div class="fs-checkout-step fs-checkout-step--active" id="step1">
                         <h2 class="editorial-heading">Shipping Information</h2>
                         <p class="text-secondary">Where should we deliver your heritage collection?</p>
@@ -307,28 +309,6 @@ Security:
                         <button type="button" class="fs-btn fs-btn--primary" id="continueToPaymentBtn">
                             Continue to Payment
                         </button>
-                        <script>
-                            // Defensive checkout button binding
-                            (function() {
-                                try {
-                                    const continueBtn = document.getElementById('continueToPaymentBtn');
-                                    if (continueBtn) {
-                                        continueBtn.addEventListener('click', function() {
-                                            if (typeof Checkout !== 'undefined' && Checkout.validateAndProceedToPayment) {
-                                                Checkout.validateAndProceedToPayment();
-                                            } else {
-                                                safeError('Checkout: Checkout object not available');
-                                                alert('Payment system is not ready. Please refresh the page and try again.');
-                                            }
-                                        });
-                                    } else {
-                                        safeError('Checkout: Continue to Payment button not found');
-                                    }
-                                } catch (e) {
-                                    safeError('Checkout: Button binding failed', e);
-                                }
-                            })();
-                        </script>
                     </div>
 
                     <div class="fs-checkout-step" id="step2">
@@ -352,34 +332,9 @@ Security:
                         </div>
                         
                         <div id="stripe-payment-element-container" class="stripe-payment-element-container--hidden">
-                            <div id="stripe-card-element"></div>
-                            <div id="stripe-payment-errors" class="text-sm text-danger"></div>
+                            <div id="stripe-payment-errors" class="stripe-payment-errors"></div>
+                            <div id="stripe-card-element" class="stripe-card-element"></div>
                         </div>
-                        
-                        <div class="fs-checkout-actions">
-                            <button type="button" class="fs-btn fs-btn--outline" onclick="Checkout.goToCheckoutStep(1)">
-                                Back to Shipping
-                            </button>
-                            <button type="button" class="fs-btn fs-btn--primary" onclick="Checkout.reviewOrder()">
-                                Review Selection
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="fs-checkout-step" id="step3">
-                        <h2 class="editorial-heading">Final Review</h2>
-                        <div class="fs-order-review">
-                            <p class="text-secondary">Verify your curated selection and shipping details before we begin processing your order.</p>
-                        </div>
-                        <div class="fs-checkout-actions">
-                            <button type="button" class="fs-btn fs-btn--outline" onclick="Checkout.goToCheckoutStep(2)">
-                                Modify Payment
-                            </button>
-                            <button type="submit" class="fs-btn fs-btn--primary" name="placeOrder" value="true">
-                                Confirm Purchase — ₹<%= String.format("%.2f", cartTotal) %>
-                            </button>
-                        </div>
-                    </div>
                 </form>
             </div>
 

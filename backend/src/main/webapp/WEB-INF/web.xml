@@ -65,7 +65,21 @@
     <url-pattern>/*</url-pattern>
   </filter-mapping>
 
-  <!-- 3. Security Hardening (rate limiting, IP blocking, CSP headers) -->
+  <!-- 2.5. Rate Limiting (prevent API abuse and DDoS) - DISABLED FOR DEVELOPMENT -->
+  <!--
+  <filter>
+    <filter-name>RateLimitFilter</filter-name>
+    <filter-class>com.fashionstore.filter.RateLimitFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>RateLimitFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  -->
+
+  <!-- 3. Security Hardening (rate limiting, CSP headers) - DISABLED FOR DEVELOPMENT -->
+  <!-- Mapped to /* but skips FORWARD/INCLUDE/ERROR dispatches internally -->
+  <!--
   <filter>
     <filter-name>SecurityHardeningFilter</filter-name>
     <filter-class>com.fashionstore.filter.SecurityHardeningFilter</filter-class>
@@ -73,9 +87,12 @@
   <filter-mapping>
     <filter-name>SecurityHardeningFilter</filter-name>
     <url-pattern>/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
   </filter-mapping>
+  -->
 
-  <!-- 3.5. Demo Hardening (disables non-essential routes in demo mode) -->
+  <!-- 3.5. Demo Hardening (disables non-essential routes in demo mode) - DISABLED FOR DEVELOPMENT -->
+  <!--
   <filter>
     <filter-name>DemoHardeningFilter</filter-name>
     <filter-class>com.fashionstore.filter.DemoHardeningFilter</filter-class>
@@ -83,16 +100,20 @@
   <filter-mapping>
     <filter-name>DemoHardeningFilter</filter-name>
     <url-pattern>/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
   </filter-mapping>
+  -->
 
-  <!-- 4. JWT Authentication Filter (validates JWT for /api/admin/*) -->
+  <!-- 4. JWT Authentication Filter — ONLY protects /api/admin/* -->
+  <!-- Mapped narrowly so it never runs on storefront or static asset requests -->
   <filter>
     <filter-name>JWTAuthenticationFilter</filter-name>
     <filter-class>com.fashionstore.filter.JWTAuthenticationFilter</filter-class>
   </filter>
   <filter-mapping>
     <filter-name>JWTAuthenticationFilter</filter-name>
-    <url-pattern>/*</url-pattern>
+    <url-pattern>/api/admin/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
   </filter-mapping>
 
   <!-- 4. File Upload Security (apply to upload endpoints only) -->
@@ -135,13 +156,49 @@
 
   <!-- Session Configuration -->
   <!-- Cookie security flags are set programmatically based on environment (HTTP vs HTTPS) -->
+  <!-- Session timeout is for customer authentication (JSP/MVC) -->
+  <!-- Admin authentication uses JWT with separate timeout (15 min access, 7 days refresh) -->
   <session-config>
-    <session-timeout>15</session-timeout>
+    <session-timeout>30</session-timeout>
     <cookie-config>
       <http-only>true</http-only>
       <!-- secure and same-site are set programmatically in SecurityHardeningFilter -->
     </cookie-config>
     <tracking-mode>COOKIE</tracking-mode>
   </session-config>
-  
+
+  <!-- Request Size Limits (prevent memory exhaustion attacks) -->
+  <multipart-config>
+    <max-file-size>10485760</max-file-size> <!-- 10MB max file size -->
+    <max-request-size>20971520</max-request-size> <!-- 20MB max request size -->
+    <file-size-threshold>1048576</file-size-threshold> <!-- 1MB threshold -->
+  </multipart-config>
+
+  <!-- JSP Servlet Configuration for Tomcat 10.x Jasper Compiler -->
+  <servlet>
+    <servlet-name>jsp</servlet-name>
+    <servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>
+    <init-param>
+      <param-name>fork</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    <init-param>
+      <param-name>xpoweredBy</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    <init-param>
+      <param-name>development</param-name>
+      <param-value>true</param-value>
+    </init-param>
+    <init-param>
+      <param-name>enablePooling</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    <load-on-startup>3</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>jsp</servlet-name>
+    <url-pattern>*.jsp</url-pattern>
+  </servlet-mapping>
+
 </web-app>

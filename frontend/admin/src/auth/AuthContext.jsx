@@ -1,162 +1,183 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { AuthApi } from '../api/client.js';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import adminApiClient from '../core/api/client.js';
 
 const AuthContext = createContext(null);
 
+/**
+ * AuthContext - Centralized Authentication State Management
+ * 
+ * AUTHENTICATION ARCHITECTURE:
+ * ============================
+ * - JWT-based authentication for admin users
+ * - Tokens stored in HTTP-only cookies (set by backend)
+ * - Session check on mount to verify authentication status
+ * - Automatic logout on token expiration
+ * - Event-based logout for API failures
+ * 
+ * SECURITY FEATURES:
+ * ===================
+ * - No token storage in localStorage (prevents XSS)
+ * - HTTP-only cookies (set by backend)
+ * - Role validation (admin only)
+ * - Automatic cleanup on logout
+ * - Protected route integration
+ * 
+ * RACE CONDITION FIXES:
+ * ======================
+ * - Single session check per mount
+ * - Debounced logout events
+ * - Loading state prevents duplicate checks
+ * - Cleanup on unmount
+ */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const mountedRef = useRef(true);
-  const MAX_RETRIES = 3;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+  const sessionCheckRef = useRef(false);
+  const logoutTimeoutRef = useRef(null);
 
-  // On mount, check whether an admin session already exists (page refresh case).
+  /**
+   * Session check - verifies authentication status on mount
+   * Uses single execution flag to prevent race conditions
+   * Checks if user is logged in via JWT token
+   */
   useEffect(() => {
-    mountedRef.current = true;
-    
-    const checkAuth = async () => {
+    // Prevent duplicate session checks
+    if (sessionCheckRef.current) {
+      return;
+    }
+    sessionCheckRef.current = true;
+
+    const checkSession = async () => {
       try {
-        setError(null);
-        const response = await AuthApi.me();
+        console.log('[AuthContext] Checking session...');
+        // Check if user is authenticated via JWT token
+        const response = await adminApiClient.get('me');
         
-        if (mountedRef.current) {
-          // Validate response structure
-          if (!response || !response.data) {
-            console.warn('Invalid response from AuthApi.me()');
-            setUser(null);
-            setLoading(false);
-            return;
-          }
-          
-          const { data } = response;
-          
-          // Check for success flag and user data
-          if (data?.success && data.data) {
-            setUser(data.data);
-            setRetryCount(0); // Reset retry count on success
-          } else if (data?.data) {
-            // Some backends may not include success flag
-            setUser(data.data);
-            setRetryCount(0);
-          } else {
-            setUser(null);
-          }
+        if (response.data?.success && response.data?.data) {
+          setUser(response.data.data);
+          setIsAuthenticated(true);
+          console.log('[AuthContext] Session check successful');
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          console.log('[AuthContext] Session check failed - no data');
         }
       } catch (err) {
-        // 401 -> not authenticated (expected on first load)
-        // Other errors should be logged but not break the app
-        if (mountedRef.current) {
-          if (err.response?.status !== 401) {
-            console.error('Error checking auth status:', err.message);
-            setError(err.message);
-            
-            // Retry with exponential backoff for non-401 errors
-            if (retryCount < MAX_RETRIES) {
-              const delay = Math.pow(2, retryCount) * 1000;
-              setTimeout(() => {
-                if (mountedRef.current) {
-                  setRetryCount(c => c + 1);
-                }
-              }, delay);
-              return; // Don't set loading false yet, will retry
-            }
-          }
-          setUser(null);
-        }
-      } finally {
-        if (mountedRef.current) {
-          setLoading(false);
-        }
-      }
-    };
-    
-    checkAuth();
-    
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [retryCount]);
-
-  // Listen for 401 errors from API interceptor
-  useEffect(() => {
-    const handleLogout = () => {
-      if (mountedRef.current) {
+        console.error('[AuthContext] Session check failed:', err);
+        // Token might be expired or invalid
         setUser(null);
-        setError(null);
-        setRetryCount(0);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
     };
-    
-    window.addEventListener('auth:logout', handleLogout);
-    return () => window.removeEventListener('auth:logout', handleLogout);
+
+    checkSession();
+
+    // Cleanup function
+    return () => {
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+      }
+    };
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  /**
+   * Handle logout event from API client
+   * Debounced to prevent multiple rapid logouts
+   */
+  useEffect(() => {
+    const handleLogoutEvent = () => {
+      // Clear any existing logout timeout
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+      }
+
+      // Debounce logout to prevent rapid successive calls
+      logoutTimeoutRef.current = setTimeout(() => {
+        setUser(null);
+        setIsAuthenticated(false);
+        navigate('/admin/login', { replace: true });
+      }, 100);
+    };
+
+    window.addEventListener('auth:logout', handleLogoutEvent);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleLogoutEvent);
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+      }
+    };
+  }, [navigate]);
+
+  /**
+   * Login function
+   * Validates credentials and sets user state
+   * Uses JWT-based authentication via /api/admin/login endpoint
+   */
+  const login = async (email, password) => {
     try {
-      // Validate inputs
-      if (!email || !password) {
-        return { ok: false, message: 'Email and password are required' };
+      console.log('[AuthContext] Attempting login...');
+      const response = await adminApiClient.post('login', { email, password });
+      
+      console.log('[AuthContext] Login response:', response);
+      
+      if (response.data?.success) {
+        // Login successful - set user state
+        if (response.data?.data) {
+          setUser(response.data.data);
+          setIsAuthenticated(true);
+          console.log('[AuthContext] Login successful, user set:', response.data.data);
+          return { ok: true };
+        }
       }
       
-      setError(null);
-      const response = await AuthApi.login(email, password);
-      
-      // Validate response
-      if (!response || !response.data) {
-        return { ok: false, message: 'Invalid response from server' };
-      }
-      
-      const { data } = response;
-      
-      // Check for success and user data
-      if (data?.success && data.data) {
-        setUser(data.data);
-        setRetryCount(0);
-        return { ok: true };
-      } else if (data?.data) {
-        // Some backends may not include success flag
-        setUser(data.data);
-        setRetryCount(0);
-        return { ok: true };
-      }
-      
-      // Login failed
-      const message = data?.message || 'Login failed';
-      setError(message);
-      return { ok: false, message };
+      return { ok: false, message: response.data?.message || 'Login failed' };
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Login failed';
-      setError(message);
-      console.error('Login error:', err);
-      return { ok: false, message };
+      console.error('[AuthContext] Login failed:', err);
+      return { ok: false, message: err.response?.data?.message || err.message || 'Login failed' };
     }
-  }, []);
+  };
 
-  const logout = useCallback(async () => {
+  /**
+   * Logout function
+   * Clears JWT tokens from backend and local state
+   */
+  const logout = async () => {
     try {
-      // Attempt to notify backend
-      await AuthApi.logout();
+      await adminApiClient.post('logout');
     } catch (err) {
-      // Log but don't fail - we still want to clear local state
-      console.error('Logout API error:', err);
+      console.error('Logout API call failed:', err);
     } finally {
-      // Always clear local state
+      // Clear local state regardless of API call result
       setUser(null);
-      setError(null);
-      setRetryCount(0);
+      setIsAuthenticated(false);
+      navigate('/admin/login', { replace: true });
     }
-  }, []);
+  };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    loading,
+    isAuthenticated,
+    login,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * useAuth hook - access authentication state
+ */
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
 }

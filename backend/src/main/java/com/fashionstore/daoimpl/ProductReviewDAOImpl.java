@@ -15,13 +15,12 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
 
     @Override
     public boolean createReview(ProductReview review) {
-        String sql = "INSERT INTO product_reviews (product_id, user_id, rating, title, comment) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, review.getProductId());
             ps.setInt(2, review.getUserId());
             ps.setInt(3, review.getRating());
-            ps.setString(4, review.getTitle());
-            ps.setString(5, review.getComment());
+            ps.setString(4, review.getComment());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             logger.error("Error creating review: {}", e.getMessage(), e);
@@ -32,7 +31,7 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
     @Override
     public List<ProductReview> getReviewsByProductId(int productId) {
         List<ProductReview> reviews = new ArrayList<>();
-        String sql = "SELECT review_id, product_id, user_id, rating, title, comment, created_at FROM product_reviews WHERE product_id = ? ORDER BY created_at DESC";
+        String sql = "SELECT review_id, product_id, user_id, rating, comment, created_at FROM reviews WHERE product_id = ? ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, productId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -46,7 +45,7 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
 
     @Override
     public ProductReview getReviewById(int reviewId) {
-        String sql = "SELECT review_id, product_id, user_id, rating, title, comment, created_at FROM product_reviews WHERE review_id = ?";
+        String sql = "SELECT review_id, product_id, user_id, rating, comment, created_at FROM reviews WHERE review_id = ?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, reviewId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -60,12 +59,11 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
 
     @Override
     public boolean updateReview(ProductReview review) {
-        String sql = "UPDATE product_reviews SET rating = ?, title = ?, comment = ? WHERE review_id = ?";
+        String sql = "UPDATE reviews SET rating = ?, comment = ? WHERE review_id = ?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, review.getRating());
-            ps.setString(2, review.getTitle());
-            ps.setString(3, review.getComment());
-            ps.setInt(4, review.getReviewId());
+            ps.setString(2, review.getComment());
+            ps.setInt(3, review.getReviewId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             logger.error("Error updating review: {}", e.getMessage(), e);
@@ -75,7 +73,7 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
 
     @Override
     public boolean deleteReview(int reviewId) {
-        String sql = "DELETE FROM product_reviews WHERE review_id = ?";
+        String sql = "DELETE FROM reviews WHERE review_id = ?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, reviewId);
             return ps.executeUpdate() > 0;
@@ -88,7 +86,7 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
     @Override
     public List<ProductReview> getReviewsByUserId(int userId) {
         List<ProductReview> reviews = new ArrayList<>();
-        String sql = "SELECT review_id, product_id, user_id, rating, title, comment, created_at FROM product_reviews WHERE user_id = ? ORDER BY created_at DESC";
+        String sql = "SELECT review_id, product_id, user_id, rating, comment, created_at FROM reviews WHERE user_id = ? ORDER BY created_at DESC";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -102,7 +100,7 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
 
     @Override
     public double getAverageRating(int productId) {
-        String sql = "SELECT AVG(rating) FROM product_reviews WHERE product_id = ?";
+        String sql = "SELECT AVG(rating) FROM reviews WHERE product_id = ?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, productId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -120,7 +118,6 @@ public class ProductReviewDAOImpl implements ProductReviewDAO {
         review.setProductId(rs.getInt("product_id"));
         review.setUserId(rs.getInt("user_id"));
         review.setRating(rs.getInt("rating"));
-        review.setTitle(rs.getString("title"));
         review.setComment(rs.getString("comment"));
         review.setCreatedAt(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toLocalDateTime() : null);
         return review;

@@ -21,7 +21,7 @@ import java.util.Map;
  * Health check endpoint for monitoring and load balancer health checks
  * Provides application health status with detailed diagnostics
  */
-@WebServlet("/health")
+@WebServlet("/health-system")
 public class HealthCheckServlet extends HttpServlet {
 
     private static final Logger logger = LoggerFactory.getLogger(HealthCheckServlet.class);

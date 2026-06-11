@@ -69,11 +69,18 @@ public class AdminStatsApiController extends AdminApiBaseController {
                 int totalOrders = orderService.getTotalOrderCount();
                 int lowStockCount = productService.getLowStockProductCount(10);
                 List<Order> recentOrders = orderService.getRecentOrders(10);
+                List<User> recentUsers = userService.getAllUsers().stream()
+                    .sorted((u1, u2) -> u2.getCreatedAt().compareTo(u1.getCreatedAt()))
+                    .limit(10)
+                    .toList();
                 writeApiResponse(response, 200, ApiResponse.success("Dashboard data retrieved successfully", Map.of(
-                        "stats", Map.of("totalRevenue", totalRevenue, "totalUsers", totalUsers, "totalOrders", totalOrders, "lowStockCount", lowStockCount),
-                        "recentOrders", recentOrders.stream().map(this::publicOrder).toList()
-                )));
-                return;
+                    "revenue", totalRevenue,
+                    "orders", totalOrders,
+                    "users", totalUsers,
+                    "lowStock", lowStockCount,
+                    "recentOrders", recentOrders.stream().map(this::publicOrder).toList(),
+                    "recentUsers", recentUsers.stream().map(this::publicUser).toList()
+                )));          
             }
             
             writeApiResponse(response, 404, ApiResponse.error("Not found"));
@@ -97,6 +104,16 @@ public class AdminStatsApiController extends AdminApiBaseController {
         m.put("state", o.getState());
         m.put("zip", o.getZip());
         m.put("phone", o.getPhone());
+        return m;
+    }
+
+    public Map<String, Object> publicUser(User u) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", u.getUserId());
+        m.put("name", u.getFullName());
+        m.put("email", u.getEmail());
+        m.put("role", u.getRole());
+        m.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().getTime() : null);
         return m;
     }
 }

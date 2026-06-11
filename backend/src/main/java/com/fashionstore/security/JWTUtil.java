@@ -27,17 +27,30 @@ public class JWTUtil {
     
     private static String getJwtSecretKey() {
         String secret = System.getenv("JWT_SECRET_KEY");
+        String env = System.getProperty("spring.profiles.active", "development");
+        
         if (secret == null || secret.isEmpty()) {
-            String env = System.getProperty("spring.profiles.active", "development");
             if ("production".equals(env) || "prod".equals(env)) {
-                throw new IllegalStateException("JWT_SECRET_KEY environment variable is required in production");
+                throw new IllegalStateException(
+                    "CRITICAL: JWT_SECRET_KEY environment variable MUST be set in production. " +
+                    "This is a security requirement. Application startup aborted."
+                );
             }
-            logger.warn("JWT_SECRET_KEY not set - using development mode only. Set JWT_SECRET_KEY environment variable for production.");
+            logger.warn("JWT_SECRET_KEY not set - using development mode only. " +
+                        "Set JWT_SECRET_KEY environment variable for production.");
             return "FashionStoreJWTSecretKey2026ForDevelopmentUseOnly";
         }
+        
         if (secret.length() < 32) {
+            if ("production".equals(env) || "prod".equals(env)) {
+                throw new IllegalStateException(
+                    "CRITICAL: JWT_SECRET_KEY is too short (" + secret.length() + " chars). " +
+                    "Minimum 32 characters required for production security. Application startup aborted."
+                );
+            }
             logger.warn("JWT_SECRET_KEY is too short ({} chars). Minimum 32 characters recommended.", secret.length());
         }
+        
         return secret;
     }
     
@@ -64,9 +77,11 @@ public class JWTUtil {
     /**
      * Generate JWT refresh token
      */
-    public static String generateRefreshToken(String userId) {
+    public static String generateRefreshToken(String userId, String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
+        claims.put("email", email);
+        claims.put("role", role);
         claims.put("type", "refresh");
         
         return createToken(claims, REFRESH_TOKEN_EXPIRATION);

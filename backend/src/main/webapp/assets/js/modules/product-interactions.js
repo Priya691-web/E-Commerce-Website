@@ -8,6 +8,8 @@
  * - All product data from backend (ProductController)
  * - All AJAX calls to backend endpoints
  * - No client-side product calculations or filtering
+ * 
+ * Wishlist functionality now uses WishlistManager for centralized state management
  */
 
 const FashionStoreProductInteractions = (function() {
@@ -20,39 +22,28 @@ const FashionStoreProductInteractions = (function() {
     }
     
     function setupWishlistButtons() {
-        // Initialize wishlist buttons on page load
-        document.querySelectorAll('.fs-product-card__wishlist, .wishlist-btn').forEach(btn => {
-            const productId = btn.dataset.productId;
-            if (productId) {
-                checkWishlistStatus(productId, btn);
-            }
-        });
-    }
-    
-    function checkWishlistStatus(productId, button) {
-        fetch(`${contextPath}/wishlist/api/check?productId=${productId}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.inWishlist) {
-                button.classList.add('active');
-                button.setAttribute('aria-pressed', 'true');
-            }
-        })
-        .catch(err => {
-            console.error('Error checking wishlist status:', err);
-        });
+        // Initialize wishlist buttons on page load using WishlistManager
+        if (typeof WishlistManager !== 'undefined' && WishlistManager.updateWishlistButtons) {
+            document.querySelectorAll('.fs-product-card__wishlist, .wishlist-btn, [data-product-id]').forEach(btn => {
+                const productId = btn.dataset.productId;
+                if (productId) {
+                    WishlistManager.checkWishlistStatus(parseInt(productId), btn);
+                }
+            });
+        }
     }
     
     function toggleWishlist(productId, button) {
         if (!productId) return;
         
+        // Use WishlistManager for centralized wishlist management
+        if (typeof WishlistManager !== 'undefined' && WishlistManager.toggleWishlist) {
+            return WishlistManager.toggleWishlist(productId, button);
+        }
+        
+        // Fallback to centralized API client if WishlistManager is not available
         const isAdding = !button || !button.classList.contains('active');
         
-        // Show loading state
         if (button) {
             button.classList.add('loading');
             if (typeof StateManager !== 'undefined') {
@@ -60,50 +51,90 @@ const FashionStoreProductInteractions = (function() {
             }
         }
         
-        fetch(`${contextPath}/wishlist/api/toggle`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ productId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
+        const api = window.FashionStoreAPI || window.FashionStoreAPI?.api;
+        if (api) {
+            api.post('/api/wishlist?action=toggle', { productId })
+            .then(response => {
+                if (response.success || response.status === 'success') {
+                    const responseData = response.data || {};
+                    const isFavorite = responseData.isFavorite !== undefined ? responseData.isFavorite : isAdding;
+                    
+                    if (button) {
+                        if (isFavorite) {
+                            button.classList.add('active', 'product-card__wishlist--active');
+                            button.setAttribute('aria-pressed', 'true');
+                        } else {
+                            button.classList.remove('active', 'product-card__wishlist--active');
+                            button.setAttribute('aria-pressed', 'false');
+                        }
+                    }
+                    
+                    if (typeof FashionStore !== 'undefined' && FashionStore.showToast) {
+                        FashionStore.showToast(isFavorite ? 'Added to wishlist' : 'Removed from wishlist', 'success');
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Error toggling wishlist:', err);
+                if (typeof FashionStore !== 'undefined' && FashionStore.showToast) {
+                    FashionStore.showToast('Failed to update wishlist', 'error');
+                }
+            })
+            .finally(() => {
                 if (button) {
-                    button.classList.toggle('active');
-                    button.setAttribute('aria-pressed', button.classList.contains('active') ? 'true' : 'false');
+                    button.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('wishlist-btn-' + productId, false);
+                    }
                 }
-                
-                FashionStore.showToast(
-                    data.inWishlist ? 'Added to wishlist' : 'Removed from wishlist',
-                    'success'
-                );
-                
-                // Update navbar wishlist count if available
-                updateWishlistCount(data.wishlistCount);
-            }
-        })
-        .catch(err => {
-            console.error('Error toggling wishlist:', err);
-            FashionStore.showToast('Failed to update wishlist', 'error');
-        })
-        .finally(() => {
-            if (button) {
-                button.classList.remove('loading');
-                if (typeof StateManager !== 'undefined') {
-                    StateManager.setButtonLoading('wishlist-btn-' + productId, false);
+            });
+        } else {
+            // Fallback to direct fetch
+            fetch(`${contextPath}/api/wishlist?action=toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.csrfToken || ''
+                },
+                credentials: 'include',
+                body: JSON.stringify({ productId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success || data.status === 'success') {
+                    const responseData = data.data || {};
+                    const isFavorite = responseData.isFavorite !== undefined ? responseData.isFavorite : isAdding;
+                    
+                    if (button) {
+                        if (isFavorite) {
+                            button.classList.add('active', 'product-card__wishlist--active');
+                            button.setAttribute('aria-pressed', 'true');
+                        } else {
+                            button.classList.remove('active', 'product-card__wishlist--active');
+                            button.setAttribute('aria-pressed', 'false');
+                        }
+                    }
+                    
+                    if (typeof FashionStore !== 'undefined' && FashionStore.showToast) {
+                        FashionStore.showToast(isFavorite ? 'Added to wishlist' : 'Removed from wishlist', 'success');
+                    }
                 }
-            }
-        });
-    }
-    
-    function updateWishlistCount(count) {
-        const badge = document.getElementById('nav-wishlist-badge');
-        if (badge) {
-            badge.textContent = count;
-            badge.style.display = count > 0 ? 'block' : 'none';
+            })
+            .catch(err => {
+                console.error('Error toggling wishlist:', err);
+                if (typeof FashionStore !== 'undefined' && FashionStore.showToast) {
+                    FashionStore.showToast('Failed to update wishlist', 'error');
+                }
+            })
+            .finally(() => {
+                if (button) {
+                    button.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('wishlist-btn-' + productId, false);
+                    }
+                }
+            });
         }
     }
     
@@ -130,41 +161,74 @@ const FashionStoreProductInteractions = (function() {
     function submitReview(productId, rating, comment, form) {
         FashionStore.showLoading(form, 'Submitting review...');
         
-        fetch(`${contextPath}/reviews/api/submit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-                productId,
+        const api = window.FashionStoreAPI || window.FashionStoreAPI?.api;
+        if (api) {
+            api.post('/review', {
+                productId: productId,
                 rating: parseInt(rating),
-                comment
+                comment: comment
             })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                FashionStore.showToast('Review submitted successfully', 'success');
-                form.reset();
-                
-                // Add new review to the reviews list
-                const reviewsList = document.getElementById('reviews-list');
-                if (reviewsList && data.review) {
-                    const reviewHtml = createReviewHTML(data.review);
-                    reviewsList.insertAdjacentHTML('afterbegin', reviewHtml);
+            .then(response => {
+                if (response.success) {
+                    FashionStore.showToast('Review submitted successfully', 'success');
+                    form.reset();
+                    
+                    // Add new review to the reviews list
+                    const reviewsList = document.getElementById('reviews-list');
+                    if (reviewsList && response.data?.review) {
+                        const reviewHtml = createReviewHTML(response.data.review);
+                        reviewsList.insertAdjacentHTML('afterbegin', reviewHtml);
+                    }
+                } else {
+                    FashionStore.showToast(response.message || 'Failed to submit review', 'error');
                 }
-            } else {
-                FashionStore.showToast(data.message || 'Failed to submit review', 'error');
-            }
-        })
-        .catch(err => {
-            console.error('Error submitting review:', err);
-            FashionStore.showToast('Failed to submit review', 'error');
-        })
-        .finally(() => {
-            FashionStore.hideLoading(form);
-        });
+            })
+            .catch(err => {
+                console.error('Error submitting review:', err);
+                FashionStore.showToast('Failed to submit review', 'error');
+            })
+            .finally(() => {
+                FashionStore.hideLoading(form);
+            });
+        } else {
+            // Fallback to direct fetch
+            fetch(`${contextPath}/review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.csrfToken || ''
+                },
+                body: new URLSearchParams({
+                    productId,
+                    rating: parseInt(rating),
+                    comment
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    FashionStore.showToast('Review submitted successfully', 'success');
+                    form.reset();
+                    
+                    // Add new review to the reviews list
+                    const reviewsList = document.getElementById('reviews-list');
+                    if (reviewsList && data.review) {
+                        const reviewHtml = createReviewHTML(data.review);
+                        reviewsList.insertAdjacentHTML('afterbegin', reviewHtml);
+                    }
+                } else {
+                    FashionStore.showToast(data.message || 'Failed to submit review', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error submitting review:', err);
+                FashionStore.showToast('Failed to submit review', 'error');
+            })
+            .finally(() => {
+                FashionStore.hideLoading(form);
+            });
+        }
     }
     
     function createReviewHTML(review) {
@@ -188,85 +252,21 @@ const FashionStoreProductInteractions = (function() {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const productId = btn.dataset.productId;
-                if (productId) {
-                    openQuickView(productId);
-                }
+                openQuickView(productId);
             });
         });
+
+        // Setup quickview close button
+        const quickviewCloseBtn = document.getElementById('quickview-close-btn');
+        if (quickviewCloseBtn) {
+            quickviewCloseBtn.addEventListener('click', closeQuickView);
+        }
     }
     
     function openQuickView(productId) {
-        // Show loading overlay
-        if (typeof StateManager !== 'undefined') {
-            StateManager.showOverlay(true, 'Loading product details...');
-        } else {
-            FashionStore.showLoading(document.body, 'Loading product details...');
-        }
-        
-        fetch(`${contextPath}/product/api/quick-view?productId=${productId}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (typeof StateManager !== 'undefined') {
-                StateManager.showOverlay(false);
-            } else {
-                FashionStore.hideLoading(document.body);
-            }
-            
-            if (data.success) {
-                const modal = createQuickViewModal(data.product);
-                document.body.appendChild(modal);
-                
-                // Show modal
-                requestAnimationFrame(() => {
-                    modal.classList.add('active');
-                });
-                
-                // Close button
-                modal.querySelector('.quick-view-modal__close').addEventListener('click', () => {
-                    closeQuickView();
-                });
-                
-                // Close on backdrop click
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        closeQuickView();
-                    }
-                });
-                
-                // Close on escape
-                document.addEventListener('keydown', handleEscape);
-            } else {
-                FashionStore.showToast('Failed to load product details', 'error');
-                // Show error state
-                if (typeof StateManager !== 'undefined') {
-                    StateManager.showError('quick-view-error', {
-                        errorMessage: 'Unable to load product details',
-                        onRetry: () => openQuickView(productId)
-                    });
-                }
-            }
-        })
-        .catch(err => {
-            if (typeof StateManager !== 'undefined') {
-                StateManager.showOverlay(false);
-            } else {
-                FashionStore.hideLoading(document.body);
-            }
-            console.error('Error loading quick view:', err);
-            FashionStore.showToast('Failed to load product details', 'error');
-            
-            // Show error state
-            if (typeof StateManager !== 'undefined') {
-                StateManager.showError('quick-view-error', {
-                    errorMessage: 'Unable to load product details',
-                    onRetry: () => openQuickView(productId)
-                });
-            }
-        });
+        // Quick view endpoint doesn't exist in backend - redirect to product page instead
+        window.location.href = `${contextPath}/product?id=${productId}`;
+        return;
     }
     
     function createQuickViewModal(product) {
@@ -315,6 +315,7 @@ const FashionStoreProductInteractions = (function() {
                 modal.remove();
             }, 300);
         }
+        // Remove escape key listener
         document.removeEventListener('keydown', handleEscape);
     }
     
@@ -331,8 +332,8 @@ const FashionStoreProductInteractions = (function() {
         return div.innerHTML;
     }
     
+    // Cleanup any open modals on page unload
     function cleanup() {
-        // Remove event listeners if needed
         closeQuickView();
     }
     
@@ -384,12 +385,19 @@ window.FashionStore.submitReview = FashionStoreProductInteractions.submitReview;
 window.FashionStore.openQuickView = FashionStoreProductInteractions.openQuickView;
 window.FashionStore.closeQuickView = FashionStoreProductInteractions.closeQuickView;
 
-// Initialize on DOM ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', FashionStoreProductInteractions.init);
-} else {
-    FashionStoreProductInteractions.init();
+// Register with FashionStoreApp for centralized initialization
+if (typeof window.FashionStoreApp !== 'undefined') {
+    window.FashionStoreApp.registerModule('productInteractions', FashionStoreProductInteractions.init, 15);
 }
+
+// Cleanup on page navigation to prevent memory leaks
+window.addEventListener('beforeunload', () => {
+    FashionStoreProductInteractions.cleanup();
+});
+
+window.addEventListener('pagehide', () => {
+    FashionStoreProductInteractions.cleanup();
+});
 
 // Export for ES6 modules
 if (typeof module !== 'undefined' && module.exports) {

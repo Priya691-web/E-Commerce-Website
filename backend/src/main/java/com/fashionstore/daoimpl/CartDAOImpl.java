@@ -24,7 +24,8 @@ public class CartDAOImpl implements CartDAO {
             return 0;
         }
 
-        String checkSql = "SELECT cart_item_id, quantity FROM cart_items WHERE user_id = ? AND product_id = ? AND size_label = ?";
+        // Use SELECT FOR UPDATE to prevent race conditions
+        String checkSql = "SELECT cart_item_id, quantity FROM cart_items WHERE user_id = ? AND product_id = ? AND size_label = ? FOR UPDATE";
         String updateSql = "UPDATE cart_items SET quantity = quantity + ? WHERE cart_item_id = ?";
         String insertSql = "INSERT INTO cart_items (user_id, product_id, size_label, quantity) VALUES (?, ?, ?, ?)";
 
@@ -50,7 +51,7 @@ public class CartDAOImpl implements CartDAO {
                             int existingId = rs.getInt("cart_item_id");
                             int currentQuantity = rs.getInt("quantity");
 
-                            // Prevent excessive quantities
+                            // Prevent excessive quantities (max 100 per item)
                             int newQuantity = Math.min(currentQuantity + item.getQuantity(), 100);
 
                             try (PreparedStatement updatePs = con.prepareStatement(updateSql)) {
@@ -58,7 +59,9 @@ public class CartDAOImpl implements CartDAO {
                                 updatePs.setInt(2, existingId);
                                 int result = updatePs.executeUpdate();
                                 con.commit();
-                                return result;
+                                logger.debug("Updated cart item {} for user {}, quantity: {} -> {}", 
+                                    existingId, item.getUserId(), currentQuantity, newQuantity);
+                                return result > 0 ? existingId : 0;
                             }
                         } else {
                             try (PreparedStatement insertPs = con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
@@ -73,17 +76,21 @@ public class CartDAOImpl implements CartDAO {
                                 if (result > 0) {
                                     try (ResultSet generatedKeys = insertPs.getGeneratedKeys()) {
                                         if (generatedKeys.next()) {
-                                            return generatedKeys.getInt(1);
+                                            int newId = generatedKeys.getInt(1);
+                                            logger.debug("Created new cart item {} for user {}, product {}, quantity: {}", 
+                                                newId, item.getUserId(), item.getProductId(), item.getQuantity());
+                                            return newId;
                                         }
                                     }
                                 }
-                                return result;
+                                return 0;
                             }
                         }
                     }
                 }
             } catch (Exception e) {
                 con.rollback();
+                logger.error("Transaction failed for cart operation, rolled back: {}", e.getMessage(), e);
                 throw e;
             } finally {
                 con.setAutoCommit(originalAutoCommit);
@@ -182,5 +189,18 @@ public class CartDAOImpl implements CartDAO {
             logger.error("Error clearing cart for user {}: {}", userId, e.getMessage(), e);
         }
         return false;
+    }
+
+    @Override
+    public boolean clearCartByUserIdInTransaction(Connection conn, int userId) throws Exception {
+        String sql = "DELETE FROM cart_items WHERE user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Error clearing cart for user {} in transaction: {}", userId, e.getMessage(), e);
+            throw e;
+        }
     }
 }

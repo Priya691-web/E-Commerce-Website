@@ -17,9 +17,9 @@ export default defineConfig(({ mode }) => {
   
   return {
     // Base path for production build - must match where admin is served
-    // In production: served through Nginx at /admin/
-    // In development: served from root /
-    base: isProduction ? '/admin/' : '/',
+    // Admin frontend is served at root / in its own Docker container
+    // Assets are resolved from /assets/
+    base: '/',
     
     plugins: [react()],
     
@@ -74,9 +74,9 @@ export default defineConfig(({ mode }) => {
             return undefined;
           },
           // Ensure proper asset naming for production with content-based hashing
-          entryFileNames: 'assets/[name]-[contenthash:8].js',
-          chunkFileNames: 'assets/[name]-[contenthash:8].js',
-          assetFileNames: 'assets/[name]-[contenthash:8][extname]',
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]',
         },
       },
       // Use default minification (esbuild)

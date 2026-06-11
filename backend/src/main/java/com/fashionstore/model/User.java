@@ -1,6 +1,7 @@
 package com.fashionstore.model;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 
 public class User implements Serializable {
 
@@ -14,6 +15,9 @@ public class User implements Serializable {
     private String gender;
     private String address;
     private String role; // "customer" or "admin"
+    private boolean isActive;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
 
     // Default Constructor
     public User() {
@@ -31,6 +35,7 @@ public class User implements Serializable {
         this.gender = gender;
         this.address = address;
         this.role = role;
+        this.isActive = true;
     }
 
     // ================= GETTERS & SETTERS =================
@@ -99,6 +104,30 @@ public class User implements Serializable {
         this.role = role;
     }
 
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     // ================= BUSINESS LOGIC =================
 
     public boolean isAdmin() {
@@ -116,6 +145,7 @@ public class User implements Serializable {
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
                 ", role='" + role + '\'' +
+                ", isActive=" + isActive +
                 '}';
     }
 }

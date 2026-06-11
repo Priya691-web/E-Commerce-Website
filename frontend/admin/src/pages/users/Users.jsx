@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Shield, Ban, RotateCcw, Trash2 } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
-import { UsersApi } from '../../api/client.js';
+import { UsersApi } from '../../core/api/endpoints.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useDataTableWithFilter } from '../../hooks/useDataTable.js';
 

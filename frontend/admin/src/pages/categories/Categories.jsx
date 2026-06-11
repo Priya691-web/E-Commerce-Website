@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Save, X, ImageIcon } from 'lucide-react';
-import { CategoriesApi } from '../../api/client.js';
+import { CategoriesApi } from '../../core/api/endpoints.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useDataTable } from '../../hooks/useDataTable.js';
+import DataTable from '../../components/DataTable.jsx';
 
 export default function Categories() {
   const { addToast } = useToast();
@@ -55,6 +56,34 @@ export default function Categories() {
     setForm({ name: '', description: '' });
   };
 
+  const columns = [
+    { key: 'name', header: 'Name' },
+    { key: 'description', header: 'Description', render: (r) => r.description || '—' },
+    {
+      key: 'actions',
+      header: '',
+      width: '100px',
+      render: (r) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleEdit(r)}
+            className="p-1.5 rounded hover:bg-ink-100 dark:hover:bg-ink-700 text-ink-500 dark:text-ink-300 transition-colors"
+            aria-label="Edit category"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={() => handleDelete(r.id)}
+            className="p-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-500 transition-colors"
+            aria-label="Delete category"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-8 section-lg">
       <div>
@@ -77,12 +106,14 @@ export default function Categories() {
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             className="input"
+            aria-label="Category name"
           />
           <input
             placeholder="Description"
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             className="input"
+            aria-label="Category description"
           />
         </div>
         <div className="flex items-center gap-3 mt-6">
@@ -105,33 +136,7 @@ export default function Categories() {
             ))}
           </div>
         ) : (
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr className="border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
-                <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Name</th>
-                <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-[var(--color-text-muted)]">Description</th>
-                <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider text-[var(--color-text-muted)] w-24"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--color-border-light)]">
-              {categories.length === 0 ? (
-                <tr><td colSpan={3} className="px-5 py-8 text-center text-[var(--color-text-muted)]">No categories</td></tr>
-              ) : (
-                categories.map((c) => (
-                  <tr key={c.id} className="hover:bg-[var(--color-bg-secondary)] transition">
-                    <td className="px-5 py-3 text-[var(--color-text-primary)] font-medium">{c.name}</td>
-                    <td className="px-5 py-3 text-[var(--color-text-secondary)]">{c.description || '—'}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleEdit(c)} className="p-1.5 rounded hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"><Pencil size={14} /></button>
-                        <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded hover:bg-[var(--color-error)]/10 text-[var(--color-error)] transition-colors"><Trash2 size={14} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <DataTable columns={columns} rows={categories} empty="No categories" getRowKey={(r) => r.id} />
         )}
       </div>
     </div>

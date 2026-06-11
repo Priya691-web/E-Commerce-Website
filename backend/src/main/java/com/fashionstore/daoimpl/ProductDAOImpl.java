@@ -174,7 +174,7 @@ public class ProductDAOImpl implements ProductDAO {
         }
 
         // Fetch all sizes in a single query using IN clause
-        String sql = "SELECT * FROM product_sizes WHERE product_id IN (" +
+        String sql = "SELECT product_size_id, product_id, size_label, stock_quantity, sku_code, is_available FROM product_sizes WHERE product_id IN (" +
                 String.join(",", Collections.nCopies(productIds.size(), "?")) + ") " +
                 "ORDER BY product_id, size_label";
 
@@ -319,7 +319,9 @@ public class ProductDAOImpl implements ProductDAO {
 
             // Architecture Upgrade: Filtering by sizes now requires a JOIN with product_sizes table
             StringBuilder sql = new StringBuilder(
-                    "SELECT DISTINCT p.*, c.category_name FROM products p " +
+                    "SELECT DISTINCT p.product_id, p.product_name, p.description, p.price, p.discount_percent, p.image_url, " +
+                    "p.is_new, p.is_sale, p.is_trending, p.brand, p.active, p.stock_quantity, p.category_id, " +
+                    "c.category_name FROM products p " +
                     "JOIN categories c ON c.category_id = p.category_id "
             );
             
@@ -374,7 +376,9 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public List<Product> searchProducts(String query) {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.category_name FROM products p " +
+        String sql = "SELECT p.product_id, p.product_name, p.description, p.price, p.discount_percent, p.image_url, " +
+                "p.is_new, p.is_sale, p.is_trending, p.brand, p.active, p.stock_quantity, p.category_id, " +
+                "c.category_name FROM products p " +
                 "JOIN categories c ON c.category_id = p.category_id " +
                 "WHERE p.active = TRUE AND c.is_active = TRUE " +
                 "AND (p.product_name LIKE ? OR p.description LIKE ? OR p.brand LIKE ?)";
@@ -444,7 +448,9 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public List<Product> getProducts(ProductQuery query) {
         List<Product> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT DISTINCT p.*, c.category_name FROM products p ");
+        StringBuilder sql = new StringBuilder("SELECT DISTINCT p.product_id, p.product_name, p.description, p.price, p.discount_percent, p.image_url, " +
+                "p.is_new, p.is_sale, p.is_trending, p.brand, p.active, p.stock_quantity, p.category_id, " +
+                "c.category_name FROM products p ");
         List<Object> params = new ArrayList<>();
 
         sql.append("JOIN categories c ON c.category_id = p.category_id ");
@@ -774,7 +780,9 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public List<Product> getFeaturedProducts(int limit) {
         List<Product> list = new ArrayList<>();
-        String sql = "SELECT p.*, c.category_name FROM products p " +
+        String sql = "SELECT p.product_id, p.product_name, p.description, p.price, p.discount_percent, p.image_url, " +
+                "p.is_new, p.is_sale, p.is_trending, p.brand, p.active, p.stock_quantity, p.category_id, " +
+                "c.category_name FROM products p " +
                 "JOIN categories c ON c.category_id = p.category_id " +
                 "WHERE p.active = TRUE AND c.is_active = TRUE " +
                 "ORDER BY is_trending DESC, popular_score DESC, is_sale DESC, is_new DESC, product_id DESC LIMIT ?";

@@ -24,53 +24,80 @@ const ProductReviews = (function() {
             }
         }
         
-        fetch(window.contextPath + '/review', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': window.csrfToken || ''
-            },
-            body: new URLSearchParams({
+        // Use centralized API client
+        const api = window.FashionStoreAPI || window.FashionStoreAPI?.api;
+        if (api) {
+            api.post('/review', {
                 productId: productId,
-                rating: rating.value,
+                rating: parseInt(rating.value),
                 comment: comment.value
             })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                FashionStore.showToast(data.message || 'Review submitted successfully', 'success');
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                FashionStore.showToast(data.message || 'Failed to submit review', 'error');
-            }
-        })
-        .catch(err => {
-            console.error('Error submitting review:', err);
-            FashionStore.showToast('Failed to submit review. Please try again.', 'error');
-        })
-        .finally(() => {
-            if (submitBtn) {
-                submitBtn.classList.remove('loading');
-                if (typeof StateManager !== 'undefined') {
-                    StateManager.setButtonLoading('submitReviewBtn', false);
+            .then(response => {
+                if (response.success) {
+                    FashionStore.showToast(response.message || 'Review submitted successfully', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    FashionStore.showToast(response.message || 'Failed to submit review', 'error');
                 }
-            }
-        });
+            })
+            .catch(err => {
+                console.error('Error submitting review:', err);
+                FashionStore.showToast('Failed to submit review. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (submitBtn) {
+                    submitBtn.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('submitReviewBtn', false);
+                    }
+                }
+            });
+        } else {
+            // Fallback to direct fetch if API client not available
+            fetch(window.contextPath + '/review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.csrfToken || ''
+                },
+                body: new URLSearchParams({
+                    productId: productId,
+                    rating: rating.value,
+                    comment: comment.value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    FashionStore.showToast(data.message || 'Review submitted successfully', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    FashionStore.showToast(data.message || 'Failed to submit review', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error submitting review:', err);
+                FashionStore.showToast('Failed to submit review. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (submitBtn) {
+                    submitBtn.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('submitReviewBtn', false);
+                    }
+                }
+            });
+        }
     }
     
     function init() {
-        // Make submitReview available globally for onclick handlers
-        window.submitReview = submitReview;
-        
-        // Add event listener to review form
-        const reviewForm = document.getElementById('reviewForm');
-        if (reviewForm) {
-            reviewForm.addEventListener('submit', function(e) {
-                const productId = this.dataset.productId;
+        // Register event handlers with centralized event delegation
+        if (typeof EventDelegation !== 'undefined') {
+            EventDelegation.on('submit', '#reviewForm', function(event, target) {
+                const productId = target.dataset.productId;
                 if (productId) {
-                    submitReview(e, productId);
+                    submitReview(event, productId);
                 }
             });
         }
@@ -101,7 +128,7 @@ const ProductReviews = (function() {
     };
 })();
 
-// Auto-initialize if on product details page
-if (document.querySelector('.product-detail')) {
-    ProductReviews.init();
+// Register with FashionStoreApp for centralized initialization
+if (typeof window.FashionStoreApp !== 'undefined') {
+    window.FashionStoreApp.registerModule('productReviews', ProductReviews.init, 30);
 }

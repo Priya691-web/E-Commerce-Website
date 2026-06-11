@@ -106,9 +106,9 @@
 
 import axios from 'axios';
 
-// In production/Docker, the nginx proxy handles /api routing,
-// so we use a relative base URL. In dev (Vite), the proxy forwards to localhost.
-// VITE_API_BASE env var can override for custom setups.
+// In production/Docker, nginx proxies /api to backend, so use relative path
+// In dev (Vite), the proxy forwards to localhost:8080
+// VITE_API_BASE env var can override for custom setups
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/admin';
 
 // Validate API base URL
@@ -130,7 +130,7 @@ export class APIError extends Error {
 
 /**
  * Handle authentication errors (401)
- * Redirects to login and dispatches logout event
+ * Dispatches logout event for AuthContext to handle router-aware navigation
  */
 function handleAuthError(err) {
   const pathname = window.location?.pathname || '';
@@ -142,6 +142,10 @@ function handleAuthError(err) {
       window.dispatchEvent(new CustomEvent('auth:logout'));
     } catch (e) {
       console.error('Failed to dispatch logout event:', e);
+      // Fallback to direct navigation only if event dispatch fails
+      if (!pathname.startsWith('/admin/login')) {
+        window.location.href = '/admin/login';
+      }
     }
   }
   
@@ -353,17 +357,15 @@ adminApiClient.interceptors.response.use(
           processQueue(null);
           return adminApiClient(originalRequest);
         } else {
-          // Refresh failed - logout user
+          // Refresh failed - logout user via event
           processQueue(new Error('Token refresh failed'), null);
           handleAuthError(error);
-          window.location.href = '/admin/login';
           return Promise.reject(error);
         }
       } catch (refreshError) {
-        // Refresh error - logout user
+        // Refresh error - logout user via event
         processQueue(refreshError, null);
         handleAuthError(refreshError);
-        window.location.href = '/admin/login';
         return Promise.reject(refreshError);
       }
     }

@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthApi } from '../api/client.js';
+import { useAuth } from '../auth/AuthContext.jsx';
+import { Button, Input, Card } from '../design-system/index.js';
+import adminApiClient from '../core/api/client.js';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -18,8 +21,8 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    if (!fullName || !email || !phone || !password || !confirmPassword || !adminKey) {
-      setError('Please fill in all fields.');
+    if (!email || !phone || !password || !confirmPassword || !adminKey) {
+      setError('Please fill in all required fields.');
       return;
     }
 
@@ -35,7 +38,8 @@ export default function Register() {
 
     setSubmitting(true);
     try {
-      const result = await AuthApi.register({
+      // Register via centralized API client for consistent error handling and retry logic
+      const registerResponse = await adminApiClient.post('/register', {
         fullName,
         email,
         phone,
@@ -44,13 +48,21 @@ export default function Register() {
         adminKey,
       });
 
-      if (result.data?.success) {
-        navigate('/login', { replace: true, state: { message: 'Admin account created successfully. Please login.' } });
+      if (registerResponse.data?.success) {
+        // Auto-login after successful registration
+        const loginResult = await login(email, password);
+        if (loginResult.ok) {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          setError('Registration successful but auto-login failed. Please login manually.');
+          navigate('/admin/login', { replace: true });
+        }
       } else {
-        setError(result.data?.message || 'Registration failed.');
+        setError(registerResponse.data?.message || 'Registration failed.');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Something went wrong. Please try again.';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -64,7 +76,7 @@ export default function Register() {
       }} />
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-bg)] via-[var(--color-bg-secondary)] to-[var(--color-bg-tertiary)] backdrop-blur-xl" aria-hidden="true" />
       
-      <div className="relative w-full container-md card section-md">
+      <Card className="relative w-full container-md card section-md">
         <div className="flex flex-col items-center gap-3 mb-8 text-center">
           <span className="badge badge-primary">Create Access</span>
           <h1 className="text-h1">Admin Registration</h1>
@@ -84,13 +96,12 @@ export default function Register() {
             <label htmlFor="fullName" className="block text-sm font-semibold text-[var(--color-text-primary)] mb-2">
               Full Name
             </label>
-            <input
+            <Input
               id="fullName"
               type="text"
               autoComplete="name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="input w-full"
               placeholder="John Doe"
               disabled={submitting}
             />
@@ -100,13 +111,12 @@ export default function Register() {
             <label htmlFor="email" className="block text-sm font-semibold text-[var(--color-text-primary)] mb-2">
               Email Address
             </label>
-            <input
+            <Input
               id="email"
               type="email"
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="input w-full"
               placeholder="admin@example.com"
               disabled={submitting}
             />
@@ -116,13 +126,12 @@ export default function Register() {
             <label htmlFor="phone" className="block text-sm font-semibold text-[var(--color-text-primary)] mb-2">
               Phone Number
             </label>
-            <input
+            <Input
               id="phone"
               type="tel"
               autoComplete="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="input w-full"
               placeholder="9876543210"
               disabled={submitting}
             />
@@ -132,13 +141,12 @@ export default function Register() {
             <label htmlFor="password" className="block text-sm font-semibold text-[var(--color-text-primary)] mb-2">
               Password
             </label>
-            <input
+            <Input
               id="password"
               type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="input w-full"
               placeholder="••••••••"
               disabled={submitting}
               minLength={8}
@@ -149,13 +157,12 @@ export default function Register() {
             <label htmlFor="confirmPassword" className="block text-sm font-semibold text-[var(--color-text-primary)] mb-2">
               Confirm Password
             </label>
-            <input
+            <Input
               id="confirmPassword"
               type="password"
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="input w-full"
               placeholder="••••••••"
               disabled={submitting}
               minLength={8}
@@ -166,12 +173,11 @@ export default function Register() {
             <label htmlFor="adminKey" className="block text-sm font-semibold text-[var(--color-text-primary)] mb-2">
               Admin Secret Key
             </label>
-            <input
+            <Input
               id="adminKey"
               type="password"
               value={adminKey}
               onChange={(e) => setAdminKey(e.target.value)}
-              className="input w-full"
               placeholder="Enter admin secret key"
               disabled={submitting}
             />
@@ -180,13 +186,14 @@ export default function Register() {
             </p>
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={submitting}
-            className="btn btn-primary w-full"
+            variant="primary"
+            className="w-full"
           >
             {submitting ? 'Creating account…' : 'Create Admin Account'}
-          </button>
+          </Button>
         </form>
 
         <p className="text-center text-body-sm mt-8 text-[var(--color-text-secondary)]">
@@ -195,7 +202,7 @@ export default function Register() {
             Sign in
           </Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

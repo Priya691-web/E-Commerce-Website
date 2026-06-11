@@ -10,9 +10,11 @@
 .admin-table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    -ms-overflow-style: scrollbar;
+    scrollbar-width: auto;
     margin-bottom: var(--space-6);
 }
 
@@ -193,7 +195,7 @@
     }
     
     .admin-table th {
-        font-size: 10px;
+        font-size: var(--text-xs);
     }
     
     .admin-table {

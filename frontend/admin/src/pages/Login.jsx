@@ -30,7 +30,7 @@ export default function Login() {
     try {
       const result = await login(email, password);
       if (result.ok) {
-        navigate('/dashboard', { replace: true });
+        navigate('/admin/dashboard', { replace: true });
       } else {
         setError(result.message || 'Invalid credentials.');
       }
@@ -77,7 +77,6 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@example.com"
               disabled={submitting}
-              className="input"
             />
           </div>
 
@@ -93,17 +92,17 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               disabled={submitting}
-              className="input"
             />
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={submitting}
-            className="btn btn-primary w-full"
+            variant="primary"
+            className="w-full"
           >
             {submitting ? 'Signing in…' : 'Sign In'}
-          </button>
+          </Button>
         </form>
 
         <p className="text-center text-body-sm mt-8 text-[var(--color-text-secondary)]">

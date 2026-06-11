@@ -49,20 +49,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                     .then(data => {
                         if (data && (data.success || data.status === 'success')) {
-                            FashionStore.showToast('Saved for later', 'success');
+                            if (typeof FashionStore !== 'undefined' && FashionStore.showToast) {
+                                FashionStore.showToast('Saved for later', 'success');
+                            }
                             // Reload page to show updated cart
                             setTimeout(() => {
                                 window.location.reload();
                             }, 500);
                         } else {
-                            FashionStore.showToast(data.message || 'Failed to save for later', 'error');
+                            if (typeof FashionStore !== 'undefined' && FashionStore.showToast) {
+                                FashionStore.showToast(data.message || 'Failed to save for later', 'error');
+                            }
                             saveBtn.disabled = false;
                             saveBtn.textContent = 'Save for later';
                         }
                     })
                     .catch(err => {
                         console.error('Save for later error:', err);
-                        FashionStore.showToast('Failed to save for later. Please try again.', 'error');
+                        if (typeof FashionStore !== 'undefined' && FashionStore.showToast) {
+                            FashionStore.showToast('Failed to save for later. Please try again.', 'error');
+                        }
                         saveBtn.disabled = false;
                         saveBtn.textContent = 'Save for later';
                     });
@@ -88,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ── Coupon Application ───────────────────────────────────────────────────────
     
     const couponCodeInput = document.getElementById('couponCode');
-    const applyCouponBtn = document.querySelector('.fs-cart-summary__coupon button');
+    const applyCouponBtn = document.getElementById('apply-coupon-btn');
     const couponMessage = document.getElementById('couponMessage');
     
     if (applyCouponBtn && couponCodeInput) {
@@ -148,6 +154,42 @@ document.addEventListener('DOMContentLoaded', function() {
         if (progress) {
             progressBar.style.width = Math.min(progress, 100) + '%';
         }
+    }
+    
+    // ── Update Cart Totals from Backend Response ───────────────────────────────
+    
+    // Override CartManager.updateMiniCartUI to also update cart page totals
+    if (typeof CartManager !== 'undefined') {
+        const originalUpdateUI = CartManager.updateMiniCartUI;
+        CartManager.updateMiniCartUI = function(data) {
+            // Call original implementation
+            originalUpdateUI.call(this, data);
+            
+            // Update cart page totals if on cart page
+            if (data) {
+                // Update summary subtotal
+                const summarySubtotal = document.getElementById('summary-subtotal');
+                if (summarySubtotal && data.cartTotal !== undefined) {
+                    summarySubtotal.textContent = data.cartTotal.toFixed(2);
+                }
+                
+                // Update summary total
+                const summaryTotal = document.getElementById('summary-total');
+                if (summaryTotal && data.cartTotal !== undefined) {
+                    summaryTotal.textContent = data.cartTotal.toFixed(2);
+                }
+                
+                // Update individual item totals
+                if (data.cartItems) {
+                    data.cartItems.forEach(item => {
+                        const itemTotalEl = document.getElementById(`item-total-${item.cartItemId}`);
+                        if (itemTotalEl) {
+                            itemTotalEl.textContent = (item.price * item.quantity).toFixed(2);
+                        }
+                    });
+                }
+            }
+        };
     }
     
     // ── Make applyCoupon available globally for backward compatibility ───────────

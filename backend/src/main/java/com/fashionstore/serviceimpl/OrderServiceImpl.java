@@ -5,6 +5,8 @@ import com.fashionstore.dao.OrderItemDAO;
 import com.fashionstore.model.Order;
 import com.fashionstore.model.OrderItem;
 import com.fashionstore.service.OrderService;
+import com.fashionstore.util.TransactionTemplate;
+import com.fashionstore.util.ValidationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,7 @@ import java.util.Map;
 
 /**
  * Service implementation for order operations
+ * REFACTORED: Uses TransactionTemplate for proper transaction management
  */
 public class OrderServiceImpl implements OrderService {
 
@@ -60,65 +63,105 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order createOrder(int userId, Map<String, Object> orderData) {
         try {
-            Order order = new Order();
-            order.setUserId(userId);
-            
-            if (orderData.containsKey("totalAmount")) {
-                order.setTotalAmount(((Number) orderData.get("totalAmount")).doubleValue());
-            }
-            if (orderData.containsKey("fullName")) {
-                order.setFullName((String) orderData.get("fullName"));
-            }
-            if (orderData.containsKey("address")) {
-                order.setAddress((String) orderData.get("address"));
-            }
-            if (orderData.containsKey("city")) {
-                order.setCity((String) orderData.get("city"));
-            }
-            if (orderData.containsKey("state")) {
-                order.setState((String) orderData.get("state"));
-            }
-            if (orderData.containsKey("zip")) {
-                order.setZip((String) orderData.get("zip"));
-            }
-            if (orderData.containsKey("phone")) {
-                order.setPhone((String) orderData.get("phone"));
-            }
-            if (orderData.containsKey("paymentMethod")) {
-                order.setPaymentMethod((String) orderData.get("paymentMethod"));
-            }
-            if (orderData.containsKey("status")) {
-                order.setStatus((String) orderData.get("status"));
-            } else {
-                order.setStatus("Pending");
-            }
-            
-            int orderId = orderDAO.createOrder(order);
-            if (orderId > 0) {
-                order.setOrderId(orderId);
+            return TransactionTemplate.executeInTransaction((conn, correlationId) -> {
+                // Validate input
+                if (userId <= 0) {
+                    throw new IllegalArgumentException("Invalid user ID: " + userId);
+                }
                 
+                if (orderData == null) {
+                    throw new IllegalArgumentException("Order data cannot be null");
+                }
+
+                // Build order object with validation
+                Order order = new Order();
+                order.setUserId(userId);
+                order.setTotalAmount(ValidationUtils.safeDoubleFromString(
+                    String.valueOf(orderData.get("totalAmount")), 0.0));
+                order.setFullName(ValidationUtils.safeString(
+                    (String) orderData.get("fullName")));
+                order.setAddress(ValidationUtils.safeString(
+                    (String) orderData.get("address")));
+                order.setCity(ValidationUtils.safeString(
+                    (String) orderData.get("city")));
+                order.setState(ValidationUtils.safeString(
+                    (String) orderData.get("state")));
+                order.setZip(ValidationUtils.safeString(
+                    (String) orderData.get("zip")));
+                order.setPhone(ValidationUtils.safeString(
+                    (String) orderData.get("phone")));
+                order.setPaymentMethod(ValidationUtils.safeString(
+                    (String) orderData.get("paymentMethod"), "COD"));
+                order.setStatus(ValidationUtils.safeString(
+                    (String) orderData.get("status"), "Pending"));
+
+                // Validate order data
+                if (order.getTotalAmount() <= 0) {
+                    throw new IllegalArgumentException("Order total amount must be positive");
+                }
+                if (!ValidationUtils.isNotEmpty(order.getFullName())) {
+                    throw new IllegalArgumentException("Order full name is required");
+                }
+                if (!ValidationUtils.isNotEmpty(order.getAddress())) {
+                    throw new IllegalArgumentException("Order address is required");
+                }
+                if (!ValidationUtils.isNotEmpty(order.getPhone())) {
+                    throw new IllegalArgumentException("Order phone is required");
+                }
+
+                // Create order in transaction
+                int orderId = orderDAO.createOrder(conn, order);
+                
+                if (orderId <= 0) {
+                    throw new RuntimeException("Failed to create order");
+                }
+                
+                order.setOrderId(orderId);
+                logger.info("[{}] Order created successfully: orderId={}, userId={}", 
+                    correlationId, orderId, userId);
+
                 // Add order items if provided
                 if (orderData.containsKey("items")) {
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> itemsData = (List<Map<String, Object>>) orderData.get("items");
-                    for (Map<String, Object> itemData : itemsData) {
-                        OrderItem item = new OrderItem();
-                        item.setOrderId(orderId);
-                        item.setProductId(((Number) itemData.get("productId")).intValue());
-                        item.setSizeLabel((String) itemData.get("sizeLabel"));
-                        item.setQuantity(((Number) itemData.get("quantity")).intValue());
-                        item.setPrice(((Number) itemData.get("price")).doubleValue());
-                        orderItemDAO.addOrderItem(item);
+                    
+                    if (itemsData != null && !itemsData.isEmpty()) {
+                        for (Map<String, Object> itemData : itemsData) {
+                            OrderItem item = new OrderItem();
+                            item.setOrderId(orderId);
+                            item.setProductId(ValidationUtils.safeIntFromString(
+                                String.valueOf(itemData.get("productId"))));
+                            item.setSizeLabel(ValidationUtils.safeString(
+                                (String) itemData.get("sizeLabel"), "M"));
+                            item.setQuantity(ValidationUtils.safeIntFromString(
+                                String.valueOf(itemData.get("quantity"))));
+                            item.setPrice(ValidationUtils.safeDoubleFromString(
+                                String.valueOf(itemData.get("price"))));
+
+                            // Validate order item
+                            if (item.getProductId() <= 0) {
+                                throw new IllegalArgumentException("Invalid product ID in order item");
+                            }
+                            if (!ValidationUtils.isValidQuantity(item.getQuantity())) {
+                                throw new IllegalArgumentException("Invalid quantity in order item: " + item.getQuantity());
+                            }
+                            if (item.getPrice() < 0) {
+                                throw new IllegalArgumentException("Invalid price in order item: " + item.getPrice());
+                            }
+
+                            orderItemDAO.addOrderItem(conn, item);
+                            logger.debug("[{}] Order item added: orderId={}, productId={}, quantity={}", 
+                                correlationId, orderId, item.getProductId(), item.getQuantity());
+                        }
                     }
                 }
-                
-                logger.info("Order created successfully: orderId={}, userId={}", orderId, userId);
+
                 return order;
-            }
+            });
         } catch (Exception e) {
             logger.error("Error creating order for user {}: {}", userId, e.getMessage(), e);
+            return null;
         }
-        return null;
     }
 
     @Override

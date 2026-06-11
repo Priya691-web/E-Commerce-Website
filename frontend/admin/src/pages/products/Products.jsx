@@ -1,14 +1,18 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Pencil, Trash2, Filter, X } from 'lucide-react';
 import DataTable from '../../components/DataTable.jsx';
 import OptimizedImage from '../../components/OptimizedImage.jsx';
-import { ProductsApi } from '../../api/client.js';
+import { ProductsApi } from '../../core/api/endpoints.js';
 import { useDataTableWithFilter } from '../../hooks/useDataTable.js';
+import { useLocation } from 'react-router-dom';
 
 const STATUS_OPTIONS = ['all', 'active', 'inactive', 'out_of_stock'];
 
 export default function Products() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
 
   const {
     items: products,
@@ -39,6 +43,13 @@ export default function Products() {
       return rows;
     },
   });
+
+  // Handle search from navigation state (from Header search)
+  useEffect(() => {
+    if (location.state?.search) {
+      setSearch(location.state.search);
+    }
+  }, [location.state, setSearch]);
 
   const columns = [
     {
@@ -89,7 +100,7 @@ export default function Products() {
       render: (r) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate(`/products/${r.id}/edit`)}
+            onClick={() => navigate(`/admin/products/${r.id}/edit`)}
             className="p-2 rounded-lg border border-ink-200/70 dark:border-ink-700/70 bg-white/80 dark:bg-ink-900/80 hover:shadow-md text-ink-600 dark:text-ink-200 transition"
             title="Edit"
           >
@@ -116,7 +127,7 @@ export default function Products() {
           <h1 className="text-2xl font-bold text-ink-900 dark:text-white">Products</h1>
         </div>
         <button
-          onClick={() => navigate('/products/new')}
+          onClick={() => navigate('/admin/products/new')}
           className="btn-primary self-start"
         >
           <Plus size={16} /> Add Product
@@ -135,13 +146,19 @@ export default function Products() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-white/90 dark:bg-ink-900/90 border border-ink-200/80 dark:border-ink-700/80 flex items-center justify-center text-ink-500 shadow-sm">
+          <button
+            onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
+            className="w-10 h-10 rounded-full bg-white/90 dark:bg-ink-900/90 border border-ink-200/80 dark:border-ink-700/80 flex items-center justify-center text-ink-500 shadow-sm hover:bg-ink-100 dark:hover:bg-ink-700 transition-colors"
+            aria-label="Advanced filters"
+            aria-expanded={showAdvancedFilter}
+          >
             <Filter size={16} />
-          </div>
+          </button>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="h-10 px-3 rounded-xl border border-ink-200/80 dark:border-ink-700/80 bg-white/90 dark:bg-ink-900/90 text-sm text-ink-900 dark:text-ink-100 focus:outline-none shadow-sm"
+            aria-label="Filter by status"
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>{s === 'all' ? 'All Status' : s.replace('_', ' ')}</option>
@@ -149,6 +166,52 @@ export default function Products() {
           </select>
         </div>
       </div>
+
+      {/* Advanced Filter Panel */}
+      {showAdvancedFilter && (
+        <div className="card p-4 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-sm">Advanced Filters</h3>
+            <button
+              onClick={() => setShowAdvancedFilter(false)}
+              className="p-1 hover:bg-ink-100 dark:hover:bg-ink-700 rounded"
+              aria-label="Close filters"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-ink-500 dark:text-ink-400 mb-1">Price Range</label>
+              <select className="input w-full text-sm">
+                <option value="">All Prices</option>
+                <option value="0-50">$0 - $50</option>
+                <option value="50-100">$50 - $100</option>
+                <option value="100-500">$100 - $500</option>
+                <option value="500+">$500+</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-500 dark:text-ink-400 mb-1">Category</label>
+              <select className="input w-full text-sm">
+                <option value="">All Categories</option>
+                <option value="clothing">Clothing</option>
+                <option value="accessories">Accessories</option>
+                <option value="footwear">Footwear</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-500 dark:text-ink-400 mb-1">Stock Level</label>
+              <select className="input w-full text-sm">
+                <option value="">All Levels</option>
+                <option value="in-stock">In Stock</option>
+                <option value="low-stock">Low Stock</option>
+                <option value="out-of-stock">Out of Stock</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         {loading ? (

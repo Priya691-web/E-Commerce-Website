@@ -3,6 +3,8 @@ package com.fashionstore.serviceimpl;
 import com.fashionstore.dao.SavedItemDAO;
 import com.fashionstore.model.SavedItem;
 import com.fashionstore.service.SavedItemService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -17,6 +19,7 @@ import java.util.List;
  */
 public class SavedItemServiceImpl implements SavedItemService {
     
+    private static final Logger logger = LoggerFactory.getLogger(SavedItemServiceImpl.class);
     private final SavedItemDAO savedItemDAO;
 
     public SavedItemServiceImpl() {
@@ -35,7 +38,7 @@ public class SavedItemServiceImpl implements SavedItemService {
                 field.setAccessible(true);
                 field.set(this, savedItemDAO);
             } catch (Exception e) {
-                System.err.println("Failed to set savedItemDAO: " + e.getMessage());
+                logger.error("Failed to set savedItemDAO: {}", e.getMessage(), e);
             }
         }
     }

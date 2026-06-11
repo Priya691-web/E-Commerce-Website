@@ -63,37 +63,40 @@ export class ApiError extends Error {
 }
 
 /**
- * Create API error from axios error
+ * Create API error from fetch error
  */
 export function createApiError(error, defaultMessage = ERROR_MESSAGES.UNKNOWN_ERROR) {
     let code = ERROR_CODES.UNKNOWN_ERROR;
     let message = defaultMessage;
     let statusCode = 0;
 
-    if (!error.response) {
-        // Network error
-        if (error.code === 'ECONNABORTED') {
+    if (!error.statusCode) {
+        // Network error (no statusCode means fetch failed)
+        if (error.name === 'AbortError' || error.message?.includes('timeout')) {
             code = ERROR_CODES.TIMEOUT_ERROR;
             message = ERROR_MESSAGES.TIMEOUT_ERROR;
+        } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+            code = ERROR_CODES.NETWORK_ERROR;
+            message = ERROR_MESSAGES.NETWORK_ERROR;
         } else {
             code = ERROR_CODES.NETWORK_ERROR;
             message = ERROR_MESSAGES.NETWORK_ERROR;
         }
     } else {
-        statusCode = error.response.status;
+        statusCode = error.statusCode;
 
         // Handle HTTP status codes
         switch (statusCode) {
             case 400:
                 code = ERROR_CODES.VALIDATION_ERROR;
-                message = error.response.data?.message || ERROR_MESSAGES.VALIDATION_ERROR;
+                message = error.message || error.data?.message || ERROR_MESSAGES.VALIDATION_ERROR;
                 break;
             case 401:
                 code = ERROR_CODES.SESSION_EXPIRED;
                 message = ERROR_MESSAGES.SESSION_EXPIRED;
                 break;
             case 403:
-                if (error.response.data?.includes('CSRF')) {
+                if (error.message?.includes('CSRF') || error.data?.includes('CSRF')) {
                     code = ERROR_CODES.CSRF_ERROR;
                     message = ERROR_MESSAGES.CSRF_ERROR;
                 } else {
@@ -122,14 +125,13 @@ export function createApiError(error, defaultMessage = ERROR_MESSAGES.UNKNOWN_ER
                 break;
             default:
                 code = ERROR_CODES.UNKNOWN_ERROR;
-                message = error.response.data?.message || defaultMessage;
+                message = error.message || error.data?.message || defaultMessage;
         }
     }
 
     return new ApiError(message, code, statusCode, {
         originalError: error,
-        response: error.response,
-        config: error.config
+        data: error.data
     });
 }
 

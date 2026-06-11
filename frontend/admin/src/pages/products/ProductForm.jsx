@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Upload } from 'lucide-react';
 import OptimizedImage from '../../components/OptimizedImage.jsx';
-import { ProductsApi, CategoriesApi } from '../../api/client.js';
+import { ProductsApi, CategoriesApi } from '../../core/api/endpoints.js';
 import { useToast } from '../../context/ToastContext.jsx';
 
 export default function ProductForm() {
@@ -165,7 +165,7 @@ export default function ProductForm() {
           addToast('Product created', 'success');
         }
       }
-      navigate('/products');
+      navigate('/admin/products');
     } catch {
       addToast(isEdit ? 'Update failed' : 'Create failed', 'error');
     } finally {

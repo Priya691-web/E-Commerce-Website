@@ -27,6 +27,14 @@ function RouteFallback() {
   );
 }
 
+/**
+ * CatchAllRoute - Handles unknown routes
+ * Redirects to dashboard if authenticated, otherwise to login
+ */
+function CatchAllRoute() {
+  return <Navigate to="/login" replace />;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -38,38 +46,38 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           {/* Root redirect */}
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="/dashboard" replace />} />
           
           {/* Dashboard */}
-          <Route path="dashboard" element={<Suspense fallback={<RouteFallback />}><Dashboard /></Suspense>} />
+          <Route path="/dashboard" element={<Suspense fallback={<RouteFallback />}><Dashboard /></Suspense>} />
           
           {/* Products */}
-          <Route path="products" element={<Suspense fallback={<RouteFallback />}><Products /></Suspense>} />
-          <Route path="products/new" element={<Suspense fallback={<RouteFallback />}><ProductForm /></Suspense>} />
-          <Route path="products/:id/edit" element={<Suspense fallback={<RouteFallback />}><ProductForm /></Suspense>} />
+          <Route path="/products" element={<Suspense fallback={<RouteFallback />}><Products /></Suspense>} />
+          <Route path="/products/new" element={<Suspense fallback={<RouteFallback />}><ProductForm /></Suspense>} />
+          <Route path="/products/:id/edit" element={<Suspense fallback={<RouteFallback />}><ProductForm /></Suspense>} />
           
           {/* Inventory */}
-          <Route path="inventory" element={<Suspense fallback={<RouteFallback />}><Inventory /></Suspense>} />
+          <Route path="/inventory" element={<Suspense fallback={<RouteFallback />}><Inventory /></Suspense>} />
           
           {/* Orders */}
-          <Route path="orders" element={<Suspense fallback={<RouteFallback />}><Orders /></Suspense>} />
+          <Route path="/orders" element={<Suspense fallback={<RouteFallback />}><Orders /></Suspense>} />
           
           {/* Users */}
-          <Route path="users" element={<Suspense fallback={<RouteFallback />}><Users /></Suspense>} />
+          <Route path="/users" element={<Suspense fallback={<RouteFallback />}><Users /></Suspense>} />
           
           {/* Categories */}
-          <Route path="categories" element={<Suspense fallback={<RouteFallback />}><Categories /></Suspense>} />
+          <Route path="/categories" element={<Suspense fallback={<RouteFallback />}><Categories /></Suspense>} />
           
           {/* Coupons */}
-          <Route path="coupons" element={<Suspense fallback={<RouteFallback />}><Coupons /></Suspense>} />
+          <Route path="/coupons" element={<Suspense fallback={<RouteFallback />}><Coupons /></Suspense>} />
           
           {/* Settings */}
-          <Route path="settings" element={<Suspense fallback={<RouteFallback />}><Settings /></Suspense>} />
+          <Route path="/settings" element={<Suspense fallback={<RouteFallback />}><Settings /></Suspense>} />
         </Route>
       </Route>
 
-      {/* Catch-all - redirect to dashboard */}
-      <Route path="*" element={<Navigate to="dashboard" replace />} />
+      {/* Catch-all - redirect to login (ProtectedRoute will handle auth check) */}
+      <Route path="*" element={<CatchAllRoute />} />
     </Routes>
   );
 }

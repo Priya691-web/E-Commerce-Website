@@ -272,7 +272,7 @@ button, a[role="button"], input[type="button"], input[type="submit"] {
 .section-label,
 .home-section-label {
     display: inline-block;
-    font-size: 11px;
+    font-size: var(--text-xs);
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wider);
     color: var(--color-text-tertiary);
@@ -364,7 +364,7 @@ button, a[role="button"], input[type="button"], input[type="submit"] {
 
 .page-masthead__eyebrow {
     display: inline-block;
-    font-size: 11px;
+    font-size: var(--text-xs);
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wider);
     color: var(--color-text-tertiary);

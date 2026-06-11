@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutGrid, ShoppingBag, Users, Tag, Settings, BarChart3, Package, X } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
@@ -13,6 +14,18 @@ const navigationItems = [
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }) {
+  const { user } = useAuth();
+  
+  const userInitials = (user?.fullName || user?.email || 'A')
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  
+  const userName = user?.fullName || user?.email?.split('@')[0] || 'Admin';
+  const userEmail = user?.email || 'admin@fashionstore.com';
+
   return (
     <aside
       className={`
@@ -36,13 +49,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <button
           onClick={() => setIsOpen(false)}
           className="lg:hidden p-2 text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-700 rounded-md transition-colors"
+          aria-label="Close sidebar"
         >
           <X size={20} />
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1" aria-label="Main navigation">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -58,8 +72,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                   : 'text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-700/50 hover:text-ink-900 dark:hover:text-ink-100'
                 }
               `}
+              aria-current={item.href === '/dashboard' ? undefined : false}
             >
-              <Icon size={20} className="shrink-0" />
+              <Icon size={20} className="shrink-0" aria-hidden="true" />
               <span>{item.name}</span>
             </NavLink>
           );
@@ -70,14 +85,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       <div className="p-4 border-t border-ink-200 dark:border-ink-700 shrink-0">
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-ink-50 dark:bg-ink-700/30">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
-            A
+            {userInitials}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-medium text-ink-900 dark:text-ink-50 truncate">
-              Admin User
+            <span className="text-sm font-medium text-ink-900 dark:text-ink-50 truncate" title={userName}>
+              {userName}
             </span>
-            <span className="text-xs text-ink-500 dark:text-ink-400 truncate">
-              admin@fashionstore.com
+            <span className="text-xs text-ink-500 dark:text-ink-400 truncate" title={userEmail}>
+              {userEmail}
             </span>
           </div>
         </div>

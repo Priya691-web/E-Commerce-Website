@@ -25,32 +25,92 @@ public class PaymentDAOImpl implements PaymentDAO {
 
     @Override
     public int createPayment(Payment payment) {
+        return createPayment(null, payment);
+    }
+
+    /**
+     * Create payment with connection for transaction support
+     * This version is used within a transaction to ensure atomicity
+     */
+    @Override
+    public int createPayment(Connection conn, Payment payment) {
+        return createPaymentInTransaction(conn, payment);
+    }
+
+    /**
+     * Create payment in transaction (alias for createPayment with connection)
+     * This version is used within a transaction to ensure atomicity
+     * 
+     * IDEMPOTENCY: Checks if payment with same transaction_id already exists
+     * to prevent duplicate payments from retry attempts or webhook re-deliveries.
+     */
+    @Override
+    public int createPaymentInTransaction(Connection conn, Payment payment) {
+        // Idempotency check: Return existing payment if transaction_id already exists
+        if (payment.getTransactionId() != null && !payment.getTransactionId().isBlank()) {
+            Payment existingPayment = getPaymentByTransactionId(payment.getTransactionId());
+            if (existingPayment != null) {
+                logger.info("Payment with transaction_id {} already exists (idempotency). Returning existing payment_id: {}", 
+                    payment.getTransactionId(), existingPayment.getPaymentId());
+                return existingPayment.getPaymentId();
+            }
+        }
+
         String sql = "INSERT INTO payments (order_id, payment_method, transaction_id, amount, currency, status, gateway_response, payment_signature, webhook_id, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try {
+            Connection con = conn;
+            boolean shouldClose = false;
             
-            ps.setInt(1, payment.getOrderId());
-            ps.setString(2, payment.getPaymentMethod());
-            ps.setString(3, payment.getTransactionId());
-            ps.setBigDecimal(4, payment.getAmount());
-            ps.setString(5, payment.getCurrency());
-            ps.setString(6, payment.getStatus());
-            ps.setString(7, payment.getGatewayResponse());
-            ps.setString(8, payment.getPaymentSignature());
-            ps.setString(9, payment.getWebhookId());
-            ps.setBoolean(10, payment.isVerified());
+            if (con == null) {
+                con = DBConnection.getConnection();
+                shouldClose = true;
+            }
             
-            int result = ps.executeUpdate();
-            
-            if (result > 0) {
-                try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        return rs.getInt(1);
+            try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                
+                ps.setInt(1, payment.getOrderId());
+                ps.setString(2, payment.getPaymentMethod());
+                ps.setString(3, payment.getTransactionId());
+                ps.setBigDecimal(4, payment.getAmount());
+                ps.setString(5, payment.getCurrency());
+                ps.setString(6, payment.getStatus());
+                ps.setString(7, payment.getGatewayResponse());
+                ps.setString(8, payment.getPaymentSignature());
+                ps.setString(9, payment.getWebhookId());
+                ps.setBoolean(10, payment.isVerified());
+                
+                int result = ps.executeUpdate();
+                
+                if (result > 0) {
+                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            int paymentId = rs.getInt(1);
+                            logger.info("Created new payment with id {} for order {}, transaction_id: {}", 
+                                paymentId, payment.getOrderId(), payment.getTransactionId());
+                            if (shouldClose) {
+                                con.close();
+                            }
+                            return paymentId;
+                        }
                     }
                 }
             }
+            if (shouldClose) {
+                con.close();
+            }
         } catch (SQLException e) {
+            // Check for duplicate entry error (MySQL error 1062)
+            if (e.getErrorCode() == 1062 && e.getMessage() != null && e.getMessage().contains("transaction_id")) {
+                logger.warn("Duplicate payment detected for transaction_id: {}. Fetching existing payment.", payment.getTransactionId());
+                // Try to fetch the existing payment
+                if (payment.getTransactionId() != null) {
+                    Payment existingPayment = getPaymentByTransactionId(payment.getTransactionId());
+                    if (existingPayment != null) {
+                        return existingPayment.getPaymentId();
+                    }
+                }
+            }
             logger.error("PaymentDAOImpl.createPayment Error: {}", e.getMessage(), e);
         }
         return 0;

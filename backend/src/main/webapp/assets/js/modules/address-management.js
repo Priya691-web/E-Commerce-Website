@@ -18,41 +18,71 @@ const AddressManagement = (function() {
             }
         }
         
-        const formData = new URLSearchParams();
-        formData.append('action', 'setDefault');
-        formData.append('addressId', addressId);
-        formData.append('csrfToken', window.csrfToken || '');
-        
-        fetch(window.contextPath + '/account/addresses', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': window.csrfToken || ''
-            },
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                FashionStore.showToast(data.message, 'success');
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                FashionStore.showToast(data.message, 'error');
-            }
-        })
-        .catch(err => {
-            console.error('Error setting default address:', err);
-            FashionStore.showToast('Failed to set default address. Please try again.', 'error');
-        })
-        .finally(() => {
-            if (btn) {
-                btn.classList.remove('loading');
-                if (typeof StateManager !== 'undefined') {
-                    StateManager.setButtonLoading('set-default-btn-' + addressId, false);
+        // Use centralized API client
+        const api = window.FashionStoreAPI || window.FashionStoreAPI?.api;
+        if (api) {
+            api.post('/account/addresses', {
+                action: 'setDefault',
+                addressId: addressId
+            })
+            .then(response => {
+                if (response.success) {
+                    FashionStore.showToast(response.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    FashionStore.showToast(response.message, 'error');
                 }
-            }
-        });
+            })
+            .catch(err => {
+                console.error('Error setting default address:', err);
+                FashionStore.showToast('Failed to set default address. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('set-default-btn-' + addressId, false);
+                    }
+                }
+            });
+        } else {
+            // Fallback to direct fetch
+            const formData = new URLSearchParams();
+            formData.append('action', 'setDefault');
+            formData.append('addressId', addressId);
+            formData.append('csrfToken', window.csrfToken || '');
+            
+            fetch(window.contextPath + '/account/addresses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.csrfToken || ''
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    FashionStore.showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    FashionStore.showToast(data.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error setting default address:', err);
+                FashionStore.showToast('Failed to set default address. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('set-default-btn-' + addressId, false);
+                    }
+                }
+            });
+        }
     }
     
     function deleteAddress(addressId) {
@@ -69,66 +99,92 @@ const AddressManagement = (function() {
             }
         }
         
-        const formData = new URLSearchParams();
-        formData.append('action', 'delete');
-        formData.append('addressId', addressId);
-        formData.append('csrfToken', window.csrfToken || '');
-        
-        fetch(window.contextPath + '/account/addresses', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': window.csrfToken || ''
-            },
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                FashionStore.showToast(data.message, 'success');
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                FashionStore.showToast(data.message, 'error');
-            }
-        })
-        .catch(err => {
-            console.error('Error deleting address:', err);
-            FashionStore.showToast('Failed to delete address. Please try again.', 'error');
-        })
-        .finally(() => {
-            if (btn) {
-                btn.classList.remove('loading');
-                if (typeof StateManager !== 'undefined') {
-                    StateManager.setButtonLoading('delete-address-btn-' + addressId, false);
+        // Use centralized API client
+        const api = window.FashionStoreAPI || window.FashionStoreAPI?.api;
+        if (api) {
+            api.post('/account/addresses', {
+                action: 'delete',
+                addressId: addressId
+            })
+            .then(response => {
+                if (response.success) {
+                    FashionStore.showToast(response.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    FashionStore.showToast(response.message, 'error');
                 }
-            }
-        });
+            })
+            .catch(err => {
+                console.error('Error deleting address:', err);
+                FashionStore.showToast('Failed to delete address. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('delete-address-btn-' + addressId, false);
+                    }
+                }
+            });
+        } else {
+            // Fallback to direct fetch
+            const formData = new URLSearchParams();
+            formData.append('action', 'delete');
+            formData.append('addressId', addressId);
+            formData.append('csrfToken', window.csrfToken || '');
+            
+            fetch(window.contextPath + '/account/addresses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.csrfToken || ''
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    FashionStore.showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    FashionStore.showToast(data.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error deleting address:', err);
+                FashionStore.showToast('Failed to delete address. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.classList.remove('loading');
+                    if (typeof StateManager !== 'undefined') {
+                        StateManager.setButtonLoading('delete-address-btn-' + addressId, false);
+                    }
+                }
+            });
+        }
     }
     
     function init() {
-        // Make functions available globally for onclick handlers
-        window.setDefaultAddress = setDefaultAddress;
-        window.deleteAddress = deleteAddress;
-        
-        // Add event listeners
-        document.querySelectorAll('.set-default-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const addressId = this.dataset.addressId;
+        // Register event handlers with centralized event delegation
+        if (typeof EventDelegation !== 'undefined') {
+            EventDelegation.on('click', '.set-default-btn', function(event, target) {
+                const addressId = target.dataset.addressId;
                 if (addressId) {
+                    event.preventDefault();
                     setDefaultAddress(addressId);
                 }
             });
-        });
-        
-        document.querySelectorAll('.delete-address-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const addressId = this.dataset.addressId;
+
+            EventDelegation.on('click', '.delete-address-btn', function(event, target) {
+                const addressId = target.dataset.addressId;
                 if (addressId) {
+                    event.preventDefault();
                     deleteAddress(addressId);
                 }
             });
-        });
+        }
         
         // Check if address list is empty and show empty state
         const addressList = document.querySelector('.address-list');
@@ -151,7 +207,7 @@ const AddressManagement = (function() {
     };
 })();
 
-// Auto-initialize if on address management page
-if (document.querySelector('.address-management-page')) {
-    AddressManagement.init();
+// Register with FashionStoreApp for centralized initialization
+if (typeof window.FashionStoreApp !== 'undefined') {
+    window.FashionStoreApp.registerModule('addressManagement', AddressManagement.init, 30);
 }
